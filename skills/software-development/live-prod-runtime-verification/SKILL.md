@@ -186,3 +186,4 @@ When you finish, give a short operational summary:
 
 - See `references/runtime-verification-checklist.md` for a concise checklist covering routing, admin runtime, document ingestion, session continuity, and LLM post-guards.
 - See `references/prod-contour-rollout-pitfalls.md` for concrete runtime lessons about bind-host regressions after restart, local user-systemd frontend surfaces, chained admin-screen handler failures, and live marker-file ingestion probes.
+- See `references/curated-github-backup-live-runtime.md` for the pattern of building a curated GitHub backup from the real live contour, including systemd units, launcher scripts, deploy files, safe exclusions, and weekly refresh scheduling.

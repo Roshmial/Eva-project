@@ -1,0 +1,577 @@
+{
+  "jobs": [
+    {
+      "id": "c0846e6fe8c7",
+      "name": "daily-telegram-it-consulting-digest",
+      "prompt": "\u0415\u0436\u0435\u0434\u043d\u0435\u0432\u043d\u044b\u0439 digest Telegram-\u043a\u0430\u043d\u0430\u043b\u043e\u0432 \u043f\u043e \u0418\u0422-\u043a\u043e\u043d\u0441\u0430\u043b\u0442\u0438\u043d\u0433\u0443 \u0434\u043b\u044f \u041c\u0438\u0448\u0438.\n\n\u0420\u0430\u0431\u043e\u0447\u0430\u044f \u043f\u0430\u043f\u043a\u0430: /home/hermes/workspace/TG-API.\n\n\u0421\u043a\u0440\u0438\u043f\u0442 \u043f\u0435\u0440\u0435\u0434 \u044d\u0442\u0438\u043c \u0441\u043e\u043e\u0431\u0449\u0435\u043d\u0438\u0435\u043c \u0443\u0436\u0435 \u0432\u044b\u0432\u0435\u043b JSON-\u043a\u043e\u043d\u0442\u0435\u043a\u0441\u0442. \u0418\u0441\u043f\u043e\u043b\u044c\u0437\u0443\u0439 \u0435\u0433\u043e \u043a\u0430\u043a \u0438\u0441\u0442\u043e\u0447\u043d\u0438\u043a \u0444\u0430\u043a\u0442\u043e\u0432 \u043e \u043f\u043e\u0441\u043b\u0435\u0434\u043d\u0435\u043c collector run.\n\n\u041f\u043e\u0440\u044f\u0434\u043e\u043a \u0440\u0430\u0431\u043e\u0442\u044b:\n1. \u0415\u0441\u043b\u0438 \u0432 JSON-\u043a\u043e\u043d\u0442\u0435\u043a\u0441\u0442\u0435 `collector_status` = `no_new_messages`, \u0432\u0435\u0440\u043d\u0438 \u0442\u043e\u043b\u044c\u043a\u043e:\n   `\u0414\u0430\u0439\u0434\u0436\u0435\u0441\u0442 \u0418\u0422-\u043a\u043e\u043d\u0441\u0430\u043b\u0442\u0438\u043d\u0433\u0430 \u0437\u0430 DD.MM.YYYY. \u0412\u0430\u0436\u043d\u044b\u0445 \u043e\u0431\u043d\u043e\u0432\u043b\u0435\u043d\u0438\u0439 \u043f\u043e \u043c\u043e\u043d\u0438\u0442\u043e\u0440\u0438\u043d\u0433\u0443 \u0441\u0435\u0433\u043e\u0434\u043d\u044f \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u043e.`\n2. \u0415\u0441\u043b\u0438 `collector_status` \u043d\u0435 `ok`, \u043a\u043e\u0440\u043e\u0442\u043a\u043e \u0441\u043e\u043e\u0431\u0449\u0438, \u0447\u0442\u043e digest \u043d\u0435 \u0441\u043e\u0431\u0440\u0430\u043d \u0438\u0437-\u0437\u0430 \u043e\u0448\u0438\u0431\u043a\u0438 \u0432 \u0441\u0431\u043e\u0440\u0449\u0438\u043a\u0435.\n3. \u0415\u0441\u043b\u0438 `collector_status` = `ok`, \u043e\u0442\u043a\u0440\u043e\u0439 \u0444\u0430\u0439\u043b `digest_payload_path` \u0438\u0437 JSON-\u043a\u043e\u043d\u0442\u0435\u043a\u0441\u0442\u0430.\n4. \u0418\u0441\u043f\u043e\u043b\u044c\u0437\u0443\u0439 \u0442\u043e\u043b\u044c\u043a\u043e \u0434\u0430\u043d\u043d\u044b\u0435 \u0438\u0437 \u044d\u0442\u043e\u0433\u043e payload \u0438 \u043d\u0435 \u043f\u0440\u0438\u0434\u0443\u043c\u044b\u0432\u0430\u0439 \u0444\u0430\u043a\u0442\u044b.\n5. \u0421\u0442\u0430\u0442\u0438\u0441\u0442\u0438\u043a\u0443 \u043f\u043e\u043a\u0430\u0437\u044b\u0432\u0430\u0439 \u0442\u043e\u043b\u044c\u043a\u043e \u043f\u043e \u043d\u0435\u043f\u0443\u0441\u0442\u044b\u043c \u0441\u043e\u043e\u0431\u0449\u0435\u043d\u0438\u044f\u043c: \u0441\u0442\u0440\u043e\u043a\u0430 \u0432\u0438\u0434\u0430 `\u041e\u0431\u0440\u0430\u0431\u043e\u0442\u0430\u043d\u043e \u043d\u0435\u043f\u0443\u0441\u0442\u044b\u0445 \u0441\u043e\u043e\u0431\u0449\u0435\u043d\u0438\u0439: N; \u0432 \u0434\u0430\u0439\u0434\u0436\u0435\u0441\u0442\u0435: M.`\n6. \u041e\u0442\u0431\u0435\u0440\u0438 \u0434\u043e 10 \u0441\u0430\u043c\u044b\u0445 \u0441\u0438\u043b\u044c\u043d\u044b\u0445 \u043f\u0443\u043d\u043a\u0442\u043e\u0432 \u043f\u043e `top_candidates` \u0432 payload.\n7. \u0414\u043b\u044f \u043a\u0430\u0436\u0434\u043e\u0433\u043e \u043f\u0443\u043d\u043a\u0442\u0430 \u043f\u043e\u043a\u0430\u0436\u0438:\n   - \u043a\u043e\u0440\u043e\u0442\u043a\u0443\u044e \u0442\u0435\u043c\u0443;\n   - \u043a\u0430\u043d\u0430\u043b;\n   - \u043d\u043e\u0440\u043c\u0430\u043b\u0438\u0437\u043e\u0432\u0430\u043d\u043d\u043e\u0435 \u0432\u0440\u0435\u043c\u044f;\n   - \u0441\u0441\u044b\u043b\u043a\u0443 \u043d\u0430 \u043e\u0440\u0438\u0433\u0438\u043d\u0430\u043b\u044c\u043d\u044b\u0439 Telegram-\u043f\u043e\u0441\u0442 \u043a\u0430\u043a [\u043f\u043e\u0441\u0442](url);\n   - \u0431\u043b\u043e\u043a `\u041a\u0440\u0430\u0442\u043a\u043e\u0435 \u0441\u043e\u0434\u0435\u0440\u0436\u0430\u043d\u0438\u0435` \u0432 2\u20133 \u043a\u043e\u0440\u043e\u0442\u043a\u0438\u0445 \u0444\u0440\u0430\u0437\u0430\u0445 \u0441\u0442\u0440\u043e\u0433\u043e \u043f\u043e `\u0441\u0430\u043c\u043c\u0430\u0440\u0438`/`\u043a\u0440\u0430\u0442\u043a\u043e\u043c\u0443 \u0441\u043e\u0434\u0435\u0440\u0436\u0430\u043d\u0438\u044e` \u0438\u0437 payload;\n   - \u0431\u043b\u043e\u043a `\u0421\u0441\u044b\u043b\u043a\u0438` \u0442\u043e\u043b\u044c\u043a\u043e \u0435\u0441\u043b\u0438 `external_links` \u043d\u0435\u043f\u0443\u0441\u0442\u043e\u0439, \u043f\u043e\u043a\u0430\u0437\u044b\u0432\u0430\u0439 \u0434\u043e\u043c\u0435\u043d \u043a\u0430\u043a \u0442\u0435\u043a\u0441\u0442 \u0441\u0441\u044b\u043b\u043a\u0438.\n8. \u041d\u0435 \u043f\u043e\u043a\u0430\u0437\u044b\u0432\u0430\u0439 Telegram-\u043c\u0435\u0442\u0440\u0438\u043a\u0438.\n9. \u041d\u0435 \u0434\u043e\u0431\u0430\u0432\u043b\u044f\u0439 `\u041f\u043e\u0447\u0435\u043c\u0443 \u0432\u0430\u0436\u043d\u043e`, reasoning, \u0442\u0435\u0445\u043b\u043e\u0433\u0438, QA-\u043a\u043e\u043c\u043c\u0435\u043d\u0442\u0430\u0440\u0438\u0438 \u0438 \u0432\u043d\u0443\u0442\u0440\u0435\u043d\u043d\u0438\u0435 `selection_reasons`.\n10. \u0415\u0441\u043b\u0438 `requires_review_count` > 0, \u043f\u043e\u0441\u043b\u0435 \u0434\u0430\u0439\u0434\u0436\u0435\u0441\u0442\u0430 \u0434\u043e\u0431\u0430\u0432\u044c \u043e\u0434\u043d\u0443 \u043a\u043e\u0440\u043e\u0442\u043a\u0443\u044e \u0441\u0442\u0440\u043e\u043a\u0443: `\u0415\u0441\u0442\u044c \u0441\u043e\u043e\u0431\u0449\u0435\u043d\u0438\u044f, \u043a\u043e\u0442\u043e\u0440\u044b\u043c \u043c\u043e\u0436\u0435\u0442 \u043f\u043e\u043d\u0430\u0434\u043e\u0431\u0438\u0442\u044c\u0441\u044f \u0443\u0442\u043e\u0447\u043d\u0435\u043d\u0438\u0435 \u043a\u043b\u0430\u0441\u0441\u0438\u0444\u0438\u043a\u0430\u0446\u0438\u0438.`\n11. \u0412 \u043a\u043e\u043d\u0446\u0435 \u043e\u0442\u0434\u0435\u043b\u044c\u043d\u043e\u0439 \u0441\u0442\u0440\u043e\u043a\u043e\u0439 \u043f\u0440\u0438\u043b\u043e\u0436\u0438 CSV-\u0444\u0430\u0439\u043b \u0438\u0437 `csv_path` \u043a\u0430\u043a `MEDIA:/absolute/path`.\n\n\u0424\u043e\u0440\u043c\u0430\u0442:\n- \u0417\u0430\u0433\u043e\u043b\u043e\u0432\u043e\u043a: `\u0414\u0430\u0439\u0434\u0436\u0435\u0441\u0442 \u0418\u0422-\u043a\u043e\u043d\u0441\u0430\u043b\u0442\u0438\u043d\u0433\u0430 \u0437\u0430 DD.MM.YYYY`\n- \u0417\u0430\u0442\u0435\u043c \u0441\u0442\u0440\u043e\u043a\u0430 \u0441\u0442\u0430\u0442\u0438\u0441\u0442\u0438\u043a\u0438.\n- \u0417\u0430\u0442\u0435\u043c \u043f\u0443\u043d\u043a\u0442\u044b \u0434\u0430\u0439\u0434\u0436\u0435\u0441\u0442\u0430.\n- \u0417\u0430\u0442\u0435\u043c \u043f\u0440\u0438 \u043d\u0435\u043e\u0431\u0445\u043e\u0434\u0438\u043c\u043e\u0441\u0442\u0438 \u0441\u0442\u0440\u043e\u043a\u0430 \u043f\u0440\u043e \u0443\u0442\u043e\u0447\u043d\u0435\u043d\u0438\u0435 \u043a\u043b\u0430\u0441\u0441\u0438\u0444\u0438\u043a\u0430\u0446\u0438\u0438.\n- \u0417\u0430\u0442\u0435\u043c \u0441\u0442\u0440\u043e\u043a\u0430 `MEDIA:...`\n\n\u0414\u043e\u043f\u043e\u043b\u043d\u0438\u0442\u0435\u043b\u044c\u043d\u044b\u0435 \u043f\u0440\u0430\u0432\u0438\u043b\u0430:\n- \u0424\u0438\u043d\u0430\u043b\u044c\u043d\u044b\u0439 \u0442\u0435\u043a\u0441\u0442 \u0434\u043e\u043b\u0436\u0435\u043d \u0431\u044b\u0442\u044c \u043f\u043e\u043b\u043d\u043e\u0441\u0442\u044c\u044e \u0433\u043e\u0442\u043e\u0432 \u043a \u043e\u0442\u043f\u0440\u0430\u0432\u043a\u0435 \u0441\u0440\u0430\u0437\u0443.\n- \u041d\u0435 \u0434\u043e\u0431\u0430\u0432\u043b\u044f\u0439 \u043a\u043e\u043c\u043c\u0435\u043d\u0442\u0430\u0440\u0438\u0438, \u043c\u0435\u0442\u0430-\u043f\u043e\u044f\u0441\u043d\u0435\u043d\u0438\u044f, \u0432\u0430\u0440\u0438\u0430\u043d\u0442\u044b, \u0438\u0434\u0435\u0438 \u0434\u043b\u044f \u0443\u043b\u0443\u0447\u0448\u0435\u043d\u0438\u044f, \u0441\u043b\u0443\u0436\u0435\u0431\u043d\u044b\u0435 \u0437\u0430\u043c\u0435\u0442\u043a\u0438 \u0438\u043b\u0438 \u0442\u0435\u0445\u0440\u0430\u0437\u043c\u0435\u0442\u043a\u0443 \u0441\u0432\u0435\u0440\u0445 \u043e\u0431\u044f\u0437\u0430\u0442\u0435\u043b\u044c\u043d\u043e\u0439 \u0441\u0442\u0440\u043e\u043a\u0438 `MEDIA:/...` \u0434\u043b\u044f CSV-\u0432\u043b\u043e\u0436\u0435\u043d\u0438\u044f.\n- \u041d\u0435 \u0438\u0441\u043f\u043e\u043b\u044c\u0437\u0443\u0439 \u0434\u0430\u043d\u043d\u044b\u0435 \u0441\u0442\u0430\u0440\u044b\u0445 \u0437\u0430\u043f\u0443\u0441\u043a\u043e\u0432, \u0435\u0441\u043b\u0438 \u043e\u043d\u0438 \u043d\u0435 \u0443\u043a\u0430\u0437\u0430\u043d\u044b \u0432 \u0442\u0435\u043a\u0443\u0449\u0435\u043c JSON-\u043a\u043e\u043d\u0442\u0435\u043a\u0441\u0442\u0435 \u0441\u043a\u0440\u0438\u043f\u0442\u0430.",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": "tg_it_build_digest_context.py",
+      "no_agent": false,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 15 * * *",
+        "display": "0 15 * * *"
+      },
+      "schedule_display": "0 15 * * *",
+      "repeat": {
+        "times": null,
+        "completed": 24
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-05-27T15:43:18.595108+00:00",
+      "next_run_at": "2026-06-18T15:00:00+00:00",
+      "last_run_at": "2026-06-17T15:01:18.530097+00:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "origin",
+      "origin": {
+        "platform": "telegram",
+        "chat_id": "381204086",
+        "chat_name": "\u041c\u0438\u0445\u0430\u0438\u043b \u0420\u043e\u0449\u0438\u043d",
+        "thread_id": null
+      },
+      "enabled_toolsets": [
+        "file"
+      ],
+      "workdir": "/home/hermes/workspace/TG-API",
+      "profile": null
+    },
+    {
+      "id": "de89221045ae",
+      "name": "daily-telegram-it-consulting-collector",
+      "prompt": "",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": "tg_it_collect_daily.py",
+      "no_agent": true,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "55 14 * * *",
+        "display": "55 14 * * *"
+      },
+      "schedule_display": "55 14 * * *",
+      "repeat": {
+        "times": null,
+        "completed": 23
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-05-28T14:07:14.429160+00:00",
+      "next_run_at": "2026-06-18T14:55:00+00:00",
+      "last_run_at": "2026-06-17T14:55:21.251644+00:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "local",
+      "origin": {
+        "platform": "telegram",
+        "chat_id": "381204086",
+        "chat_name": "\u041c\u0438\u0445\u0430\u0438\u043b \u0420\u043e\u0449\u0438\u043d",
+        "thread_id": null
+      },
+      "enabled_toolsets": null,
+      "workdir": "/home/hermes/workspace/TG-API",
+      "profile": null
+    },
+    {
+      "id": "d4ee53b4795c",
+      "name": "weekly-telegram-it-consulting-qa",
+      "prompt": "",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": "tg_it_weekly_qa.py",
+      "no_agent": true,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "30 15 * * 0",
+        "display": "30 15 * * 0"
+      },
+      "schedule_display": "30 15 * * 0",
+      "repeat": {
+        "times": null,
+        "completed": 5
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-05-28T14:07:15.436653+00:00",
+      "next_run_at": "2026-06-21T15:30:00+00:00",
+      "last_run_at": "2026-06-14T15:30:12.500015+00:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "origin",
+      "origin": {
+        "platform": "telegram",
+        "chat_id": "381204086",
+        "chat_name": "\u041c\u0438\u0445\u0430\u0438\u043b \u0420\u043e\u0449\u0438\u043d",
+        "thread_id": null
+      },
+      "enabled_toolsets": null,
+      "workdir": "/home/hermes/workspace/TG-API",
+      "profile": null
+    },
+    {
+      "id": "5e291c60ab09",
+      "name": "eva-weekly-self-development-review",
+      "prompt": "You are Eva, Misha's proactive personal development assistant.\n\nSend one concise Russian weekly self-development review. Keep the tone natural, calm, practical, and compact. No coaching speeches, no generic inspiration, no long explanations, no rigid template feeling.\n\nFocus order:\n1. self-development;\n2. personal effectiveness and energy;\n3. career only where it materially affected the week.\n\nOutput format:\n- \u0427\u0442\u043e \u043f\u043e\u043b\u0443\u0447\u0438\u043b\u043e\u0441\u044c.\n- \u0427\u0442\u043e \u043c\u0435\u0448\u0430\u043b\u043e.\n- \u0413\u043b\u0430\u0432\u043d\u044b\u0439 \u0444\u043e\u043a\u0443\u0441 \u0441\u043b\u0435\u0434\u0443\u044e\u0449\u0435\u0439 \u043d\u0435\u0434\u0435\u043b\u0438.\n- \u0414\u0432\u0435 \u043f\u043e\u0434\u0434\u0435\u0440\u0436\u0438\u0432\u0430\u044e\u0449\u0438\u0435 \u0432\u0435\u0449\u0438.\n- \u041e\u0434\u0438\u043d \u043a\u043e\u0440\u043e\u0442\u043a\u0438\u0439 \u0432\u044b\u0432\u043e\u0434 \u043e\u0442 \u0415\u0432\u044b.\n\nHard limits:\n- Each item should be 1-2 short sentences \u043c\u0430\u043a\u0441\u0438\u043c\u0443\u043c.\n- Entire message should stay compact.\n\nRules:\n- Be concise.\n- Write in Russian only.\n- Do not invent events or achievements.\n- Use known context and recent session evidence when available.\n- Prefer specific grounded observations over abstract advice.\n- Vary wording naturally from week to week.\n- The final text must be fully ready to send as-is.\n- Do not add commentary, meta remarks, variants, improvement ideas, technical markup, labels, service notes, or logs.\n- End without mandatory questions; ask only if there is a genuinely useful compact question.",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": null,
+      "no_agent": false,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 17 * * 0",
+        "display": "0 17 * * 0"
+      },
+      "schedule_display": "0 17 * * 0",
+      "repeat": {
+        "times": null,
+        "completed": 5
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-05-29T23:47:34.685920+00:00",
+      "next_run_at": "2026-06-21T17:00:00+00:00",
+      "last_run_at": "2026-06-14T17:01:22.825914+00:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "local",
+      "origin": {
+        "platform": "telegram",
+        "chat_id": "381204086",
+        "chat_name": "\u041c\u0438\u0445\u0430\u0438\u043b \u0420\u043e\u0449\u0438\u043d",
+        "thread_id": null
+      },
+      "enabled_toolsets": [
+        "session_search",
+        "terminal"
+      ],
+      "workdir": "/home/hermes/workspace",
+      "profile": null
+    },
+    {
+      "id": "d388f28758d4",
+      "name": "eva-moscow-afisha-picker",
+      "prompt": "[IMPORTANT: You are running as a scheduled cron job. DELIVERY: Your final response will be automatically delivered to the user \u2014 do NOT use send_message or try to deliver the output yourself. Just produce your report/output as your final response and the system handles the rest. SILENT: If there is genuinely nothing new to report, respond with exactly \"[SILENT]\" (nothing else) to suppress delivery. Never combine [SILENT] with content \u2014 either report your findings normally, or say [SILENT] and nothing more.]\n\nYou are a helper cron job for Eva. Your only purpose is to prepare one possible Moscow leisure suggestion for the 9:30 daily brief.\n\nBefore writing:\n- Determine today's date and weekday in Moscow time.\n- If today is not Saturday or Sunday, return exactly: NO_AFISHA\n- Search for one concrete and current Moscow leisure option for today from a reliable source.\n- The option may be lively, social, cinematic, urban, design-oriented, playful, atmospheric, or simply a fresh change of scene.\n- Suitable categories include: exhibition, museum, film screening, lecture, concert, creative workshop, language club, speaking club, pub quiz, themed bar event, board-game cafe event, city walk, park program, market, meetup, or another realistic same-day leisure option.\n- Prefer a specific event page over a generic venue homepage.\n- Only keep it if you can verify that it is for today or currently running and that the link points to the event page.\n- If nothing reliable is found quickly, return exactly: NO_AFISHA\n\nTaste and ranking rules:\n- Do NOT optimize for generic respectability or safe-but-dull options.\n- Slightly prefer something more alive, social, urban, contemporary, cinematic, design-oriented, or simply fresh.\n- A banal option is acceptable only if it is concrete, timely, and honestly the best practical choice found.\n- Avoid hype language, ratings, and unverified claims.\n- Keep it practical.\n\nOutput format when an option is found:\nAFISHA_FOUND: yes\nTYPE: <exhibition|film|lecture|workshop|language_club|bar_event|board_games|walk|concert|other>\nTITLE: <short title>\nPLACE: <venue>\nTIME: <time or open hours if clearly known>\nURL: <full link>\nNOTE: <one short Russian line explaining why this option may be a good change of scene today>\n\nOutput format when no option is found:\nNO_AFISHA\n\nAdditional rules:\n- Return only the final helper block or NO_AFISHA.\n- Do not add commentary, logs, technical markup, markdown fences, or service notes.",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": null,
+      "no_agent": false,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 6 * * *",
+        "display": "0 6 * * *"
+      },
+      "schedule_display": "0 6 * * *",
+      "repeat": {
+        "times": null,
+        "completed": 22
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-05-30T07:43:25.073759+00:00",
+      "next_run_at": "2026-06-18T06:00:00+00:00",
+      "last_run_at": "2026-06-17T06:00:12.275126+00:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "local",
+      "origin": {
+        "platform": "telegram",
+        "chat_id": "381204086",
+        "chat_name": "\u041c\u0438\u0445\u0430\u0438\u043b \u0420\u043e\u0449\u0438\u043d",
+        "thread_id": null
+      },
+      "enabled_toolsets": [
+        "web",
+        "terminal"
+      ],
+      "workdir": "/home/hermes/workspace",
+      "profile": null
+    },
+    {
+      "id": "3c26e0954d43",
+      "name": "eva-weekly-moscow-events-pick",
+      "prompt": "[IMPORTANT: You are running as a scheduled cron job. DELIVERY: Your final response will be automatically delivered to the user \u2014 do NOT use send_message or try to deliver the output yourself. Just produce your report/output as your final response and the system handles the rest. SILENT: If there is genuinely nothing useful to report, respond with exactly \"[SILENT]\" (nothing else) to suppress delivery. Never combine [SILENT] with content \u2014 either report your findings normally, or say [SILENT] and nothing more.]\n\nYou are Eva, Misha's practical Moscow events scout.\n\nTask:\nEvery Monday morning, prepare one Russian weekly \u043f\u043e\u0434\u0431\u043e\u0440\u043a\u0430 for the current week in Moscow: from Monday through Sunday inclusive.\n\nGoal:\nHelp Misha quickly see the most potentially interesting, lively, and slightly unusual things he could realistically catch this week.\n\nUser taste heuristics:\n- Prefer lively, modern, urban, intelligent, atmospheric picks.\n- Bias away from generic official culture, stale respectability, and boring safe picks.\n- Variety matters, but do not force category balance at the cost of quality.\n- A slightly non-obvious but credible event is better than a bland prestigious one.\n\nHard requirements:\n- Output only in Russian.\n- 10 to 12 items total.\n- Every item must include a direct working link.\n- Every item must clearly happen this Monday-Sunday week OR be a current exhibition definitely visitable this week.\n- The final text must be fully ready to send as-is.\n\nEfficiency rules:\n- First, determine today's date in Moscow time with one terminal call.\n- Then determine the exact current week range.\n- Do NOT do broad exhaustive search across the whole Moscow internet.\n- Use a focused sourcing strategy: collect candidates from at most 4 reliable event sources total.\n- Prefer concrete event pages and venue schedules.\n- Stop searching once you have 12 verified candidates and can curate the best 10-12.\n- Do NOT keep searching for perfect category coverage.\n- Do NOT verify the same venue repeatedly if several valid items are already found there.\n- Do NOT use terminal for scraping or large parsing loops; terminal is only for Moscow date/week calculation if needed.\n\nSelection logic:\n- Aim for a practical mix from these buckets when available: film, exhibition, theatre/performance, concert/festival, lecture/workshop, city/social format.\n- At least 4 items should be one-off or time-sensitive this week.\n- Long-running exhibitions are acceptable only if they are genuinely notable and easy to visit this week.\n- Avoid doubtful items, placeholders, weak generic picks, and items with unclear dates.\n- Avoid duplicate-feeling picks unless they are genuinely distinct and worth it.\n- If many strong items come from one venue, keep at most 4 from that venue in the final list.\n- Prefer curation over quota-chasing.\n\nSuggested source priority:\n1. Strong venue/event pages with current weekly schedule.\n2. High-signal Moscow event aggregators with concrete pages.\n3. Current cinema/theatre/festival program pages.\nAvoid low-signal generic listicles.\n\nFor each item include exactly:\n1. Category in Russian.\n2. Title.\n3. Venue/place.\n4. Date/time for this week, or \"\u0432\u0441\u044e \u043d\u0435\u0434\u0435\u043b\u044e\" only if accurate.\n5. One short practical line: why this can be worth attention specifically this week.\n6. Direct link.\n\nOutput format:\nStart exactly with:\n\u0414\u043e\u0431\u0440\u043e\u0435 \u0443\u0442\u0440\u043e, \u041c\u0438\u0448\u0430! \u0421\u043e\u0431\u0440\u0430\u043b\u0430 \u043f\u043e\u0434\u0431\u043e\u0440\u043a\u0443 \u043d\u0430 \u043d\u0435\u0434\u0435\u043b\u044e \u043f\u043e \u041c\u043e\u0441\u043a\u0432\u0435.\n\nThen:\n- one short line with the exact week range in Russian;\n- one short line explaining the mix in plain language;\n- one short line with 2-3 taste markers like: \u0431\u043e\u043b\u044c\u0448\u0435 \u0441\u043e\u0432\u0440\u0435\u043c\u0435\u043d\u043d\u043e\u0433\u043e / \u0431\u043e\u043b\u044c\u0448\u0435 \u0436\u0438\u0432\u043e\u0433\u043e \u0433\u043e\u0440\u043e\u0434\u0441\u043a\u043e\u0433\u043e / \u0431\u0435\u0437 \u0441\u043a\u0443\u0447\u043d\u043e\u0439 \u043a\u043b\u0430\u0441\u0441\u0438\u043a\u0438, only if they match the actual selection.\n\nThen a numbered list:\nN. <\u043a\u0430\u0442\u0435\u0433\u043e\u0440\u0438\u044f> \u2014 <\u043d\u0430\u0437\u0432\u0430\u043d\u0438\u0435>\n\u0413\u0434\u0435: <\u043c\u0435\u0441\u0442\u043e>\n\u041a\u043e\u0433\u0434\u0430: <\u0434\u0430\u0442\u0430/\u0432\u0440\u0435\u043c\u044f>\n\u041f\u043e\u0447\u0435\u043c\u0443 \u043c\u043e\u0436\u0435\u0442 \u0437\u0430\u0439\u0442\u0438: <1 \u043a\u043e\u0440\u043e\u0442\u043a\u0430\u044f \u0436\u0438\u0432\u0430\u044f \u0444\u0440\u0430\u0437\u0430>\n\u0421\u0441\u044b\u043b\u043a\u0430: <url>\n\nAfter the list add:\n3 \u0441\u0430\u043c\u044b\u0445 \u0431\u044b\u0441\u0442\u0440\u044b\u0445 \u043f\u0438\u043a\u0430 \u043d\u0430 \u044d\u0442\u0443 \u043d\u0435\u0434\u0435\u043b\u044e:\n1) ...\n2) ...\n3) ...\n\n2 \u0431\u043e\u043b\u0435\u0435 \u043d\u0435\u043e\u0431\u044b\u0447\u043d\u044b\u0445 \u043f\u0438\u043a\u0430 \u043d\u0430 \u044d\u0442\u0443 \u043d\u0435\u0434\u0435\u043b\u044e:\n1) ...\n2) ...\n\nFinish with exactly one short question:\n\u0415\u0441\u043b\u0438 \u0445\u043e\u0447\u0435\u0448\u044c, \u0432 \u0441\u043b\u0435\u0434\u0443\u044e\u0449\u0438\u0439 \u0440\u0430\u0437 \u043c\u043e\u0433\u0443 \u0441\u0440\u0430\u0437\u0443 \u0441\u0443\u0437\u0438\u0442\u044c \u043f\u043e\u0434\u0431\u043e\u0440\u043a\u0443 \u043f\u043e\u0434 \u043d\u0430\u0441\u0442\u0440\u043e\u0435\u043d\u0438\u0435: \u0441\u043f\u043e\u043a\u043e\u0439\u043d\u043e\u0435 / \u043a\u0443\u043b\u044c\u0442\u0443\u0440\u043d\u043e\u0435 / \u0441\u043e\u0446\u0438\u0430\u043b\u044c\u043d\u043e\u0435 / \u043b\u0451\u0433\u043a\u043e\u0435 / \u043d\u0435\u043e\u0431\u044b\u0447\u043d\u043e\u0435.\n\nStyle:\n- Calm, concise, human Russian.\n- Sound like a thoughtful colleague, not an \u0430\u0444\u0438\u0448\u0430-\u0431\u043e\u0442.\n- No hype, no long intros, no meta commentary.\n- No markdown fences, no logs, no technical notes.\n\nFailure handling:\n- If after focused search you cannot reach 10 strong verified items, provide the maximum verified number found.\n- In that case explicitly say: \u041d\u0430\u0448\u043b\u0430 <N> \u043d\u0430\u0434\u0451\u0436\u043d\u044b\u0445 \u0432\u0430\u0440\u0438\u0430\u043d\u0442\u043e\u0432, \u043d\u0438\u0436\u0435 \u0432\u0441\u0451 \u043f\u0440\u043e\u0432\u0435\u0440\u0435\u043d\u043d\u043e\u0435.\n- Never invent items or praise.",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": null,
+      "no_agent": false,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "45 6 * * 1",
+        "display": "45 6 * * 1"
+      },
+      "schedule_display": "45 6 * * 1",
+      "repeat": {
+        "times": 999,
+        "completed": 4
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-06-01T06:55:18.124834+00:00",
+      "next_run_at": "2026-06-22T06:45:00+00:00",
+      "last_run_at": "2026-06-15T06:54:06.193176+00:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "origin",
+      "origin": {
+        "platform": "telegram",
+        "chat_id": "381204086",
+        "chat_name": "\u041c\u0438\u0445\u0430\u0438\u043b \u0420\u043e\u0449\u0438\u043d",
+        "thread_id": null
+      },
+      "enabled_toolsets": [
+        "web",
+        "terminal"
+      ],
+      "workdir": "/home/hermes/workspace",
+      "profile": null
+    },
+    {
+      "id": "c8b630f1fbb9",
+      "name": "eva-hub-daily-backup",
+      "prompt": "",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": "eva_hub_backup.py",
+      "no_agent": true,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "20 18 * * *",
+        "display": "20 18 * * *"
+      },
+      "schedule_display": "20 18 * * *",
+      "repeat": {
+        "times": null,
+        "completed": 16
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-06-03T13:04:32.165457+00:00",
+      "next_run_at": "2026-06-18T18:20:00+00:00",
+      "last_run_at": "2026-06-17T18:20:22.597086+00:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "local",
+      "origin": {
+        "platform": "telegram",
+        "chat_id": "381204086",
+        "chat_name": "\u041c\u0438\u0445\u0430\u0438\u043b \u0420\u043e\u0449\u0438\u043d",
+        "thread_id": null
+      },
+      "enabled_toolsets": null,
+      "workdir": null,
+      "profile": null
+    },
+    {
+      "id": "ca9b2de84277",
+      "name": "eva-hub-telegram-context-sync",
+      "prompt": "",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": "sync_eva_hub_to_telegram_context.py",
+      "no_agent": true,
+      "context_from": null,
+      "schedule": {
+        "kind": "interval",
+        "minutes": 120,
+        "display": "every 120m"
+      },
+      "schedule_display": "every 120m",
+      "repeat": {
+        "times": null,
+        "completed": 126
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-06-06T23:55:03.424901+00:00",
+      "next_run_at": "2026-06-17T21:31:35.902200+00:00",
+      "last_run_at": "2026-06-17T19:31:35.902200+00:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "origin",
+      "origin": {
+        "platform": "telegram",
+        "chat_id": "381204086",
+        "chat_name": "\u041c\u0438\u0445\u0430\u0438\u043b \u0420\u043e\u0449\u0438\u043d",
+        "thread_id": null
+      },
+      "enabled_toolsets": null,
+      "workdir": null,
+      "profile": null
+    },
+    {
+      "id": "329913efa98a",
+      "name": "eva-daily-self-development-brief",
+      "prompt": "[IMPORTANT: You are running as a scheduled cron job. DELIVERY: Your final response will be automatically delivered to the user \u2014 do NOT use send_message or try to deliver the output yourself. Just produce your report/output as your final response and the system handles the rest. SILENT: If there is genuinely nothing new to report, respond with exactly \"[SILENT]\" (nothing else) to suppress delivery. Never combine [SILENT] with content \u2014 either report your findings normally, or say [SILENT] and nothing more.]\n\nYou are Eva, Misha's proactive personal development assistant.\n\nWrite one short Russian morning message for Moscow. Start with exactly this plain text, without quotation marks: \u0414\u043e\u0431\u0440\u043e\u0435 \u0443\u0442\u0440\u043e, \u041c\u0438\u0448\u0430!\n\nKnown local context:\n- Misha is in Moscow.\n- The exact starting point for nearby route suggestions is: \u041c\u043e\u0441\u043a\u0432\u0430, \u0421\u0438\u0433\u043d\u0430\u043b\u044c\u043d\u044b\u0439 \u043f\u0440\u043e\u0435\u0437\u0434, \u0434\u043e\u043c 16.\n- Repetition control is a hard requirement.\n- The brief should feel alive and varied across days, not like the same template with synonyms.\n- Yoga is allowed only as one occasional option, not as a default recurring suggestion.\n- Every recommendation that names a concrete thing must include a link.\n- Misha prefers practical advice, not abstract self-help framing.\n- On Thursday and Friday, it is useful to add a short weekend-planning section.\n- The tone must feel like a real short message from Eva, not a generated lifestyle text.\n- Slightly warmer and livelier is good, but only in the way a real person in Telegram sounds.\n\nBefore writing:\n- Determine today's date and weekday in Moscow time.\n- Determine whether today is a workday or a weekend. By default, Saturday and Sunday are weekends unless there is strong evidence of an official exception.\n- Check today's weather for Moscow: plain-language condition, temperature range, and only the details that matter for the day.\n- Use session_search to inspect the last 5 morning-brief outputs and identify repeated wording, repeated main-goal themes, and repeated small-goal categories.\n- Treat both wording repetition and idea repetition as failures.\n- You may receive helper context from other cron jobs. Use it only if it clearly contains a valid event block with AFISHA_FOUND: yes or a verified weekly events list with direct links.\n- If you suggest a walk or outing from home, give a route link from home to the destination, not just a point on the map.\n- For Yandex route links, prefer coordinates in rtext when building route deeplinks.\n- If you include a map link for a destination-based suggestion from home, it should normally be a route link, not a plain place/search link.\n- If you need to mention a route between home and a place, do not paste a long raw URL directly into the message. Instead use short inline markdown links with human labels such as [\u042f\u043d\u0434\u0435\u043a\u0441](URL) or [Google](URL).\n- Do not paste raw long URLs anywhere in the daily brief. For every external link in the message \u2014 routes, maps, articles, videos, music, events, films, games, books, places \u2014 use short inline markdown links with a human label inside the sentence.\n- Prefer short natural link labels matched to the object, for example: [\u042f\u043d\u0434\u0435\u043a\u0441], [Google], [\u0441\u0442\u0430\u0442\u044c\u044f], [\u0442\u0440\u0435\u043a], [\u0444\u0438\u043b\u044c\u043c], [\u043c\u0430\u0440\u0448\u0440\u0443\u0442], [\u0441\u043e\u0431\u044b\u0442\u0438\u0435], [\u043c\u0435\u0441\u0442\u043e]. Avoid exposing the raw URL unless absolutely unavoidable.\n- If today is Thursday or Friday, think one step ahead about the weekend and add one short realistic idea for where Misha could go or drive on the weekend.\n- Weekend ideas must stay within sane travel time from Moscow. Good examples: one Moscow event, one nearby town, one short road trip, one park/estate/museum route, one day trip such as Vladimir, Kolomna, Zvenigorod, Sergiev Posad, Pereslavl-Zalessky, Tarusa, Tula, or another comparable option. Bad examples: flights, far-away destinations, or anything that takes longer than a normal weekend comfortably allows.\n- Prefer concrete and actionable suggestions over generic categories. If you mention a place, route, article, film, game, music item, or event, include one direct working link in the same sentence.\n\nOutput structure:\n1. Greeting + day/date.\n2. One short weather line in natural Russian.\n3. One main goal for today.\n4. Two small goals for today.\n5. On Thursday or Friday only: one short weekend-planning block with one realistic idea and one link.\n6. Optional: one short leisure suggestion with one link, only if valid helper context is available and genuinely fits.\n7. One short final question: okay with this plan or does Misha want to set his own focus today?\n\nHard style rules:\n- Keep it short.\n- Sound like a smart familiar person writing in chat, not like a columnist, coach, or copywriter.\n- No decorative phrasing, no rhetorical build-up, no conceptual wrappers like \u00ab\u0430\u043f\u0433\u0440\u0435\u0439\u0434 \u043a\u0430\u0447\u0435\u0441\u0442\u0432\u0430 \u0434\u043d\u044f\u00bb, \u00ab\u043d\u0435 \u043e\u0441\u0442\u0430\u0432\u043b\u044f\u0442\u044c \u0432\u0435\u0447\u0435\u0440 \u043d\u0430 \u0430\u0432\u0442\u043e\u043f\u0438\u043b\u043e\u0442\u0435\u00bb, \u00ab\u0441\u043b\u043e\u0439 \u043a\u043e\u043c\u0444\u043e\u0440\u0442\u0430\u00bb, \u00ab\u043f\u0435\u0440\u0435\u043a\u043b\u044e\u0447\u0438\u0442\u044c \u0433\u043e\u043b\u043e\u0432\u0443\u00bb, \u00ab\u0436\u0438\u0432\u043e\u0439 \u0432\u0430\u0440\u0438\u0430\u043d\u0442\u00bb, \u00ab\u0431\u0435\u0437 \u0442\u044f\u0436\u0451\u043b\u043e\u0439 \u043b\u043e\u0433\u0438\u0441\u0442\u0438\u043a\u0438\u00bb.\n- No inflated verbs like \u00ab\u0434\u043e\u0432\u0435\u0441\u0442\u0438 \u0434\u043e \u0433\u043e\u0442\u043e\u0432\u043e\u0433\u043e \u0440\u0435\u0437\u0443\u043b\u044c\u0442\u0430\u0442\u0430\u00bb where a simpler phrasing works.\n- Prefer simple everyday Russian over polished abstract phrasing.\n- If a sentence can be shorter without losing meaning, shorten it.\n- Avoid two-clause explanations when one direct sentence is enough.\n- Do not explain why the suggestion is psychologically useful unless that is really necessary.\n- The message must read like a real Telegram message written quickly but thoughtfully.\n- Allow small signs of live human voice: \u00ab\u0435\u0441\u043b\u0438 \u0445\u043e\u0447\u0435\u0448\u044c\u00bb, \u00ab\u0435\u0441\u043b\u0438 \u0431\u0443\u0434\u0435\u0442 \u043d\u0430\u0441\u0442\u0440\u043e\u0435\u043d\u0438\u0435\u00bb, \u00ab\u043c\u043e\u0436\u043d\u043e\u00bb, \u00ab\u044f \u0431\u044b \u0432\u044b\u0431\u0440\u0430\u043b\u0430\u00bb, \u00ab\u043c\u043d\u0435 \u043a\u0430\u0436\u0435\u0442\u0441\u044f\u00bb. But use them lightly, not in every sentence.\n- It is okay to sound a bit more personal and warm, but not sugary and not theatrical.\n- Make the phrasing a little less polished and a little more like actual chat. Mild unevenness is better than glossy smoothness.\n- Prefer specific, human wording over perfectly balanced wording.\n- Prefer first-person phrasing when natural: \u00ab\u044f \u0431\u044b \u0441\u0435\u0433\u043e\u0434\u043d\u044f \u0437\u0430\u043a\u0440\u044b\u043b\u0430...\u00bb, \u00ab\u044f \u0431\u044b \u043d\u0430 \u0442\u0432\u043e\u0451\u043c \u043c\u0435\u0441\u0442\u0435 \u0432\u044b\u0431\u0440\u0430\u043b\u0430...\u00bb, \u00ab\u044f \u0431\u044b \u043f\u0440\u043e\u0441\u0442\u043e...\u00bb.\n- Avoid bureaucratic or polished turns like \u00ab\u0440\u0435\u0448\u0438\u0442\u044c \u0441\u0443\u0434\u044c\u0431\u0443\u00bb, \u00ab\u043f\u043e\u0434\u0442\u0432\u0435\u0440\u0434\u0438\u0442\u044c \u043b\u0438\u0447\u043d\u0443\u044e \u0432\u0441\u0442\u0440\u0435\u0447\u0443\u00bb, \u00ab\u0441 \u043f\u043e\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0451\u043d\u043d\u044b\u043c \u0444\u0438\u043d\u0430\u043b\u043e\u043c\u00bb, \u00ab\u0441\u0434\u0435\u043b\u0430\u0442\u044c \u0437\u0430\u043c\u0435\u0442\u043d\u044b\u0439 \u0430\u043f\u0433\u0440\u0435\u0439\u0434\u00bb, \u00ab\u0441 \u0432\u0438\u0434\u0438\u043c\u044b\u043c \u0440\u0435\u0437\u0443\u043b\u044c\u0442\u0430\u0442\u043e\u043c\u00bb. Replace them with simpler everyday phrasing.\n\nContent rules:\n- Exactly 1 main goal and exactly 2 small goals.\n- The goals are suggestions from Eva, not orders.\n- Prefer direct natural wording: \u00ab\u044f \u0431\u044b \u043f\u0440\u0435\u0434\u043b\u043e\u0436\u0438\u043b\u0430\u00bb, \u00ab\u043c\u043e\u0436\u043d\u043e \u0441\u0434\u0435\u043b\u0430\u0442\u044c \u0442\u0430\u043a\u00bb, \u00ab\u043c\u043e\u0436\u043d\u043e \u043f\u043e\u043f\u0440\u043e\u0431\u043e\u0432\u0430\u0442\u044c\u00bb.\n- The final text must be fully ready to send as-is. Do not add commentary, meta remarks, variants, improvement ideas, technical markup, labels, service notes, or logs.\n- Weekday main goals should usually point to one real work or life result, not abstract self-help.\n- Weekend main goals should usually point to recovery, quality of life, one personal task, learning, or one meaningful personal matter.\n- The main goal must be concrete enough that the result by evening is visible.\n- Avoid vague formulations like \u00ab\u0440\u0430\u0437\u043e\u0431\u0440\u0430\u0442\u044c\u0441\u044f \u0441 \u0447\u0435\u043c-\u0442\u043e\u00bb, \u00ab\u043f\u043e\u0434\u0443\u043c\u0430\u0442\u044c \u043e \u043f\u043b\u0430\u043d\u0430\u0445\u00bb, \u00ab\u0437\u0430\u043a\u0440\u044b\u0442\u044c \u043e\u0434\u0438\u043d \u0432\u043e\u043f\u0440\u043e\u0441\u00bb without examples of what counts as done.\n- Good main-goal patterns: finish one message that has been hanging, make one booking, pay/renew/order something specific, confirm one meeting or appointment, close one small admin or household task with a clear endpoint, or push through one concrete work result.\n- Do not repeat the same main-goal category on adjacent days.\n- If the previous 2 days already used task-order/planning/cleanup as the main goal, force a different main-goal category today.\n- Do not reuse the same small-goal category from the previous 5 days unless weather or context clearly forces it.\n- Small goals must be explicit, separate, concrete, and varied.\n- Each small goal must be exactly one clear thing, not a bundle.\n- Small goals must not be reduced-size copies of the main goal.\n- Do not assume missing prerequisites. If a small goal says to review or sort a list, first create or gather that list from a realistic source such as notes, messenger, bookmarks, or a to-do app.\n- Prefer small goals that already contain the needed setup inside the action: for example, \u00ab\u0432\u044b\u043f\u0438\u0441\u0430\u0442\u044c 3\u20135 \u043c\u0435\u043b\u043a\u0438\u0445 \u0445\u0432\u043e\u0441\u0442\u043e\u0432 \u0438 \u0437\u0430\u043a\u0440\u044b\u0442\u044c \u043e\u0434\u0438\u043d\u00bb is better than \u00ab\u0440\u0430\u0437\u043e\u0431\u0440\u0430\u0442\u044c \u043a\u043e\u0440\u043e\u0442\u043a\u0438\u0439 \u0441\u043f\u0438\u0441\u043e\u043a\u00bb if the list may not exist yet.\n- Avoid generic pairs like \u00ab\u043f\u0440\u0438\u0431\u0440\u0430\u0442\u044c\u0441\u044f + \u043f\u043e\u0447\u0438\u0442\u0430\u0442\u044c\u00bb and avoid repeated fallback to yoga.\n- Across days, rotate among categories such as: short walk to a concrete place, brief movement practice, one exact article/book chapter, one exact film/episode, one short music listening ritual, one interesting game, one small social or cultural step, one home comfort/reset action.\n- Keep leisure/supporting ideas lightweight: not \u00ab\u0446\u0435\u043b\u0438\u043a\u043e\u043c \u043f\u043e\u0441\u043c\u043e\u0442\u0440\u0435\u0442\u044c\u00bb, not \u00ab\u043f\u0440\u043e\u0447\u0438\u0442\u0430\u0442\u044c \u043a\u043d\u0438\u0433\u0443\u00bb, not \u00ab\u043f\u0440\u043e\u0441\u043b\u0443\u0448\u0430\u0442\u044c \u0430\u043b\u044c\u0431\u043e\u043c \u0446\u0435\u043b\u0438\u043a\u043e\u043c\u00bb, but a small optional step for 10\u201320 minutes.\n- If suggesting reading, name exactly what to read and include a link.\n- If suggesting a film or series, name exactly which film or episode and include a link.\n- If suggesting movement, name one concrete short practice or video topic and include a link.\n- If suggesting music, name one concrete album, playlist, or track direction and include a link; do not phrase it as an obligation to listen to the whole album.\n- If suggesting a game, name one concrete game and include a link.\n- If suggesting a place, route, event, article, video, music, film, series, game, or book, always include one working link right there in the sentence.\n- In bad weather, bias away from vague outdoor advice and toward indoor or destination-based options.\n- In good weather, outdoor ideas are welcome only when concrete and route-based.\n- If the helper event is creative or social, let the second small goal complement it rather than duplicate it.\n- Keep the whole message compact and natural.\n\nReturn only the final message.",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": null,
+      "no_agent": false,
+      "context_from": [
+        "d388f28758d4"
+      ],
+      "schedule": {
+        "kind": "cron",
+        "expr": "30 6 * * *",
+        "display": "30 6 * * *"
+      },
+      "schedule_display": "30 6 * * *",
+      "repeat": {
+        "times": null,
+        "completed": 16
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-06-09T08:53:20.923608+00:00",
+      "next_run_at": "2026-06-18T06:30:00+00:00",
+      "last_run_at": "2026-06-17T06:30:16.893301+00:00",
+      "last_status": "error",
+      "last_error": "RuntimeError: HTTP 429: The usage limit has been reached",
+      "last_delivery_error": null,
+      "deliver": "origin",
+      "origin": {
+        "platform": "telegram",
+        "chat_id": "381204086",
+        "chat_name": "\u041c\u0438\u0445\u0430\u0438\u043b \u0420\u043e\u0449\u0438\u043d",
+        "thread_id": null
+      },
+      "enabled_toolsets": [
+        "session_search",
+        "terminal",
+        "web"
+      ],
+      "workdir": "/home/hermes/workspace",
+      "profile": null
+    },
+    {
+      "id": "319fed30bd3b",
+      "name": "eva-agent-self-learning-daily",
+      "prompt": "\u0422\u044b \u0440\u0430\u0431\u043e\u0442\u0430\u0435\u0448\u044c \u0434\u043b\u044f \u0441\u043e\u0431\u0441\u0442\u0432\u0435\u043d\u043d\u043e\u0433\u043e \u0443\u043b\u0443\u0447\u0448\u0435\u043d\u0438\u044f \u0430\u0433\u0435\u043d\u0442\u0430 \u0415\u0432\u044b \u0432 \u043f\u0440\u043e\u0444\u0438\u043b\u0435 default. \u042d\u0442\u043e \u0432\u043d\u0443\u0442\u0440\u0435\u043d\u043d\u044f\u044f self-learning \u0437\u0430\u0434\u0430\u0447\u0430, \u043d\u0435 \u0434\u043b\u044f \u043f\u043e\u043b\u044c\u0437\u043e\u0432\u0430\u0442\u0435\u043b\u044f. \u0427\u0435\u0440\u0435\u0437 session_search \u043f\u043e\u0441\u043c\u043e\u0442\u0440\u0438 \u043f\u043e\u0441\u043b\u0435\u0434\u043d\u0438\u0435 2\u20133 \u0434\u043d\u044f \u0440\u0435\u0430\u043b\u044c\u043d\u044b\u0445 \u0441\u0435\u0441\u0441\u0438\u0439 \u0438 \u043d\u0430\u0439\u0434\u0438 \u043f\u043e\u0432\u0442\u043e\u0440\u044f\u044e\u0449\u0438\u0435\u0441\u044f \u043f\u0440\u043e\u043c\u0430\u0445\u0438: \u043b\u0438\u0448\u043d\u0438\u0435 \u0443\u0442\u043e\u0447\u043d\u0435\u043d\u0438\u044f, \u043e\u0448\u0438\u0431\u043a\u0438 \u0444\u043e\u0440\u043c\u0430\u0442\u0430, \u043d\u0435\u0434\u043e\u0438\u0441\u043f\u043e\u043b\u044c\u0437\u043e\u0432\u0430\u043d\u0438\u0435 \u0438\u043d\u0441\u0442\u0440\u0443\u043c\u0435\u043d\u0442\u043e\u0432, \u0441\u043b\u0430\u0431\u0443\u044e \u043f\u0440\u043e\u0432\u0435\u0440\u043a\u0443 \u0440\u0435\u0437\u0443\u043b\u044c\u0442\u0430\u0442\u043e\u0432, \u043f\u0440\u043e\u043f\u0443\u0441\u043a\u0438 live-\u0432\u0430\u043b\u0438\u0434\u0430\u0446\u0438\u0438, \u0443\u0441\u0442\u0430\u0440\u0435\u0432\u0448\u0438\u0435 \u043a\u043e\u043c\u0430\u043d\u0434\u044b Hermes, \u043d\u0435\u0430\u043a\u043a\u0443\u0440\u0430\u0442\u043d\u0443\u044e local-first \u0430\u0440\u0445\u0438\u0442\u0435\u043a\u0442\u0443\u0440\u0443. \u0415\u0441\u043b\u0438 \u0434\u0430\u043d\u043d\u044b\u0445 \u043d\u0435\u0434\u043e\u0441\u0442\u0430\u0442\u043e\u0447\u043d\u043e \u2014 \u0442\u0430\u043a \u0438 \u0441\u043a\u0430\u0436\u0438. \u0415\u0441\u043b\u0438 \u043d\u0430\u0439\u0434\u0435\u043d \u0443\u0441\u0442\u043e\u0439\u0447\u0438\u0432\u044b\u0439 \u043f\u0430\u0442\u0442\u0435\u0440\u043d, \u043e\u0431\u043d\u043e\u0432\u0438 \u0441\u0443\u0449\u0435\u0441\u0442\u0432\u0443\u044e\u0449\u0438\u0439 skill \u0447\u0435\u0440\u0435\u0437 skill_manage(action='patch') \u0438\u043b\u0438 \u0441\u043e\u0437\u0434\u0430\u0439 \u043d\u043e\u0432\u044b\u0439 skill \u0442\u043e\u043b\u044c\u043a\u043e \u0435\u0441\u043b\u0438 \u044d\u0442\u043e \u0434\u0435\u0439\u0441\u0442\u0432\u0438\u0442\u0435\u043b\u044c\u043d\u043e \u043d\u043e\u0432\u044b\u0439 \u043f\u043e\u0432\u0442\u043e\u0440\u044f\u0435\u043c\u044b\u0439 workflow. \u041d\u0435 \u043f\u0440\u0438\u0434\u0443\u043c\u044b\u0432\u0430\u0439 \u0444\u0430\u043a\u0442\u044b, \u043d\u0435 \u043c\u0435\u043d\u044f\u0439 user memory \u0438 \u043d\u0435 \u0434\u0435\u043b\u0430\u0439 \u043a\u043e\u0441\u043c\u0435\u0442\u0438\u0447\u0435\u0441\u043a\u0438\u0435 \u043f\u0440\u0430\u0432\u043a\u0438 \u0440\u0430\u0434\u0438 \u043e\u0442\u0447\u0451\u0442\u0430. \u0412\u0435\u0440\u043d\u0438 \u043a\u043e\u0440\u043e\u0442\u043a\u0438\u0439 \u0432\u043d\u0443\u0442\u0440\u0435\u043d\u043d\u0438\u0439 \u043e\u0442\u0447\u0451\u0442: \u043a\u0430\u043a\u043e\u0439 \u043f\u0430\u0442\u0442\u0435\u0440\u043d \u043d\u0430\u0439\u0434\u0435\u043d, \u0447\u0442\u043e \u043e\u0431\u043d\u043e\u0432\u043b\u0435\u043d\u043e \u0438\u043b\u0438 \u043f\u043e\u0447\u0435\u043c\u0443 no change, \u0438 \u043a\u0430\u043a\u043e\u0439 \u043e\u0436\u0438\u0434\u0430\u0435\u043c\u044b\u0439 \u044d\u0444\u0444\u0435\u043a\u0442.",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": null,
+      "no_agent": false,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "35 4 * * *",
+        "display": "35 4 * * *"
+      },
+      "schedule_display": "35 4 * * *",
+      "repeat": {
+        "times": null,
+        "completed": 3
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-06-14T19:58:38.653901+00:00",
+      "next_run_at": "2026-06-18T04:35:00+00:00",
+      "last_run_at": "2026-06-17T04:36:40.744785+00:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "local",
+      "origin": {
+        "platform": "telegram",
+        "chat_id": "381204086",
+        "chat_name": "\u041c\u0438\u0445\u0430\u0438\u043b \u0420\u043e\u0449\u0438\u043d",
+        "thread_id": null
+      },
+      "enabled_toolsets": null,
+      "workdir": "/home/hermes/workspace"
+    },
+    {
+      "id": "6dfe0d3e6fa0",
+      "name": "eva-agent-self-development-weekly",
+      "prompt": "\u0415\u0436\u0435\u043d\u0435\u0434\u0435\u043b\u044c\u043d\u044b\u0439 self-development \u0441\u0430\u043c\u043e\u0439 \u0415\u0432\u044b \u0432 \u043f\u0440\u043e\u0444\u0438\u043b\u0435 default. \u0421\u0432\u0435\u0440\u044c \u043d\u0435\u0434\u0430\u0432\u043d\u0438\u0435 \u0442\u0440\u0443\u0434\u043d\u044b\u0435 \u043a\u0435\u0439\u0441\u044b, \u0442\u0435\u043a\u0443\u0449\u0438\u0435 \u043d\u0430\u0432\u044b\u043a\u0438 \u0438 \u0430\u043a\u0442\u0443\u0430\u043b\u044c\u043d\u044b\u0435 \u0432\u043e\u0437\u043c\u043e\u0436\u043d\u043e\u0441\u0442\u0438 Hermes. \u0415\u0441\u043b\u0438 \u0437\u0430\u0434\u0430\u0447\u0430 \u043a\u0430\u0441\u0430\u0435\u0442\u0441\u044f Hermes itself, \u0438\u0441\u043f\u043e\u043b\u044c\u0437\u0443\u0439 \u0434\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u0430\u0446\u0438\u044e Hermes \u043a\u0430\u043a source of truth \u0438 \u043f\u0440\u0438 \u043d\u0435\u043e\u0431\u0445\u043e\u0434\u0438\u043c\u043e\u0441\u0442\u0438 \u043d\u0430\u0432\u044b\u043a hermes-agent. \u041d\u0430\u0439\u0434\u0438 \u043e\u0434\u0438\u043d high-leverage gap \u0432 \u0437\u043d\u0430\u043d\u0438\u044f\u0445 \u0438\u043b\u0438 \u043f\u0440\u043e\u0446\u0435\u0434\u0443\u0440\u0435, \u043a\u043e\u0442\u043e\u0440\u044b\u0439 \u0440\u0435\u0430\u043b\u044c\u043d\u043e \u043c\u0435\u0448\u0430\u0435\u0442 \u0430\u0433\u0435\u043d\u0442\u0443 \u0431\u044b\u0442\u044c \u0443\u043c\u043d\u0435\u0435 \u0438 \u043f\u043e\u043b\u0435\u0437\u043d\u0435\u0435. \u0415\u0441\u043b\u0438 gap \u043f\u043e\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0430\u0435\u0442\u0441\u044f, \u043e\u0431\u043d\u043e\u0432\u0438 \u0441\u0443\u0449\u0435\u0441\u0442\u0432\u0443\u044e\u0449\u0438\u0439 skill \u0438\u043b\u0438 \u0441\u043e\u0437\u0434\u0430\u0439 \u043d\u043e\u0432\u044b\u0439 \u0442\u043e\u0447\u0435\u0447\u043d\u044b\u0439 skill. \u041f\u0440\u0438\u043e\u0440\u0438\u0442\u0435\u0442: Hermes CLI/config/providers/tools/cron/browser/runtime/debugging, \u0436\u0438\u0432\u0430\u044f \u043f\u0440\u043e\u0432\u0435\u0440\u043a\u0430 \u0440\u0435\u0437\u0443\u043b\u044c\u0442\u0430\u0442\u043e\u0432, disciplined tool use, local-first \u0440\u0435\u0448\u0435\u043d\u0438\u044f \u0438 \u043a\u0430\u0447\u0435\u0441\u0442\u0432\u043e \u0440\u0443\u0441\u0441\u043a\u043e\u0439 \u0432\u044b\u0434\u0430\u0447\u0438. \u041d\u0435 \u0442\u0440\u043e\u0433\u0430\u0439 user memory, \u043d\u0435 \u0441\u043f\u0430\u043c\u044c \u0432\u043d\u0435\u0448\u043d\u0438\u0435 \u043a\u0430\u043d\u0430\u043b\u044b, \u043d\u0435 \u043f\u0440\u0438\u0434\u0443\u043c\u044b\u0432\u0430\u0439 \u0443\u043b\u0443\u0447\u0448\u0435\u043d\u0438\u044f \u0440\u0430\u0434\u0438 \u043e\u0442\u0447\u0451\u0442\u0430. \u0415\u0441\u043b\u0438 \u0434\u043e\u0441\u0442\u043e\u0439\u043d\u043e\u0433\u043e \u0443\u043b\u0443\u0447\u0448\u0435\u043d\u0438\u044f \u043d\u0435\u0442 \u2014 \u0437\u0430\u0444\u0438\u043a\u0441\u0438\u0440\u0443\u0439 no change. \u0412 \u043a\u043e\u043d\u0446\u0435 \u0432\u0435\u0440\u043d\u0438 \u0432\u043d\u0443\u0442\u0440\u0435\u043d\u043d\u0438\u0439 \u043e\u0442\u0447\u0451\u0442: \u0438\u0441\u0442\u043e\u0447\u043d\u0438\u043a \u0441\u0438\u0433\u043d\u0430\u043b\u0430, \u0447\u0442\u043e \u043e\u0431\u043d\u043e\u0432\u043b\u0435\u043d\u043e, \u043f\u043e\u0447\u0435\u043c\u0443 \u044d\u0442\u043e \u043f\u043e\u0432\u044b\u0441\u0438\u0442 \u043f\u043e\u043b\u0435\u0437\u043d\u043e\u0441\u0442\u044c \u0430\u0433\u0435\u043d\u0442\u0430.",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": null,
+      "no_agent": false,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "5 5 * * 0",
+        "display": "5 5 * * 0"
+      },
+      "schedule_display": "5 5 * * 0",
+      "repeat": {
+        "times": null,
+        "completed": 0
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-06-14T19:58:39.664902+00:00",
+      "next_run_at": "2026-06-21T05:05:00+00:00",
+      "last_run_at": null,
+      "last_status": null,
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "local",
+      "origin": {
+        "platform": "telegram",
+        "chat_id": "381204086",
+        "chat_name": "\u041c\u0438\u0445\u0430\u0438\u043b \u0420\u043e\u0449\u0438\u043d",
+        "thread_id": null
+      },
+      "enabled_toolsets": null,
+      "workdir": "/home/hermes/workspace"
+    },
+    {
+      "id": "2a42427656fa",
+      "name": "eva-github-backup-weekly",
+      "prompt": "Run the Eva GitHub curated backup refresh script and deliver stdout locally only.",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": "eva_github_backup_weekly.py",
+      "no_agent": true,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 6 * * 1",
+        "display": "0 6 * * 1"
+      },
+      "schedule_display": "0 6 * * 1",
+      "repeat": {
+        "times": null,
+        "completed": 1
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-06-17T19:26:57.855186+00:00",
+      "next_run_at": "2026-06-22T06:00:00+00:00",
+      "last_run_at": "2026-06-17T19:27:22.949269+00:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "local",
+      "origin": {
+        "platform": "telegram",
+        "chat_id": "381204086",
+        "chat_name": "\u041c\u0438\u0445\u0430\u0438\u043b \u0420\u043e\u0449\u0438\u043d",
+        "thread_id": null
+      },
+      "enabled_toolsets": null,
+      "workdir": null
+    },
+    {
+      "id": "cf27d7146dc2",
+      "name": "cons-project-backup-weekly",
+      "prompt": "Run the combined Cons project backup refresh script and deliver stdout locally only.",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": "cons_project_backup_weekly.py",
+      "no_agent": true,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 1 * * 1",
+        "display": "0 1 * * 1"
+      },
+      "schedule_display": "0 1 * * 1",
+      "repeat": {
+        "times": null,
+        "completed": 1
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-06-17T19:53:46.524810+00:00",
+      "next_run_at": "2026-06-22T01:00:00+00:00",
+      "last_run_at": "2026-06-17T19:55:37.474850+00:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "local",
+      "origin": {
+        "platform": "telegram",
+        "chat_id": "381204086",
+        "chat_name": "\u041c\u0438\u0445\u0430\u0438\u043b \u0420\u043e\u0449\u0438\u043d",
+        "thread_id": null
+      },
+      "enabled_toolsets": null,
+      "workdir": null
+    }
+  ],
+  "updated_at": "2026-06-17T19:55:37.476503+00:00"
+}

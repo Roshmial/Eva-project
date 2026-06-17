@@ -2364,3 +2364,39 @@ Verified:
 Rejected:
 - Сохранять в коде полуживой Telegram analytics route «на всякий случай».
 - Считать слово `аналитика` достаточным trigger-ом для dashboard-routing без явного запроса на дашборд.
+
+[2026-06-17] — Cons-project должен хранить combined backup контура 95+178 вместе с TG API
+
+Context:
+- Для агента на 178 было решено вести отдельный GitHub backup в `git@github.com:Roshmial/Cons-project.git`.
+- Выяснено, что production frontend `8803` физически живёт на сервере 95, но является неотъемлемой частью контура 178.
+- Дополнительно пользователь потребовал включить в этот же backup и operational функционал `TG-API`.
+
+Agreed:
+- `Cons-project` хранит не snapshot одного сервера, а curated combined backup общего рабочего контура.
+- В backup обязательно входят: frontend `8803` с 95, backend/runtime/deploy-контур 178 и локальный `TG-API` контур на 95.
+- Для weekly refresh используется один центральный механизм на текущем сервере, потому что только он видит одновременно и локальные компоненты 95, и remote-контур 178.
+- Еженедельное обновление должно идти в окне `03:00–06:00 МСК`; зафиксирован слот `04:00 МСК` (`0 1 * * 1` UTC).
+
+Implemented:
+- Обновлён скрипт `~/.hermes/scripts/cons_project_backup_weekly.py`:
+  - добавлено копирование `local-95/tg-api/**`;
+  - добавлены фильтры, исключающие TG API secrets, session/runtime/raw/export data, generated analytics, `.venv`, логи и state-файлы;
+  - исключение runtime DB расширено до `.db`.
+- В `Cons-project` автоматически генерируются и коммитятся описательные файлы:
+  - `README.md`;
+  - `BACKUP_SCOPE.md`;
+  - `CONTOUR_MAP.md`;
+  - `DEPLOYMENT_AND_BACKUP_LOGIC.md`;
+  - `TG_API_SCOPE.md`.
+- Backup заново собран и запушен в `origin/main`.
+
+Verified:
+- Ручной запуск `python3 /home/hermes/.hermes/scripts/cons_project_backup_weekly.py` прошёл успешно.
+- GitHub backup обновлён commit-ом `ba0a7f4 Weekly curated backup refresh`.
+- В HEAD подтверждено наличие новых root-docs и содержимого `local-95/tg-api/`, включая `app.py`, `telegram_monitor_pipeline.py`, `collect_daily_pipeline.py`, `telegram_web_auth.py`, `install_hermes_tg_cron.py`, `hermes_tg_cron_manifest.json`.
+
+Rejected:
+- Вести backup только по 178 и не включать production frontend `8803`.
+- Хранить TG API отдельно от `Cons-project`, если он является operational частью того же рабочего контура.
+- Тянуть в GitHub TG API runtime/session/export артефакты и чувствительные локальные state-файлы.
