@@ -10,8 +10,12 @@ description: Доведение и live-проверка Hermes Web MVP по з�
 Типовые случаи:
 - задачи/рассылки/jobs UI;
 - админские формы и массовые действия;
-- recipients vs self-subscribe;
-- проверки, что сообщения идут в отдельные `job`-чаты;
+- recipients vs viewers / access / routing;
+- user memory / personalization, когда нужно доказать не только чтение профиля, но и реальное накопление interaction-memory в live-контуре;
+
+Связанная reference:
+- `references/user-interaction-memory-writeback-2026-06.md` — отдельное user-scoped поле памяти, periodic backend writeback, DB/prompt/live-проверка.
+
 - ситуации, где код уже изменён, но live runtime ведёт себя как будто правок нет.
 
 # Основная идея

@@ -1,68 +1,42 @@
-# User interaction memory writeback for Hermes Web MVP
+# User interaction memory writeback — 2026-06
 
-Когда полезно:
-- пользователь говорит, что агент использует только ранее записанный профиль, но не фиксирует новые результаты взаимодействия;
-- в базе уже есть `pinned_json` / `assistant_profile_json`, но нет признаков auto-writeback;
-- нужно внедрить memory accumulation без отдельной внешней инфраструктуры.
+When Hermes Web appears to "use memory" but does not accumulate new durable facts from chat, treat this as an architecture gap between profile personalization and interaction-derived memory.
 
-## Проверенный паттерн
+## Problem pattern
+- `pinned_json` / `assistant_profile_json` already exist and are read into prompt personalization.
+- Users expect the agent to remember stable preferences or working rules from ordinary dialogue.
+- No auto-write path exists after assistant responses, so the system only reuses manually edited profile data.
 
-Разделяй два слоя:
-1. `profile_memory` — ручной профиль пользователя (`pinned_json`, `assistant_profile_json`);
-2. `interaction_memory` — автоматически накопленные устойчивые факты из диалогов.
+## Preferred fix in this stack
+Use a separate user-scoped store for interaction memory instead of mixing auto-derived memory into manual profile fields.
 
-Для второго слоя нужны:
-- отдельное поле пользователя, например `interaction_memory_json`;
-- отдельный курсор `memory_last_processed_message_id`;
-- периодический worker pass внутри уже существующего backend runtime.
+Recommended fields on `users`:
+- `interaction_memory_json` — normalized list of durable memory items derived from dialogue.
+- `memory_last_processed_message_id` — cursor for periodic/background processing.
 
-## Почему не писать в pinned_json
+## Delivery pattern
+1. Keep manual profile memory (`pinned_json`, `assistant_profile_json`) separate from auto-derived memory.
+2. Add a periodic backend worker inside the existing Hermes Web backend process; do not introduce a separate external service unless there is a proven need.
+3. The worker should:
+   - scan new user/assistant messages after the stored cursor;
+   - extract only durable, user-scoped facts/preferences/work-rules;
+   - update `interaction_memory_json`;
+   - advance `memory_last_processed_message_id`.
+4. Extend personalization assembly so prompt injection uses both:
+   - manual profile memory;
+   - interaction-derived memory.
+5. Prefer periodic/asynchronous writeback over synchronous writeback in the chat response path to avoid slowing replies and to keep retries/idempotence simple.
 
-Смешивание auto-memory и ручного профиля даёт три проблемы:
-- админский/ручной профиль перестаёт быть управляемым;
-- нельзя понять, что пользователь задал явно, а что накопилось автоматически;
-- сложнее безопасно обновлять и чистить память.
+## Verification checklist
+- Confirm DB writeback: `interaction_memory_json` becomes non-empty and the cursor advances.
+- Confirm prompt path: personalization builder includes interaction memory in the assembled block.
+- Add at least two tests:
+  - memory writeback from a short user/assistant exchange;
+  - personalization includes interaction memory after writeback.
+- For live verification, use a temporary user/thread, run the periodic pass, verify DB state, then clean up test data.
 
-## Минимальная схема реализации
-
-1. Добавить user-scoped поля в `users`.
-2. В `user_to_dict()` и personalization serialization вернуть `interaction_memory` отдельно.
-3. В `build_personalization_block()` включать `interaction_memory=...` отдельной частью, не смешивая с `profile_memory=...`.
-4. Периодический worker должен:
-   - выбирать пользователей с новыми `user/assistant` сообщениями после курсора;
-   - извлекать memory-кандидаты эвристикой, а при наличии model path можно дополнять LLM JSON extraction;
-   - обновлять `interaction_memory_json`;
-   - продвигать `memory_last_processed_message_id`.
-5. Проверять не только запись памяти, но и продвижение курсора.
-
-## Практические проверки
-
-Локально:
-- `python3 -m py_compile services/backend/app.py services/backend/test_smoke.py`
-- `python3 -m unittest services/backend/test_smoke.py -k memory`
-- `python3 -m unittest services/backend/test_smoke.py -k personalization`
-
-Live:
-- выкатить backend-код;
-- перезапустить runtime;
-- создать временного пользователя и короткий диалог с явным предпочтением;
-- прогнать periodic writeback;
-- проверить, что:
-  - `interaction_memory_json` обновился;
-  - `memory_last_processed_message_id` дошёл до последнего сообщения;
-  - temporary test data можно убрать без следов.
-
-## Важный нюанс тестов
-
-Если в test DB уже есть demo-сообщения, worker может подобрать не того пользователя первым. Для точечных тестов изолируй сценарий:
-- либо выставляй другим пользователям курсор на текущий `MAX(messages.id)`;
-- либо делай выборку/worker достаточно адресной.
-
-Это не баг самой memory-механики, а ловушка тестовой выборки.
-
-## Подтверждённый live-результат
-
-На live backend `178.104.207.89` periodic writeback успешно записал в `interaction_memory_json` предпочтение вида:
-- `По умолчанию отвечай кратко и не используй английские слова без необходимости`
-
-и продвинул `memory_last_processed_message_id` до последнего сообщения тестового диалога.
+## Pitfalls
+- Do not write auto-derived memory into `pinned_json`; that field is for curated/manual notes.
+- Do not block the normal chat reply on memory extraction unless there is a strong reason.
+- Do not treat every message as memory; store only durable guidance and stable preferences.
+- Do not rely on UI-only verification; confirm both DB writeback and prompt inclusion.
