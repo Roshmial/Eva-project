@@ -69,6 +69,12 @@ Do not diagnose product bugs until you have proved all of the following:
 - Prefer existing project smoke/acceptance scripts first.
 - If smoke fails, distinguish between product failure and acceptance-script drift.
 - If labels/placeholders/tabs changed but the feature still works, patch the smoke script to the real UI contract.
+- For frontend deploy/state fixes, do not stop at `curl`, static asset grep, or source-file inspection. Re-open the real page in a clean browser session and verify the actual DOM/screen state that the user complained about.
+- Do not jump straight to `это кеш, сделай hard refresh` unless an independent browser check has already shown the fresh page behaving correctly while the server is serving the new build. Cache is a fallback explanation, not the default verdict.
+- Separate three proofs explicitly:
+  - build proof: new bundle/hash/file exists;
+  - delivery proof: the intended runtime serves that bundle;
+  - user-visible proof: the live page/snapshot/console shows the changed UI or the symptom is gone.
 
 6. Finish with a hygiene pass.
 - Remove or stop stale legacy listeners that can steal traffic or create false diagnostics.

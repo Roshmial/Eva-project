@@ -5,6 +5,8 @@ description: Доведение и live-проверка Hermes Web MVP по з�
 
 # Когда использовать
 
+Дополнительная reference по chat-routing и ложным timeout/file-сигналам: `references/chat-routing-and-timeout-pitfalls.md`.
+
 Используй для задач по Hermes Web MVP, когда нужно не только изменить код, но и доказать живым runtime, что фронт, backend и фактическая модель доставки работают согласованно.
 
 Типовые случаи:
@@ -13,8 +15,10 @@ description: Доведение и live-проверка Hermes Web MVP по з�
 - recipients vs viewers / access / routing;
 - user memory / personalization, когда нужно доказать не только чтение профиля, но и реальное накопление interaction-memory в live-контуре;
 
-Связанная reference:
+Связанные references:
 - `references/user-interaction-memory-writeback-2026-06.md` — отдельное user-scoped поле памяти, periodic backend writeback, DB/prompt/live-проверка.
+- `references/admin-chat-routing-and-non-executable-promises-2026-06.md` — как отделять ложный Telegram/analytics routing от реальной недоступности API и как не принять `приступаю` за фактический action-run.
+- `references/admin-followup-focused-context-and-timeout-normalization-2026-06.md` — короткие follow-up подтверждения (`Да, сделай`) после длинного assistant-плана, focused context вместо full history и запрет на ложный file-specific timeout text.
 
 - ситуации, где код уже изменён, но live runtime ведёт себя как будто правок нет.
 
@@ -206,6 +210,10 @@ description: Доведение и live-проверка Hermes Web MVP по з�
 - Проверка идёт под админом, хотя сценарий нужен под обычным пользователем.
 - Смешение понятий "админ назначает recipients" и "пользователь сам подписывается".
 - Вывод по одной только кнопке в UI без проверки реального канала доставки.
+- Не считай фразы ассистента вроде `приступаю`, `запускаю`, `сейчас создам` доказательством реального action-run. Для Hermes Web обязательно сверяй `downstream`, `message_kind`, наличие job/task/action-метаданных и следующий `chat_task`; иначе можно принять обычный текстовый ответ LLM за фактический старт коннектора или фоновой операции.
+- Если после длинного assistant-плана пользователь отвечает коротким подтверждением (`Да, сделай`, `давай`, `запускай`), не предполагай автоматически, что это уже explicit action-route. Сначала проверь, не ушёл ли turn в generic chat path с пустым `request_policy_json`. Для такого класса сбоев полезен focused follow-up context вместо полного history path.
+- Если в `chat_task.last_error` стоит просто `timed out`, не принимай это за file-generation defect, пока не доказано, что turn реально шёл по export/generated-file path. Generic timeout и file timeout должны различаться и в диагностике, и в пользовательском тексте ошибки.
+- Запросы, где пользователь редактирует или обсуждает текст с упоминаниями `Telegram`, `интернет`, `аналитика`, могут ложно уехать в connector/analytics routing, хотя intent — обычная редактура. Если видишь `source_missing` или похожий connector error на явно текстовом запросе, проверяй не доступность API в вакууме, а ошибочную классификацию source по ключевым словам из содержимого текста.
 - Для jobs-экрана сохранён stale `activeJobId`, и frontend падает/обнуляет экран на `Новая задача` или при открытии деталей, потому что пытается догрузить уже недоступную задачу. Для этого класса регрессий нужен fallback: при `403/404` переехать на первую доступную задачу, а не ломать экран.
 - В job-flow access может быть уже исправлен в `job detail`, но список `/api/jobs` всё ещё собран отдельной логикой и потому даёт другое поведение. Всегда сверяй list-path и detail-path вместе.
 - Время в карточках задач может быть неверным не из-за scheduler, а из-за frontend formatter'ов, которые используют timezone браузера вместо продуктовой зоны.

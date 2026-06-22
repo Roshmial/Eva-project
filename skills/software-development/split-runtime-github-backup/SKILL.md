@@ -67,6 +67,22 @@ Use when different hosts own different runtime parts.
 
 In the combined case, prefer a CENTRAL backup job on the host that can reliably read both sides of the contour. This is better than independent weekly backups on each host because it avoids drift and keeps one repository as the source of truth.
 
+### C. Dual-topology backup in one GitHub repo
+Use when the user needs BOTH:
+- a combined split-host backup that reflects the real production contour, and
+- a standalone backup for one host (for example, the backend/runtime server by itself).
+
+In that case, do not force both shapes into the same branch.
+
+Recommended pattern:
+- keep the combined production contour on `main`
+- publish the standalone host backup to a dedicated branch such as `standalone-178`
+
+Reason:
+- the two backups answer different recovery questions
+- pushing the standalone host snapshot into `main` will silently destroy the combined contour model
+- branch separation preserves both operational views without duplicate repositories
+
 ## 3. Build a curated repository, not a raw home-directory dump
 
 Create a dedicated backup repo directory and copy only the allowed scope.
@@ -78,6 +94,12 @@ Recommended sections:
 - `remote-<host>/runtime-systemd/`
 - `README.md`
 - `BACKUP_SCOPE.md`
+
+When the contour has adjacent operational layers that are required for a practical rebuild, include them explicitly instead of pretending the app repo alone is enough.
+Common examples:
+- `tg-api/` or another Telegram/data-ingest contour
+- `hermes-runtime/` with `config.yaml`, `cron/jobs.json`, and reusable scripts
+- dedicated root docs for architecture, logic, zero-start deployment, and model fallback
 
 The README should explain:
 - what each host contributes
@@ -125,6 +147,12 @@ For split contours, the scheduled job should run where the combined snapshot is 
 
 When the user gives a Moscow-time window, convert it explicitly from the host timezone. If the host runs in UTC, document the conversion in the job setup.
 
+If the repository carries multiple backup topologies:
+- combined contour on `main`
+- standalone host contour on another branch
+
+then each topology needs its own deterministic refresh script and its own scheduler entry. Keep the branch target explicit inside the script so a later edit cannot accidentally push the wrong topology into `main`.
+
 ## 8. Verify after setup
 
 Do not stop after writing the script.
@@ -145,6 +173,8 @@ You must verify:
 - Recreating the backup directory by deleting the whole repo, including `.git`.
 - Leaving two competing weekly jobs on different hosts.
 - Backing up runtime data directories that contain live DB/state.
+- Reusing the same Git branch for both combined and standalone backup shapes.
+- Forgetting adjacent operational layers like TG API or Hermes cron/scripts, which makes the backup look complete but not actually deployable.
 
 # Output contract
 
@@ -157,3 +187,4 @@ When finished, report:
 # References
 
 - See `references/combined-contour-checklist.md` for a concise checklist for split frontend/backend GitHub backups.
+- See `references/dual-topology-branching.md` for the pattern where one GitHub repo carries both a combined production contour and a standalone host backup on separate branches.

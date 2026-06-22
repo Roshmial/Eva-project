@@ -289,6 +289,7 @@ Pitfall:
 - Do not recommend multi-user sharing through the user's personal Hermes profile when isolation and predictable behavior matter.
 - Do not leave API-server toolsets broad by default in a shared web deployment.
 - Do not rely on per-user memory when the stated requirement is one common agent behavior.
+- In this user's local-first web/product discussions, when the request is phrased as "add it on the frontend", interpret that as a backend-backed feature by default: UI on the frontend, logic/state/validation/execution via backend. Do not waste answer space repeatedly warning that a pure frontend-only implementation would be unreliable unless the user explicitly asks about a frontend-only variant.
 
 ## Verification
 Check that:

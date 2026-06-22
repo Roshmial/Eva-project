@@ -108,6 +108,8 @@ hermes doctor [--fix]       Check dependencies and config
 hermes status [--all]       Show component status
 ```
 
+Important CLI pitfall: use the installed `hermes` entrypoint for health/config checks. Do not assume `python -m hermes ...` works in the active venv — many installs expose only the console script, so `python -m hermes doctor` can fail with `No module named hermes` even when `hermes doctor` works.
+
 ### Tools & Skills
 
 ```

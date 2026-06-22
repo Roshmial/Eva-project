@@ -45,6 +45,109 @@ Verified:
 - `npm run react:build` в `/home/hermes/workspace/hermes-web-mvp-react-8793` прошёл успешно.
 - Полный `npm run ui:smoke` в этой сессии не выполнен: Playwright Chromium не стартует из-за системной зависимости `libnspr4.so`.
 
+[2026-06-18] — Hermes Web prod 178 must reconcile Hermes cron delivery in background, not only on jobs UI/API access
+
+Context:
+- На prod `178.104.207.89` cron `ТГ Дайджест` (`64f6e352b557`) 18.06.2026 сгенерировал output вовремя: старт около `06:30:09 UTC`, итоговый markdown-файл `/home/hermes/.hermes/cron/output/64f6e352b557/2026-06-18_06-31-06.md` был готов в `06:31:06 UTC` (`09:31 МСК`).
+- Сообщение в web-thread Виктории появилось только в `06:53:20 UTC`, то есть после позднего обновления recipients для Hermes-job около `06:53:33 UTC`.
+- Разбор `services/backend/app.py` показал, что `reconcile_hermes_job_delivery()` вызывался только как побочный эффект jobs API (`/api/jobs`, `/api/jobs/<id>`, patch/update, manual run) и не имел автономного фонового цикла.
+
+Decision:
+- Доставка Hermes cron output в web-контур не должна зависеть от открытия экранов, чтения jobs API или ручного patch/update задачи.
+- В существующий backend `scheduler_worker()` добавлен второй проход: каждые `SCHEDULER_POLL_SECONDS` он делает `list_cached_hermes_jobs(force_refresh=True)` и для каждой Hermes-job вызывает `reconcile_hermes_job_delivery(...)` и `sync_hermes_job_threads(...)`.
+- Архитектурно это остаётся local-first решением внутри текущего backend runtime, без отдельного демона, без внешнего scheduler и без привязки к UI-активности.
+
+Verification:
+- На prod `178.104.207.89` live-код подтверждён grep-ом: в `app.py` присутствует `for hermes_job in list_cached_hermes_jobs(force_refresh=True):` внутри `scheduler_worker()`.
+- `hermes-web-backend-8791.service` после выкладки перезапущен и перешёл в `active (running)`.
+- `curl http://127.0.0.1:8791/api/health` после рестарта вернул `status=ok`.
+- Полная поведенческая проверка следующего реального cron-tick ещё не зафиксирована; текущая верификация подтверждает внедрение live-фикса и живость runtime.
+- Backlog / follow-up: текущий polling-подхват Hermes cron delivery в `scheduler_worker()` считается временным operational fix. Целевая архитектура — event-driven привязка к завершению Hermes cron job, чтобы backend делал reconcile/delivery сразу по факту готового output, без цикла опроса.
+
+[2026-06-18] — Hermes Web chat-to-job must not create recurring monitoring from ordinary research requests without explicit user schedule intent
+
+Context:
+- На prod `178.104.207.89` у пользователя Елена (`user_id=8`, `epervyshina@kept.ru`) обычные исследовательские запросы про подбор Telegram-каналов были ошибочно преобразованы в recurring monitoring jobs.
+- В переписке были фразы вроде `Подбери перечень телеграмм-каналов...` и `найди перечень каналов крупных вендоров и интеграторов для мониторинга`, но не было явного запроса на регулярность (`ежедневно`, `еженедельно`, `на регулярной основе`, `поставь задачу` и т.п.).
+- Разбор `services/backend/app.py` показал, что `maybe_create_recurring_job_from_chat()` классифицировал запрос по `recent_context`, куда попадали и предыдущие ответы ассистента. Это позволяло assistant-side словам про мониторинг/настройку регулярного отслеживания ложно запускать recurring job creation.
+
+Decision:
+- Создание recurring job из чата должно опираться только на явный intent в текущем пользовательском сообщении.
+- Контекст предыдущих сообщений можно использовать для темы и параметров задачи только после того, как intent на регулярность уже подтверждён самим пользователем.
+- Обычные исследовательские формулировки (`подбери`, `найди`, `собери перечень`) без явного schedule-intent не должны порождать recurring jobs.
+
+Implemented:
+- В `services/backend/app.py` обновлён `maybe_create_recurring_job_from_chat()`:
+  - если `looks_like_recurring_job_request(user_text)` → schedule выводится из текущего пользовательского сообщения;
+  - если `looks_like_recurring_job_followup(user_text)` → допускается использование recent context как уточняющего контекста;
+  - иначе recurring job не создаётся.
+- На prod `178` у Елены принудительно переведены в `paused` ошибочно созданные jobs `id=5,6,7` и очищены их `next_run_at`.
+
+Verified:
+- Локально: `python3 -m pytest services/backend/test_smoke.py -q -k 'test_chat_recurring_request_creates_real_job or test_chat_research_request_does_not_create_recurring_job_without_explicit_schedule_intent'` → `2 passed`.
+- Локально: `python3 -m py_compile services/backend/app.py services/backend/test_smoke.py` → ok.
+- На prod `178.104.207.89`: backend `hermes-web-backend-8791.service` перезапущен и `api/health` вернул `status=ok`.
+- На prod-коде проверено, что фразы Елены больше дают `request=false`, `followup=false`, а явная фраза `Можешь поставить сбор этой информации на еженедельной основе?` остаётся `request=true`.
+- На prod подтверждено, что jobs Елены `id=5,6,7` теперь `paused` и `next_run_at=null`.
+
+[2026-06-18] — Hermes Web admin chat on 178 must not misroute ordinary Telegram-related text into analytics flow or publish non-executable action promises
+
+Context:
+- В admin-чате на prod `178.104.207.89:8791` обнаружились два разных ложных generation/runtime симптома: (1) обычные текстовые запросы с упоминанием `Telegram`, `интернет`, `аналитика` воспринимались как special analytics/dashboard intent; (2) обычный chat-ответ мог публиковать фразы вроде `Что я сделаю сейчас` / `Приступаю`, хотя backend не запускал реальный action/file/dashboard path.
+- Проверка live runtime показала, что Telegram API-контур физически доступен (`TELEGRAM_API_BASE_URL=http://127.0.0.1:8001`, connector `telegram_api` discoverable и `available=true`), поэтому фразы вида `не могу забрать каналы` не должны объясняться просто отсутствием API.
+- Последний admin-кейс в `thread_id=81` подтвердил второй дефект: assistant написал `Приступаю к проверке инфраструктуры`, но это был обычный `downstream=hermes-api-server` ответ без реального action-run; следующий turn `Да, сделай` завершился `chat_task.last_error = timed out`.
+
+Decision:
+- Обычный текст с упоминанием Telegram/интернета/аналитики не должен сам по себе включать special dashboard/analytics route; для этого нужен явный intent на дашборд/витрину/сводку.
+- Если backend не запускает реальный исполняемый path (file_response, dashboard_result, structured action/clarification path), финальный assistant reply не должен публиковать operational promises вида `Что я сделаю сейчас`, `Проверю`, `Создам`, `Запущу`, `Приступаю`.
+- Для generic chat-ответов безопаснее быть описательными и честными, чем имитировать начало действия, которого runtime не выполняет.
+
+Implemented:
+- В `services/backend/app.py` сохранена жёсткая логика `is_dashboard_request()`: dashboard route включается только по явным токенам intent (`дашборд`, `dashboard`, `сводк`, `витрин`), а не по словам `Telegram` / `аналитика` в обычном тексте.
+- В `services/backend/app.py` добавлен `strip_non_executable_action_promises()` и расширен `postprocess_assistant_reply(...)`:
+  - для generic chat-ответов без реального action route вырезаются блоки `Что я сделаю сейчас`, numbered operational steps (`Проверю/Создам/Запущу/...`) и отдельные строки `Приступаю ...`;
+  - для реальных action/file/dashboard routes (`file_response`, `dashboard_result`, `clarification_request`, `approval_request`, `generated_from_request`, `downstream=dashboard:*`) этот фильтр не применяется.
+- На prod `178` обновлён `services/backend/app.py`, backend `hermes-web-backend-8791.service` перезапущен.
+
+Verification:
+- Локально: `python3 -m py_compile services/backend/app.py services/backend/test_smoke.py` → ok.
+- Локально: целевые регрессии по `is_dashboard_request` и `postprocess_assistant_reply` дали `2 passed` / `OK`; в текущей среде Python-процесс после этого аварийно завершался уже на shutdown, но сами тестовые ассерты успевали пройти.
+- На prod `178.104.207.89`: `curl http://127.0.0.1:8791/api/health` после рестарта вернул `status=ok`, systemd-unit остался `active (running)`.
+- На prod-коде напрямую проверено:
+  - `is_dashboard_request("Проверь общую текстовку письма: ... Telegram ... интернет ... аналитика ...") -> False`
+  - `postprocess_assistant_reply(..., {"downstream": "hermes-api-server"})` для ответа с `Что я сделаю сейчас` / `Приступаю` возвращает просто `Да, это возможно.`
+
+[2026-06-18] — Hermes Web admin follow-up `Да, сделай` after long generic assistant plan must use focused context, and generic `timed out` must not masquerade as file-generation failure
+
+Context:
+- В том же admin-thread `81` на prod `178.104.207.89:8791` сообщение пользователя `Да, сделай` породило `chat_task id=208` со `status=error`, `last_error=timed out`, при этом `request_policy_json` остался пустым (`explicit_source_ids=[]`, `connector_targets={}`).
+- Проверка `process_chat_task()` показала, что этот turn шёл не по dashboard/file/action path, а по обычному `call_hermes_api(...)` для generic chat-turn.
+- Отдельно обнаружился второй дефект: `normalize_public_error_text()` превращал любой `timed out` в текст `Не удалось сформировать файл...`, даже если файл вообще не генерировался.
+
+Decision:
+- Короткие подтверждения пользователя (`Да, сделай`, `запускай`, `давай`) после длинного содержательного assistant-плана не должны идти в полный chat-history path: для них нужен узкий focused follow-up context, чтобы продолжить ровно последний сценарий, а не перегонять весь чат через общий LLM-route.
+- Generic timeout должен показываться как generic upstream-timeout. File-specific текст допустим только для реального message-export / generated-file path.
+
+Implemented:
+- В `services/backend/app.py` добавлены helper-ы:
+  - `is_short_followup_confirmation()`
+  - `latest_substantive_assistant_message_text()`
+  - `should_use_focused_followup_context()`
+  - `build_focused_followup_messages()`
+- `call_hermes_api()` для standard-route теперь перед обычной compaction-подачей проверяет short follow-up и, если это короткое подтверждение после длинного assistant-ответа, отправляет в модель узкий focused follow-up context вместо полного history path.
+- `normalize_public_error_text()` больше не возвращает file-specific текст на голый `timed out`; теперь это generic сообщение `Не удалось получить ответ: upstream-источник превысил лимит ожидания. Повторите запрос.`
+- Обновлён live backend на prod `178`, `hermes-web-backend-8791.service` перезапущен.
+
+Verification:
+- Локально: `python3 -m py_compile services/backend/app.py services/backend/test_smoke.py` → ok.
+- Локально: целевые регрессии по short follow-up routing, timeout-normalization, dashboard-intent и promise-stripping дали `5 passed`; в этой среде после печати результата сохраняется известный crash Python на shutdown, но сами ассерты завершаются успешно до него.
+- На prod `178.104.207.89`: `curl http://127.0.0.1:8791/api/health` после рестарта вернул `status=ok`.
+- На prod напрямую проверено:
+  - `is_short_followup_confirmation("Да, сделай") -> true`
+  - `should_use_focused_followup_context(...) -> true` для сценария с длинным assistant-планом
+  - `normalize_public_error_text("timed out") -> Не удалось получить ответ: upstream-источник превысил лимит ожидания. Повторите запрос.`
+- Для исторического `chat_task id=208` подтверждено, что на момент сбоя `request_policy_json` был пустым, а `last_error` содержал именно `timed out`, то есть корень был generic follow-up path, а не реальный file/export route.
+
 [2026-06-17] — Hermes Web generation failures for admin on 178:8791 were false postguard blocks, not timeouts; generic-failure detection must only trip on 4+ identical non-benign lines in a row, not on repeated section headings across the whole answer
 [2026-06-17] — Hermes Web policy screen on 95:8803 must render from dataPolicyDraft, not admin.dataPolicy
 
@@ -2400,3 +2503,942 @@ Rejected:
 - Вести backup только по 178 и не включать production frontend `8803`.
 - Хранить TG API отдельно от `Cons-project`, если он является operational частью того же рабочего контура.
 - Тянуть в GitHub TG API runtime/session/export артефакты и чувствительные локальные state-файлы.
+
+[2026-06-17] — Eva-project должен включать TG API и Hermes transfer kit; Cons-project должен хранить архитектурную и логическую схему prod-контура
+
+Context:
+- После включения TG API в `Cons-project` пользователь отдельно потребовал добавить TG API и в `Eva-project`.
+- Дополнительно нужен комплект того, что потребуется для переноса Евы на чистый сервер после установки Hermes.
+- Для `Cons-project` потребовалось не только хранение кода и runtime-артефактов, но и явное описание архитектурной и логической схемы prod-контура.
+
+Agreed:
+- `Eva-project` хранит не только skills и заметки, но и curated operational snapshot `TG-API` плюс Hermes transfer kit.
+- В `Eva-project` должны лежать: `~/.hermes/config.yaml`, `~/.hermes/cron/jobs.json`, `~/.hermes/scripts/*` и bootstrap-документы для чистого Linux-сервера без secrets.
+- `Cons-project` должен содержать отдельные root-docs, которые объясняют prod-контур не по коду, а по архитектурной и логической модели.
+- Для `Cons-project` нужен отдельный zero-start runbook именно под развёртку с нуля, а не только под аварийное восстановление state.
+
+Implemented:
+- Обновлён `~/.hermes/scripts/eva_github_backup_weekly.py`:
+  - добавлен curated backup `tg-api/**`;
+  - добавлен раздел `hermes-runtime/` с `config/config.yaml`, `cron/jobs.json`, `scripts/*` и `transfer-kit/**`;
+  - добавлены root-docs `HERMES_TRANSFER_AND_RESTORE.md` и `TG_API_SCOPE.md`.
+- Обновлён `~/.hermes/scripts/cons_project_backup_weekly.py`:
+  - добавлены root-docs `PROD_CONTOUR_ARCHITECTURE.md` и `PROD_CONTOUR_LOGIC.md`;
+  - добавлен `DISASTER_RECOVERY_RUNBOOK.md` как zero-start runbook для развёртки с нуля;
+  - в runbook добавлены минимальная командная шпаргалка и логика model fallback;
+  - добавлен `MODEL_FALLBACK_LOGIC.md` как отдельное описание primary/auxiliary inference маршрутов;
+  - `README.md` дополнен указанием, что в backup входят архитектурные, логические и deployment-описания prod-контура.
+- Оба backup-репозитория пересобраны и запушены.
+
+Verified:
+- `Eva-project` обновлён commit-ом `a96f754 Weekly curated backup refresh`.
+- В `Eva-project` подтверждено наличие `tg-api/**`, `hermes-runtime/config/config.yaml`, `hermes-runtime/cron/jobs.json`, `hermes-runtime/scripts/*`, `hermes-runtime/transfer-kit/**`, `HERMES_TRANSFER_AND_RESTORE.md`, `TG_API_SCOPE.md`.
+- В `Cons-project` обновлён commit-ом `7d9f5e8 Weekly curated backup refresh`.
+- В `Cons-project` подтверждено наличие `PROD_CONTOUR_ARCHITECTURE.md`, `PROD_CONTOUR_LOGIC.md`, `DISASTER_RECOVERY_RUNBOOK.md`, `MODEL_FALLBACK_LOGIC.md`, `CONTOUR_MAP.md`, `DEPLOYMENT_AND_BACKUP_LOGIC.md`.
+
+Rejected:
+- Держать переносный Hermes-kit только в голове или только в runtime, без Git backup.
+- Ограничивать `Cons-project` только файловым snapshot без явного объяснения архитектуры split-host контура.
+
+[2026-06-17] — Для сервера 178 нужен отдельный standalone backup под ключ, без смешения с combined backup 95+178
+
+Context:
+- Пользователь попросил сделать для 178 «аналогичное всё»: полноценный backup под ключ и со всеми артефактами.
+- На 178 уже существовал локальный backup-скрипт, но он покрывал только project + systemd и был привязан к `Cons-project/main`, что конфликтовало бы с combined backup с 95.
+
+Agreed:
+- Для 178 нужен отдельный standalone backup-контур.
+- Он должен включать не только web-project, но и `TG-API`, `Hermes runtime`, architecture docs, logic docs, zero-start runbook и model fallback logic.
+- Публиковать standalone backup 178 нужно в тот же GitHub repo `Cons-project`, но в отдельную ветку `standalone-178`, чтобы не перезаписывать combined backup в `main`.
+- На 178 должен быть собственный weekly refresh job, запускаемый локально на этом сервере.
+
+Implemented:
+- Создан новый скрипт `~/.hermes/scripts/cons_project_178_backup_weekly.py` на сервере 178.
+- Скрипт собирает curated snapshot в `/home/hermes/workspace/cons-github-backup-178` со структурами:
+  - `project/**`
+  - `tg-api/**`
+  - `runtime-systemd/**`
+  - `hermes-runtime/**`
+- Добавлены root-docs:
+  - `PROD_CONTOUR_ARCHITECTURE.md`
+  - `PROD_CONTOUR_LOGIC.md`
+  - `DISASTER_RECOVERY_RUNBOOK.md`
+  - `MODEL_FALLBACK_LOGIC.md`
+  - `TG_API_SCOPE.md`
+  - `HERMES_RUNTIME_SCOPE.md`
+- Создан weekly cron job на 178:
+  - `cons-project-178-backup-weekly`
+  - schedule `30 1 * * 1`
+  - mode `no-agent`
+  - script `cons_project_178_backup_weekly.py`
+  - workdir `/home/hermes/workspace`
+
+Verified:
+- На 178 создан и запушен standalone backup commit `8f61722 Weekly standalone 178 backup refresh`.
+- Подтверждено, что текущая ветка backup-репозитория на 178 — `standalone-178`.
+- Подтверждено наличие в backup `README.md`, `PROD_CONTOUR_ARCHITECTURE.md`, `PROD_CONTOUR_LOGIC.md`, `DISASTER_RECOVERY_RUNBOOK.md`, `MODEL_FALLBACK_LOGIC.md`, `TG_API_SCOPE.md`, `HERMES_RUNTIME_SCOPE.md`, `runtime-systemd/tg-api.service`, `hermes-runtime/config.yaml`.
+- Подтверждено создание cron job `0eaf635c638e` на 178 для weekly refresh.
+
+Rejected:
+- Пушить standalone backup 178 в `Cons-project/main`, ломая combined backup 95+178.
+- Ограничиваться только snapshot проекта без TG-API и Hermes runtime слоя.
+
+[2026-06-19] — Hermes Web prod 178 chat runtime must reject fake structured file outputs, retry non-Russian chat answers, and catch weekly media-monitoring intents
+
+Context:
+- На prod `178.104.207.89` в chat-контуре подтвердились три реальные регрессии: агент уходил в португальский/английский, запросы на `csv`/`xlsx` могли завершаться ложным `file_response` из текста assistant-сообщения, а фразы про еженедельный сбор из СМИ не всегда распознавались как создание recurring job.
+- Live-разбор по Postgres `hermes_web` и `services/backend/app.py` показал, что `process_chat_task()` после обычного LLM-path мог публиковать `generated_file_response` для `csv/xlsx/json/xml`, хотя backend не строил структурированный dataset, а только экспортировал текст ответа в message-export файл.
+- Для language drift в publish-path не было backend-guard-а: даже явно не-русский ответ мог быть сохранён как финальный assistant message.
+
+Decision:
+- Backend не должен считать текстовый ответ валидным структурированным артефактом для `csv/xlsx/json/xml`; в таких случаях нужен честный error-path, а не псевдо-файл.
+- Для пользователей с `language=ru` backend должен делать повторный LLM-вызов с жёстким требованием русского языка, если первичный ответ ушёл в иностранный язык.
+- Chat-detection recurring jobs должна шире ловить явные weekly/media-monitoring формулировки (`еженедельный сбор`, `СМИ`, `обзор`, `дайджест`, `новости`) и более мягкие follow-up фразы.
+
+Implemented:
+- В `services/backend/app.py`:
+  - `build_generated_file_reply()` теперь отклоняет `csv/xlsx/json/xml` через `structured_generated_file_not_supported` вместо публикации fake structured export;
+  - добавлены `text_cyrillic_ratio()`, `reply_violates_expected_language()` и `enforce_russian_retry()`; `call_hermes_api()` теперь делает retry, если ответ для русского профиля вышел не-русским;
+  - `normalize_public_error_text()` получил явные user-facing тексты для `structured_generated_file_not_supported` и `llm_reply_language_guard_failed`;
+  - расширены `looks_like_recurring_job_request()` и `looks_like_recurring_job_followup()` для weekly/media-monitoring сигналов.
+- На prod live `app.py` выложен с backup, backend `hermes-web-backend-8791.service` перезапущен.
+
+Verification:
+- Локально: `python3 -m py_compile services/backend/app.py services/backend/test_smoke.py` — ok.
+- Локально: targeted smoke tests по language guard, fake structured export и recurring detection прошли (`4 tests OK` через `unittest`; `pytest` тоже показал `4 passed`, хотя раннер аварийно завершился уже после отчёта).
+- На prod `178.104.207.89`: `curl http://127.0.0.1:8791/api/health` после рестарта вернул `status=ok`.
+- На prod через прямой backend runtime test (`enqueue_chat_task` + `process_chat_task`) подтверждено:
+  - weekly media request → `message_kind=job_created`, создан job `id=54`;
+  - `csv` request → task завершается error-path с честным текстом `Не удалось сформировать файл: для CSV/XLSX/JSON/XML нужен структурированный набор данных...`, без attachments и без fake file success.
+- На prod backend helper `reply_violates_expected_language()` подтверждён на реальных regression strings: Portuguese=`True`, English=`True`, Russian=`False`.
+
+Follow-up:
+- В live-окружении остаётся отдельный технический дефект: короткие python-скрипты с `import app` периодически завершаются `Aborted/Segmentation fault` уже после полезного результата. Это не помешало текущему fix/restart, но требует отдельной диагностики рантайма/нативных зависимостей backend `.venv`.
+
+[2026-06-19] — Hermes Web должен переводить запросы вида `собери данные из источника X по формату Y` в backend collection contract до обычного chat/export path
+
+Context:
+- После фикса fake structured exports оставалась системная дыра: запросы вида `собери данные ... в csv` всё ещё могли уйти либо в общий LLM chat-path, либо в file/export-ветку, хотя для них нужен сначала формальный контракт сбора.
+- Пользователь прямо потребовал «живой алгоритм», по которому можно реализовывать задачи формата `собери данные из источника X по формату Y`, а не только общий ответ модели.
+
+Decision:
+- Для collection-задач backend должен сначала фиксировать `collection_contract`, а не пытаться сразу отвечать обычным текстом или файлом.
+- Контракт должен включать минимум: `source_kind/source_label`, `subject`, `output_format`, `fields`.
+- Если данных для контракта не хватает, backend должен вернуть `clarification_request`.
+- Для `csv/xlsx/json/xml` список полей результата обязателен.
+- Этот route должен жить раньше общего export/file-path и раньше обычного LLM-path.
+
+Implemented:
+- В `services/backend/app.py` добавлены:
+  - `infer_collection_output_format()`
+  - `looks_like_collection_request()`
+  - `infer_collection_source()`
+  - `infer_collection_subject()`
+  - `infer_collection_fields()`
+  - `build_collection_contract_meta()`
+  - `build_collection_clarification_or_contract_reply()`
+- В `process_chat_task()` новый `collection_reply` включён раньше `maybe_build_export_reply()` и общего chat-path.
+- Для complete-case backend теперь возвращает `message_kind=collection_contract` и кладёт execution steps в `meta.collection_contract`.
+- Для incomplete-case backend теперь возвращает `message_kind=clarification_request` с downstream `chat:data_collection_clarification`.
+- В `postprocess_assistant_reply()` `collection_contract` добавлен в actionable routes, чтобы backend не срезал такой ответ как «план без действия».
+- Алгоритм сохранён отдельным артефактом: `/home/hermes/workspace/source-collection-algorithm.md`.
+
+Verification:
+- Локально: `python3 -m py_compile services/backend/app.py services/backend/test_smoke.py` — ok.
+- Локально: unit tests прошли:
+  - `test_collection_request_without_source_and_fields_returns_clarification`
+  - `test_collection_request_with_source_format_and_fields_returns_contract`
+- На prod `178.104.207.89` после деплоя и `systemctl --user restart hermes-web-backend-8791.service`:
+  - `curl http://127.0.0.1:8791/api/health` вернул `status=ok`;
+  - те же 2 теста прошли в боевом `.venv` через `./.venv/bin/python -m unittest ...` — `OK`.
+
+Do not revisit without new data:
+- К старому поведению, где `собери ... в csv` трактуется как попытка сделать файл из текста assistant-ответа.
+- К схеме, где backend пропускает collection-requests напрямую в общий chat-path без фиксации source/subject/format/fields.
+
+[2026-06-19] — Tender collection business prompt must be parsed as a complete collection contract
+
+Context:
+- Пользователь дал реальную постановку про выгрузку закупок с набора тендерных площадок, с формулировками `excel (csv)`, `по закупкам в части ИТ-деятельности` и многострочным блоком `Нужна информация:`.
+- Живая проверка показала, что предыдущая версия route этот prompt не распознавала как collection-request: `looks_like_collection_request=false`, `subject=''`, `output_format=''`, `fields=[]`.
+
+Decision:
+- Такой prompt должен считаться complete collection contract без лишнего clarification.
+- `excel` в business-формулировках нужно нормализовать в `csv` как рабочий spreadsheet-friendly structured output.
+- Многострочный блок после `Нужна информация:` должен извлекаться как список полей результата.
+- Формулировки вида `по закупкам в части ...` должны извлекать предмет сбора как `subject`.
+
+Implemented:
+- В `services/backend/app.py`:
+  - `infer_collection_output_format()` расширен на `excel/эксел -> csv`;
+  - `infer_collection_subject()` расширен на шаблоны `по закупкам в части ...`, `по закупкам в сфере ...`, `по закупкам по ...`;
+  - `infer_collection_fields()` расширен на многострочный блок после `Нужна информация:`.
+- В `services/backend/test_smoke.py` добавлен regression test `test_collection_request_with_real_tender_prompt_returns_contract`.
+
+Verification:
+- Локально: `python3 -m unittest -q test_smoke.HermesWebBackendSmokeTest.test_collection_request_with_real_tender_prompt_returns_contract` — сам тест `OK`.
+- На prod `178.104.207.89`: после деплоя и `systemctl --user restart hermes-web-backend-8791.service` тест через боевой `.venv` тоже прошёл — `Ran 1 test ... OK`.
+- На prod прямой runtime probe подтвердил итоговый контракт:
+  - `source_kind=tenders`
+  - `output_format=csv`
+  - `subject=ИТ-деятельности`
+  - `missing_fields=[]`
+  - fields = 8 строк из блока `Нужна информация:`.
+
+Do not revisit without new data:
+- К старому выводу, что такой tender-prompt «слишком общий» и обязан уходить в clarification.
+- К старому парсингу, где `excel (csv)` и многострочные поля не извлекаются.
+
+[2026-06-19] — Collection requests must continue into executable downstreams, not stop at contract-only chat replies
+
+Context:
+- Пользователь отдельно потребовал убрать «вакуум» после `collection_contract` и довести контур до рабочего downstream.
+- Для Telegram-каналов нужно, чтобы запросы не терялись в chat-логике, а шли через существующий `TG-API` с созданием отдельного списка каналов под задачу.
+- Для тендеров в local-first контуре нужно хотя бы создавать отдельный source-list/task artifact с явным статусом активных и placeholder-источников, а не заканчиваться только текстовым контрактом.
+
+Decision:
+- `collection_request` после полного контракта больше не должен останавливаться на `chat:data_collection_contract`.
+- Для `source_kind=telegram` обязательный downstream — `task-specific channel list` + live вызов `TG-API /export`.
+- Для `source_kind=tenders` обязательный downstream — `task-specific tender source list` с честным `source_status` по локальному registry, без fake file export.
+
+Implemented:
+- В `services/backend/app.py` добавлены:
+  - `source_items` и `since_date` в `collection_contract`;
+  - `maybe_execute_collection_request()` как второй этап после контракта;
+  - `materialize_telegram_task_config()` и `execute_telegram_collection_contract()`;
+  - `materialize_tender_task_sources()` и `execute_tender_collection_contract()`.
+- В `TG-API` task-config теперь создаётся как отдельный `channels_task_<...>.yml` рядом с `app.py`.
+- На prod дополнительно доложен `/home/hermes/workspace/tenders/it_tender_sources.json`, потому что без него tender source matching был пустым.
+- В `services/backend/test_smoke.py` добавлены регрессии:
+  - `test_maybe_execute_collection_request_runs_telegram_api_with_task_channel_list`
+  - `test_execute_tender_collection_contract_creates_task_source_list`
+
+Verification:
+- Локально: 3 целевых теста прошли (`tender contract`, `tender execution-plan`, `telegram task-channel-list`).
+- На prod `178.104.207.89`:
+  - backend на `8791` поднят и `/api/health` отвечает `200`;
+  - live Telegram probe с реальными каналами `@b1_news`, `@Axenix_Ru` создал отдельный config `channels_task_...yml` и вернул `count=142` через `TG-API /export`;
+  - live tender probe создал файл `/home/hermes/workspace/tenders/tasks/tender_sources_...json` и вернул `source_status`: active=`zakupki.gov.ru`, `B2B-Center`; placeholder=`Fabrikant`, `Bidzaar`, `Roseltorg`.
+
+Do not revisit without new data:
+- К старому поведению, где collection-request заканчивается только `collection_contract` без downstream execution/plan.
+- К варианту, где Telegram collection живёт без отдельного task-specific channel list.
+- К варианту, где tender source-status скрывает, какие источники реально активны, а какие пока placeholders.
+
+[2026-06-19] — Prod 178 web collection requests with explicit URLs now continue into real artifact delivery
+
+Context:
+- Пользователь потребовал, чтобы запросы вида `собери информацию из источников в интернете и дай в таком-то виде` доходили до реального результата, а не оставались на уровне контракта.
+- Для `telegram` и `tenders` downstream уже был частично доведён; не хватало универсального `web/url` execution path с реальным файлом.
+
+Decision:
+- Для `source_kind in {web, url, media}` backend должен после полного контракта сам:
+  1) собрать страницы по URL,
+  2) извлечь видимый текст,
+  3) структурировать строки через Hermes API только по извлечённому контенту,
+  4) сгенерировать `csv/json/xlsx`,
+  5) отдать файл как message attachment через стандартный message-attachment route.
+- Если контракт неполный, должен возвращаться честный `clarification_request`, а не fake file.
+
+Implemented:
+- В `services/backend/app.py` добавлены:
+  - `extract_web_sources()`;
+  - расширение `build_collection_contract_meta()` для `web/url/media` + обязательный `список URL / сайтов`;
+  - `normalize_web_source_url()`, `html_to_visible_text()`, `fetch_web_source_document()`;
+  - `build_web_collection_rows_prompt()` и `structure_web_collection_rows()`;
+  - `build_collection_artifact_attachment()`;
+  - `execute_web_collection_contract()`;
+  - расширение `maybe_execute_collection_request()` на `web/url/media`;
+  - нормализация attachments в `serialize_message()` с автогенерацией `download_url` вида `/api/messages/<id>/attachments/<index>`.
+- В `services/backend/test_smoke.py` добавлены регрессии:
+  - `test_execute_web_collection_contract_creates_real_csv_artifact`
+  - `test_serialize_message_injects_attachment_download_url`
+
+Verification:
+- Локально: `python3 -m py_compile app.py test_smoke.py` и 4 целевых теста (`web artifact`, `attachment url`, `telegram`, `tender`) прошли `OK`.
+- На prod `178.104.207.89`: те же 4 теста через боевой `.venv` прошли `OK`.
+- Live HTTP verification на prod через реальный chat-flow:
+  - неполный prompt с URL вернул честный `clarification_request` с `missing_fields=["что именно собирать"]`;
+  - полный prompt `Собери данные с https://example.com и https://example.org в csv по теме example domains. Нужны поля title, summary` вернул `message_kind=collection_execution_result`;
+  - создан attachment `collection_example-domains_20260619_143400.csv`;
+  - download через `/api/messages/467/attachments/0?...` отдал реальный CSV со строками для `example.com` и `example.org`.
+
+Do not revisit without new data:
+- К старому состоянию, где `web/url` collection на prod останавливался на контракте без файла.
+- К fake-export логике для explicit URL sources, когда реальный attachment не создаётся.
+- К отдельному нестандартному download route для collection artifacts: использовать обычный message attachment flow.
+
+[2026-06-20] — Live prod token-accounting verification requires backend restart because imported probe workers can fake freshness
+
+Context:
+- Пользователь попросил добить именно живую верификацию логирования токенов по реальному prod-user path.
+- На `178.104.207.89:8791` код `attach_assistant_token_accounting()` уже лежал на диске, но публичный live ответ пользователя сначала приходил без `meta.token_accounting`.
+- Отдельный probe, который импортировал `services/backend/app.py` напрямую на сервере, неожиданно видел `token_accounting`, но это было ложноположительное подтверждение.
+
+Decision:
+- Для live-проверки token-accounting нельзя импортировать `app.py` на prod без отключения chat processor: импорт сам стартует background worker и может обработать pending `chat_tasks` уже новым кодом, пока основной running service ещё старый.
+- Истинным критерием считать только публичный user path через `http://178.104.207.89:8791/api`, а DB inspection делать отдельным off-process probe с `HERMES_WEB_CHAT_PROCESSOR_ENABLED=0`.
+- Если публичный path не содержит `token_accounting`, а файл на диске уже содержит код, это rollout gap: нужен restart боевого `hermes-web-backend-8791.service`.
+
+Implemented:
+- Подтверждено расхождение между live public path и imported local probe:
+  - public reply `assistant_id=574` содержал `usage`, но без `token_accounting`;
+  - imported probe reply `assistant_id=568` содержал `token_accounting` и `timeout_seconds=180`, что выдало отдельный ad-hoc worker, а не основной prod service.
+- Перезапущен боевой user-systemd backend `hermes-web-backend-8791.service` после server-side `py_compile services/backend/app.py services/backend/test_smoke.py`.
+- После restart live public probe повторён по реальному user path.
+
+Verification:
+- До restart: public live reply `assistant_id=574` возвращал `downstream=hermes-api-server`, `usage={prompt_tokens: 16591, completion_tokens: 287, total_tokens: 16878}`, но `token_accounting=null`.
+- После restart: public live reply `assistant_id=578` вернул `meta.token_accounting` с exact usage:
+  - `prompt_tokens=16626`
+  - `completion_tokens=294`
+  - `total_tokens=16920`
+  - `response_text_tokens_estimated=293`
+  - `llm_usage_exact=true`
+- Отдельная DB-проверка с `HERMES_WEB_CHAT_PROCESSOR_ENABLED=0` подтвердила, что `messages.meta_json` для `assistant_id=578` действительно хранит тот же `token_accounting`, а не только сериализует его в HTTP-ответе.
+
+Do not revisit without new data:
+- К live-верификации через импорт `app.py` без отключения chat processor: это может запускать ложного второго worker-а.
+- К выводу «код на диске уже новый, значит prod уже обновлён»: для backend с in-memory workers это неверно без restart и public-path probe.
+
+[2026-06-19] — Universal collection/composition contour must use one selected route, task-specific source manifests, and analog-backed proposal estimation
+
+Context:
+- Пользователь зафиксировал целевой класс задач шире простого web scraping: `источник -> обработка -> файл`, где источником может быть один файл, несколько файлов, API или открытый web, а итогом может быть не только dataset, но и проект КП / оценка стоимости / модель ресурсов.
+- Отдельное требование — agent не должен путаться между route-ветками, игнорировать чёткую постановку или одновременно пытаться идти в несколько специальных путей.
+
+Decision:
+- Для data-driven запросов нужен единый universal pipeline: `intake/contract -> selected route -> task-specific source manifest -> raw ingest -> normalization -> analog search -> estimation/composition -> artifact delivery`.
+- Верхний routing в chat backend должен оставаться взаимоисключающим: `collection_execution > collection_contract > message_export > dashboard > recurring_job > generic_chat`.
+- Для proposal-like задач analog stage обязателен: при отсутствии прямых совпадений система должна использовать partial/component analogs и явно разделять факт, аналог и гипотезу.
+
+Implemented:
+- В проект добавлен документ `docs/UNIVERSAL_DATA_COLLECTION_AND_COMPOSITION.md` с единым алгоритмом для `attachment / attachments / api / web / telegram / tenders / mixed` и с фазами до proposal/cost/resource outputs.
+- В `services/backend/app.py` расширено распознавание generic web-source формулировок (`интернете`, `веб...`) и subject extraction для конструкций вида `в csv по теме ... с полями ...`.
+- В `services/backend/test_smoke.py` добавлены регрессии:
+  - `test_process_chat_task_collection_route_preempts_dashboard_and_recurring`
+  - `test_generic_web_collection_contract_does_not_require_explicit_urls`
+
+Verified:
+- Локально: `python3 -m py_compile services/backend/app.py services/backend/test_smoke.py` — OK.
+- Локально: `python3 -m pytest services/backend/test_smoke.py -q -k 'collection_route_preempts_dashboard_and_recurring or generic_web_collection_contract_does_not_require_explicit_urls or execute_web_collection_contract_creates_real_csv_artifact or chat_research_request_does_not_create_recurring_job_without_explicit_schedule_intent or execute_tender_collection_contract_creates_task_source_list or maybe_execute_collection_request_runs_telegram_api_with_task_channel_list'` — `6 passed`.
+
+Open questions:
+- Full execution for `attachment/attachments` as first-class collection source is still not finished.
+- Full arbitrary `api` collection executor with task-specific config manifest is still not finished.
+- Analog corpus and cost/resource estimation layer for proposal drafting are designed, but not yet implemented end-to-end.
+
+[2026-06-20] — Tender collection through prod-user must treat «настрой выгрузку» as real collection intent and must return a file even when some procurement sources time out
+
+Context:
+- При live-проверке через prod-user запрос на вчерашнюю тендерную выгрузку сначала не уходил в deterministic collection-path, хотя по смыслу это был ровно запрос на выгрузку.
+- Корень №1: collection intent не срабатывал на формулировке «настроил/настрой выгрузку», а bare mention `csv` внутри длинного контракта не считалась output-format.
+- Корень №2: tender pipeline падал целиком на timeout одного источника (`zakupki.gov.ru`) вместо partial-source tolerance, поэтому пользователь оставался без файла вообще.
+
+Decision:
+- Расширить collection-action routing на wording `настро*` и `организ*` для задач класса data collection.
+- Считать bare mentions `csv/xlsx/json/xml` валидным output-format внутри collection contract даже без явной file-export фразы.
+- Для tender contour сохранить принцип partial-source tolerance: timeout/ошибка одного источника не должна валить весь run, если можно отдать хотя бы пустой/частичный CSV плюс status CSV.
+- Через prod-user deliverable считается выполненным только если backend реально возвращает attachment с выгрузкой, а не текстовый план.
+
+Live verification:
+- На prod `178.104.207.89` через прод-пользователя `admin@demo.local` повторно отправлен вчерашний tender prompt.
+- После фикса backend вернул `message_kind=collection_execution_result`, `downstream=chat:tender_collection_result` и два реальных attachment-файла:
+  - `it_tenders_2026-06-01.csv`
+  - `tender_sources_status_2026-06-01.csv`
+- Первый CSV скачан live по `download_url`, HTTP 200, файл реально существует и содержит header-строку выгрузки.
+- Фактический результат по текущему локальному contour: `0` строк данных; активные источники — `zakupki.gov.ru`, `B2B-Center`; `zakupki.gov.ru` дал timeout как source error, `B2B-Center` вернул `0 строк`; placeholders остаются `Fabrikant`, `Bidzaar`, `Roseltorg`.
+
+Implication:
+- Корневой remaining issue по вчерашнему tender кейсу был не в file delivery, а в связке `collection intent phrasing + output-format detection + partial-source tolerance`.
+- Теперь через prod-user система отдает реальный файл даже при пустом результате и отдельно показывает status CSV по источникам.
+
+[2026-06-20] — Tender collection on prod must interpret `с 01.06.2026` as a range start, not as one exact publication day
+
+Context:
+- После доведения file delivery и partial-source tolerance prod-user path всё ещё возвращал формально успешный CSV, но с `0` строками.
+- Живое воспроизведение показало, что запрос пользователя `нужны все закупки с 01.06.2026` ошибочно трактовался как `ровно 01.06.2026`, а не как диапазон `с 01.06.2026 по дату запуска`.
+- На prod `zakupki.gov.ru` из контура `178` по-прежнему недоступен по timeout, но `B2B-Center` остаётся живым и даёт релевантные строки за диапазон. Поэтому ошибка именно в интерпретации периода напрямую обнуляла полезный результат для пользователя.
+
+Decision:
+- Для tender contour wording `с <date>` считать нижней границей периода, а верхней — датой текущего запуска, если пользователь явно не задал другую.
+- Имена итоговых файлов и summary должны отражать диапазон (`since` + `until`), а не один день.
+- Если один источник недоступен, но другой в том же диапазоне даёт строки, prod-user deliverable считается выполненным только при реальном непустом CSV attachment.
+
+Implemented:
+- В `/home/hermes/workspace/eva-github-backup/hermes-runtime/scripts/it_tender_pipeline.py` добавлены range-aware фильтры по дате для `zakupki.gov.ru` и `B2B-Center`, параметр `--until-date`, новый filename suffix `YYYY-MM-DD_YYYY-MM-DD` и summary с `since_date` / `until_date`.
+- В `services/backend/app.py` `run_tender_pipeline_snapshot()` теперь передаёт в pipeline не один `--date`, а диапазон `--date` + `--until-date`; пользовательский reply показывает период `с ... по ...`.
+- Skill `research/it-tender-csv-collection` обновлён: формулировка `с 01.06.2026` закреплена как range-start semantics; отдельно зафиксировано, что при недоступном `zakupki.gov.ru` run остаётся валидным, если `B2B-Center` дал строки и status CSV честно описывает недоступный источник.
+
+Verification:
+- Локально patched script дал непустой результат за диапазон `01.06.2026 — 20.06.2026`: `208` строк (`zakupki.gov.ru = 202`, `B2B-Center = 6`).
+- На prod `178.104.207.89` direct pipeline run через backend `.venv` дал `6` строк (`B2B-Center = 6`, `zakupki.gov.ru = 0` из-за source timeout) и корректные файлы:
+  - `it_tenders_2026-06-01_2026-06-20.csv`
+  - `tender_sources_status_2026-06-01_2026-06-20.csv`
+- Через временного prod-user live round-trip повторно отправлен вчерашний tender prompt. Backend вернул:
+  - `message_kind=collection_execution_result`
+  - `downstream=chat:tender_collection_result`
+  - непустой main CSV attachment (`6` строк, HTTP 200)
+  - отдельный status CSV attachment с честным `zakupki.gov.ru = ошибка источника`, `B2B-Center = собрано`
+- После проверки временный prod-user и probe-thread'ы удалены с prod.
+
+Do not revisit without new data:
+- К старой трактовке `с 01.06.2026` как запроса на один календарный день.
+- К варианту, где tender delivery считается успешным при `0` строках только потому, что файл технически приложился.
+
+[2026-06-20] — Short complaint follow-ups on prod must not be blocked by empty request-policy envelopes
+
+Context:
+- При live-воспроизведении исходных пользовательских косяков на prod `178.104.207.89` были повторно прогнаны короткие follow-up паттерны: `где файл`, `непонятно`, `не работает`, плюс один и тот же weekly monitoring request в разных thread-ах.
+- После предыдущих фиксов routing больше не путал one-shot collection с recurring monitoring, `where file` path отдавал реальное вложение, а duplicate recurring request не плодил второй job.
+- Но обнаружился отдельный живой дефект recovery-path: короткая проблемная реплика `не работает` после короткого содержательного ответа всё ещё уходила в слишком общий LLM-ответ и подтягивала лишний контекст вроде названия thread-а.
+- Корневая причина оказалась не в intent-detection, а в том, что runtime передавал `request_policy` как формально непустой dict с пустыми/default полями (`source_mode=''`, `model_preference='auto'`, пустые `explicit_source_ids` / `allowed_source_ids` / `connector_targets`). Из-за простого truthy-check это ошибочно отключало focused follow-up path.
+
+Decision:
+- Empty/default `request_policy` envelope должен трактоваться как отсутствие реального override и не должен отключать focused complaint-recovery path.
+- Focused follow-up для коротких проблемных реплик должен включаться уже при наличии любого достаточно содержательного последнего assistant-ответа, не только длинного плана.
+
+Implemented:
+- В `services/backend/app.py` добавлен helper `request_policy_has_explicit_constraints()`.
+- `build_hermes_system_prompt()` и `should_use_focused_followup_context()` переведены с простого `if request_policy` на проверку только реальных policy constraints.
+- Для problem-followup lowered threshold: короткие реплики типа `не работает` / `непонятно` теперь могут использовать focused context и после короткого предыдущего ответа.
+- В `services/backend/test_smoke.py` добавлена регрессия `test_should_use_focused_followup_context_for_problem_reply_after_short_answer`, включая вариант с пустым/default request_policy envelope.
+- Skill `software-development/chat-runtime-reply-routing` обновлён: зафиксирован guard, что empty/default policy envelope не должен отключать short complaint recovery.
+
+Verification:
+- На prod `178.104.207.89` через боевой `.venv` прошли targeted tests:
+  - `test_short_problem_followup_detection`
+  - `test_should_use_focused_followup_context_for_short_problem_reply`
+  - `test_should_use_focused_followup_context_for_problem_reply_after_short_answer`
+- После деплоя и рестарта backend live probe подтвердил:
+  - `не работает` больше не уходит в thread-title confusion;
+  - `непонятно` и `не работает` получают `focused_followup_context=true` в message meta;
+  - ответ явно опирается на предыдущий assistant plan и честно объясняет, что фактический запуск ещё не производился.
+- Временный probe-user и созданные probe-thread/job после проверки удалены с prod, чтобы не оставлять мусор в рабочем контуре.
+
+Do not revisit without new data:
+- К старому truthy-check по `request_policy`, который считал пустой envelope реальным policy override.
+- К варианту, где `не работает` после короткого предыдущего ответа уходит в generic LLM response и теряет рабочий контекст.
+
+[2026-06-19] — Prod 178 universal collection contour now executes not only Telegram/tenders/explicit web, but also generic web-search, user attachments, and explicit API endpoints
+
+Context:
+- Пользователь отдельно дожал тему `источник -> обработка -> файл` и потребовал не оставлять universal collection contour на уровне документа/контракта.
+- До этой доработки в runtime уже работали `telegram`, `tenders` и explicit `web/url`, но оставались реальные дыры: generic web without URLs, collection из приложенных файлов и explicit API endpoints.
+
+Decision:
+- Collection contour на prod 178 должен исполнять ещё три класса запросов:
+  - generic `web` без явных URL через search-stage -> source manifest -> fetch -> artifact;
+  - `attachment/attachments` через отдельный attachment bundle -> text extraction reuse -> artifact;
+  - explicit `api` через task-specific API config -> live JSON fetch -> artifact.
+- Верхний route-selection остаётся взаимоисключающим: collection-path не должен конкурировать с dashboard / recurring-job ветками.
+
+Implemented:
+- В `services/backend/app.py` добавлены:
+  - `api` в `infer_collection_source()`;
+  - `extract_attachment_source_items()` и fallback `infer_attachment_subject()`;
+  - `materialize_web_search_task_sources()`, `search_web_source_candidates()`, `resolve_web_collection_sources()`;
+  - `build_attachment_collection_documents()`, `materialize_attachment_task_bundle()`, `execute_attachment_collection_contract()`;
+  - `fetch_api_source_payload()`, `normalize_api_payload_rows()`, `materialize_api_task_config()`, `execute_api_collection_contract()`;
+  - расширение `build_collection_contract_meta()` и `maybe_execute_collection_request()` под `attachment` и `api`.
+- В `services/backend/test_smoke.py` добавлены регрессии:
+  - `test_execute_web_collection_contract_searches_sources_when_urls_not_provided`
+  - `test_execute_attachment_collection_contract_creates_real_csv_artifact`
+  - `test_execute_api_collection_contract_creates_real_csv_artifact`
+
+Verified:
+- Локально: `python3 -m py_compile services/backend/app.py services/backend/test_smoke.py` — OK.
+- Локально: 8 целевых smoke-тестов прошли `OK`.
+- На prod `178.104.207.89`:
+  - файлы `app.py` и `test_smoke.py` скопированы в `/home/hermes/workspace/hermes-web-mvp-react-8793/services/backend/`;
+  - `services/backend/.venv/bin/python -m py_compile ...` — OK;
+  - `unittest` по 8 целевым проверкам — `OK`;
+  - backend 8791 перезапущен через `scripts/runtime_env.sh` + waitress в корректном `hermes-api` env;
+  - `/api/health` после перезапуска снова вернул prod-state: `mode=hermes-api`, `users_count=22`, `threads_count=70`.
+
+Open questions:
+- Proposal composition layer как end-to-end `requirements -> analogs -> cost/resource estimate -> project KP artifact` пока ещё не реализована.
+- Generic API branch сейчас рассчитан на explicit JSON endpoints; connector-auth / arbitrary non-JSON APIs остаются отдельным следующим слоем.
+
+[2026-06-19] — Proposal composition on prod 178 must trigger only on explicit КП / estimate intent, not on any awkward collection phrasing
+
+Context:
+- После добивки universal collection contour появилась новая зона риска: composition-layer для `КП / стоимость / ресурсы` не должен вызываться на обычных сборочных запросах, где `КП` встречается только как тема/поле, а не как явная команда подготовить proposal.
+- На локальной регрессии это проявилось так: формулировка `в csv по теме проект КП ...` ошибочно включала composition-mode вместо обычного dataset-path.
+
+Decision:
+- Proposal composition должен запускаться только по явному intent, а не по одному упоминанию `КП` в теме.
+- Явный trigger теперь требует action + explicit proposal phrase, например `подготовь КП`, `сформируй проект КП`, `коммерческое предложение`, либо явную оценку стоимости/ресурсов как отдельную задачу.
+- Для explicit proposal-intent default output format должен быть `md`, и этот выбор должен иметь приоритет над generic message-export heuristics.
+
+Implemented:
+- В `services/backend/app.py` добавлены:
+  - `infer_composition_mode()`;
+  - `looks_like_proposal_composition_request()`;
+  - `build_proposal_composition_prompt()`;
+  - `compose_proposal_payload()`;
+  - `render_proposal_markdown()`;
+  - `build_proposal_artifact_attachment()`;
+  - `maybe_attach_proposal_artifact()`.
+- `build_collection_contract_meta()` теперь хранит `composition_mode` и `request_text`.
+- `execute_web_collection_contract()`, `execute_attachment_collection_contract()`, `execute_api_collection_contract()` теперь умеют по explicit intent собирать composition artifact, а не только rows/file.
+- Intent сужен так, чтобы голое `проект КП` в теме не запускало composition-layer.
+
+Verified:
+- Локально: `python3 -m py_compile services/backend/app.py services/backend/test_smoke.py` — OK.
+- Локально: `7 passed` по целевым regression tests, включая guard against false trigger.
+- На prod `178.104.207.89`:
+  - `services/backend/.venv/bin/python -m py_compile ...` — OK;
+  - `unittest` по 7 целевым проверкам — `OK`;
+  - backend 8791 перезапущен в `hermes-api` env;
+  - `/api/health` после перезапуска снова вернул `mode=hermes-api`, `users_count=22`, `threads_count=70`.
+
+[2026-06-19] — Proposal composition completed as backend runtime + reusable skill layer; anti-hang check separated runtime health from test-process teardown noise
+
+Context:
+- Пользователь попросил добить proposal/cost/resource слой до более прикладного состояния, проверить на зависание после выкладки и отдельно прояснить, это backend-логика или skill.
+- На этом этапе runtime уже умел dataset/file path и guarded proposal intent, но ещё не тащил ограничения запроса (`budget/timeline/team`) в composition artifact.
+
+Decision:
+- Финальная схема — гибрид:
+  - backend — реальный routing/execution/runtime;
+  - skill — повторно используемые правила, guard-ы и verification pattern.
+- Не переносить executor-логику целиком в skill, чтобы не плодить второй движок рядом с backend.
+- Для anti-hang считать главным критерием живость backend runtime после рестарта и под нагрузкой health/probe, а не только устойчивость отдельного unittest-процесса при teardown.
+
+Implemented:
+- В `services/backend/app.py` добавлены extraction helpers:
+  - `infer_budget_hint()`;
+  - `infer_timeline_hint()`;
+  - `infer_team_constraints()`.
+- `build_collection_contract_meta()` теперь хранит:
+  - `budget_hint`;
+  - `timeline_hint`;
+  - `team_constraints`.
+- Proposal composition prompt и markdown artifact теперь получают и отображают эти ограничения.
+- Создан user skill `software-development/collection-proposal-routing` как слой правил поверх backend-runtime.
+
+Verified:
+- Локально:
+  - `python3 -m py_compile services/backend/app.py services/backend/test_smoke.py` — OK;
+  - `pytest` по 8 целевым проверкам — `8 passed`.
+- На prod `178.104.207.89`:
+  - `services/backend/.venv/bin/python -m py_compile ...` — OK;
+  - `unittest` по 8 целевым проверкам — `OK`;
+  - backend 8791 перезапущен в `hermes-api` env;
+  - 20 подряд вызовов `/api/health` после рестарта — все `ok`, `mode=hermes-api`, `threads_count=70`.
+- Отдельно зафиксировано:
+  - повторный `unittest` в shell-loop дал `terminate called without an active exception` / `Aborted` уже после `Ran 1 test ... OK`;
+  - при этом живой backend не упал: process остался активен, повторные `/api/health` продолжили возвращать `ok`.
+  - Значит, это выглядит как teardown/runtime-noise отдельного test-process на сервере, а не как зависание или падение prod backend 8791.
+
+[2026-06-19] — Repeated request classes should be captured as full skills, not rediscovered ad hoc from chat phrasing
+
+Context:
+- Пользователь указал на повторяющийся паттерн сбоев: когда запрос формулируется «как попало», система то уходит в хардкод под частный кейс, то теряет intent altogether.
+- Особенно болезненные классы уже проявились на практике: file delivery / export, recurring monitoring, universal source->processing->artifact with proposal/composition branch.
+
+Decision:
+- Повторяющиеся классы задач больше не оставлять только как частные backend-фиксы или устные договорённости в чате.
+- Для таких классов нужен явный skill-layer с полной процедурной формулировкой: triggers, route rules, anti-patterns, verification checklist, boundary between skill policy and backend execution.
+- При этом runtime/executor-логика остаётся в backend; skill не должен становиться вторым скрытым движком.
+
+Implemented:
+- Обновлён user skill `collection-proposal-routing` до полноценного формата с metadata, route model, contract fields, failure patterns и verification checklist.
+- Создан user skill `monitoring-request-routing` для loosely phrased recurring-monitoring requests: recurring intent, schedule/source extraction, anti-loss guard against `chat_task completed != job delivered`.
+- Создан user skill `file-artifact-intent-routing` для запросов на файл/документ/export: file intent, deterministic export path, artifact-evidence contract.
+
+Verified:
+- Все три skills созданы/обновлены через `skill_manage` и повторно прочитаны через `skill_view`.
+- Проверено, что у новых skills есть полноценный `SKILL.md` с usable content, а не пустой stub.
+
+Open questions:
+- Следующий слой — по мере накопления новых повторяющихся кейсов не плодить узкие skills на каждый баг, а держать компактный каталог skills по классам задач.
+
+[2026-06-20] — Prod 178 Telegram export must serialize backend calls because TG API is single-threaded and overlapping exports destabilize user-path delivery
+
+Context:
+- Пользователь отдельно уточнил operational constraint: локальный TG API фактически однопоточный; пока предыдущая выгрузка не завершена, новый export-запрос может срываться или уходить в ошибку.
+- Это хорошо совпало с уже воспроизведённым user-path симптомом: двухшаговый Telegram export (`запрос -> clarification -> конкретизация каналов`) раньше мог закончиться timeout/error even when routing was semantically correct.
+- Нужно было чинить не только phrasing/contract, но и сам execution-path между backend 8791 и `TG-API /export`.
+
+Decision:
+- Для `source_kind=telegram` backend должен выполнять singleflight-сериализацию вызовов TG API: одновременно активен только один живой export-запрос в runtime-контуре.
+- Если второй Telegram collection приходит, пока первый ещё не закончился, backend не должен слать второй параллельный `/export` в TG API; он должен дождаться освобождения singleflight-lock в пределах контролируемого timeout.
+- В meta результата нужно явно оставлять след этой сериализации (`execution_lock.kind`, `wait_seconds`, `timeout_seconds`), чтобы дальше было видно, что runtime учёл однопоточность TG API.
+
+Implemented:
+- В `services/backend/app.py` добавлен backend-level singleflight lock для Telegram collection execution и timeout `HERMES_WEB_TELEGRAM_COLLECTION_LOCK_TIMEOUT`.
+- `execute_telegram_collection_contract()` теперь:
+  - ждёт освобождения Telegram singleflight lock;
+  - только после этого вызывает `TG-API /export`;
+  - пишет в result meta блок `execution_lock={kind=telegram_collection_singleflight,...}`.
+- `normalize_public_error_text()` дополнен отдельным публичным текстом для случая, когда Telegram export не дождался окна выполнения.
+- В `services/backend/test_smoke.py` добавлены регрессии:
+  - `test_execute_telegram_collection_contract_waits_for_singleflight_lock`
+  - `test_normalize_public_error_text_for_telegram_busy_timeout`
+
+Verified:
+- Локально:
+  - `python3 -m py_compile services/backend/app.py services/backend/test_smoke.py` — OK.
+  - 4 целевых теста (`telegram task-channel-list`, `telegram singleflight lock`, `telegram busy timeout text`, `dashboard output path`) — OK.
+- На prod `178.104.207.89`:
+  - обновлённые `app.py` и `test_smoke.py` скопированы в боевой проект;
+  - `python -m py_compile services/backend/app.py services/backend/test_smoke.py` — OK;
+  - те же 4 server-side `unittest` — OK.
+- Live backend probe через реальный public API-path:
+  - создан временный пользователь для smoke-проверки и потом удалён;
+  - запрос `Собери данные из Telegram-каналов @b1_news, @Axenix_Ru по теме ИТ-консалтинг в csv ... с 19.06.2026` вернул `message_kind=collection_execution_result`, `downstream=chat:telegram_collection_result`, `count=5`, `processing_status=completed`.
+  - в `meta` подтверждён `execution_lock.kind=telegram_collection_singleflight`, `wait_seconds=0.0`, `timeout_seconds=540`.
+- Live two-step round-trip для исходного класса сценария:
+  - шаг 1: `Выгрузи данные из ТГ по новым каналам с 15.06 в файл` -> честный `clarification_request` с `missing_fields=[список Telegram-каналов, что именно собирать]`;
+  - шаг 2: конкретизация с каналами и полями -> успешный `collection_execution_result`, `count=37`, `processing_status=completed`, `config=task_ит-консалтинг_20260620_114930`, `since_date=2026-06-15`.
+
+Do not revisit without new data:
+- К прямым параллельным вызовам `TG-API /export` из backend без сериализации.
+- К интерпретации TG export timeout как исключительно проблемы weak LLM: здесь root cause был operational/runtime.
+- К user-path, где Telegram clarification-поток формально корректен, но execution срывается из-за overlap в однопоточном TG API.
+
+[2026-06-19] — Chat routing phrase-rules moved from scattered backend hardcode into a declarative policy layer backed by skills
+
+Context:
+- Пользователь прямо потребовал две вещи одновременно: оформить повторяющиеся сценарии как полноценные skills и убрать phrase-level backend hardcode, который расползался вокруг collection / monitoring / file-export routing.
+- Практический риск уже был подтверждён прежними сбоями: file delivery, weekly monitoring intent, proposal false-trigger и generic collection phrasing.
+
+Decision:
+- Правильный паттерн для повторяющихся request-классов — трёхслойный:
+  - skill layer: правила, guardrails, verification;
+  - policy layer: декларативные trigger/extraction rules в data-file;
+  - backend runtime: execution, artifacts, jobs, attachments, delivery.
+- Phrase-rules больше не должны жить как россыпь локальных regex прямо в backend-функциях, если это можно выразить через policy-file без изменения execution semantics.
+
+Implemented:
+- В backend-проект добавлен policy-file `services/backend/policies/chat_routing_policy.json` с секциями:
+  - `message_export`;
+  - `collection`;
+  - `monitoring`.
+- В `services/backend/app.py` backend переведён на загрузку routing-политик из этого policy-file для:
+  - export/file intent markers и request patterns;
+  - proposal / estimate trigger patterns;
+  - collection action/data-target/source/subject/field extraction rules;
+  - budget/timeline/team hint extraction;
+  - recurring monitoring / schedule / follow-up patterns.
+- Создан новый user skill `chat-request-routing-policy` и reference `references/policy-schema.md` как явный skill-layer для policy-driven routing.
+- Обновлены skills `collection-proposal-routing`, `monitoring-request-routing`, `file-artifact-intent-routing`, чтобы они ссылались на policy-layer, а не только на backend behavior.
+
+Verified:
+- Локально: `python3 -m py_compile services/backend/app.py services/backend/test_smoke.py` — OK.
+- Локально: `pytest` по целевому набору regressions для export / monitoring / collection / proposal / route-priority — `8 passed`.
+- Отдельно поймана и исправлена регрессия policy-decoding в `field_trim_chars`, из-за которой `title/name` теряли первую букву; после фикса тот же regression set снова прошёл полностью.
+
+Do not revisit without new data:
+- К возврату phrase-rules обратно в хаотичные backend regex без policy-file.
+- К модели, где skill и backend дублируют одну и ту же intent-логику разными словами.
+
+[2026-06-19] — Policy-layer rollout to prod 178 verified the old routing/file/monitoring failure classes, but generic web search-stage still has no live candidates
+
+Context:
+- После локального refactor пользователь попросил не ограничиваться кодом и выкатить изменения на prod `178.104.207.89`, затем перепроверить именно те классы кейсов, которые раньше ломались.
+- Целевой набор включал: false dashboard routing на словах `Telegram/интернет/аналитика`, recurring monitoring intent, file/export routing, universal collection routing, proposal false-trigger и проверку на зависание.
+
+Implemented:
+- На prod `178.104.207.89` обновлены:
+  - `services/backend/app.py`;
+  - `services/backend/test_smoke.py`;
+  - `services/backend/policies/chat_routing_policy.json`.
+- На сервере был досоздан каталог `services/backend/policies/`, которого раньше не было в live tree.
+- Backend unit `hermes-web-backend-8791.service` (user-systemd) перезапущен после выкладки.
+
+Verified:
+- На prod compile прошёл: `services/backend/.venv/bin/python -m py_compile services/backend/app.py services/backend/test_smoke.py` — OK.
+- На prod целевой regression set по `unittest` прошёл `13/13 OK` для кейсов:
+  - research request не создаёт recurring job без явного schedule intent;
+  - weekly media collection intent детектируется как recurring;
+  - generic file request export path;
+  - docx filename сам по себе не trigger;
+  - fake structured export reject;
+  - collection route preempts dashboard/recurring;
+  - generic web contract without explicit URLs;
+  - web-search source materialization path;
+  - Telegram channel-list collection path;
+  - tender collection path;
+  - proposal false-trigger guard;
+  - budget/timeline/team extraction;
+  - explicit attachment -> proposal artifact path.
+- Дополнительно на prod прошли ещё 2 targeted tests:
+  - explicit dashboard intent required;
+  - non-executable `Приступаю / Что я сделаю сейчас` strips for generic chat.
+- Live round-trip через prod API подтвердил:
+  - обычный текст с `Telegram, интернет, глубокая аналитика` больше не уходит в dashboard-route; ответ вернулся как обычный `downstream=hermes-api-server` без dashboard metadata;
+  - фраза `Поставь еженедельный сбор информации из СМИ в чате` реально создаёт job (`message_kind=job_created`, `created_job_id=9`);
+  - explicit web collection с `https://example.org` + `https://example.com` реально создаёт CSV artifact и возвращает `message_kind=collection_execution_result` с attachment.
+- Anti-hang soak после rollout: 20 подряд вызовов `/api/health` вернули `status=ok`; backend после рестарта остался жив.
+
+Open questions:
+- Live generic web request без URL (`Собери информацию из источников в интернете ...`) на prod сейчас доходит до collection route, но падает на source-stage с `web_collection_sources_not_found`.
+- Дополнительная runtime-диагностика показала, что `search_web_source_candidates(contract)` в live env возвращает `candidate_count=0`; это уже не routing-баг, а отдельный blocker search-stage / provider-availability на prod.
+- Отдельный серверный шум `terminate called without an active exception` / `Segmentation fault` продолжает иногда появляться после завершённых `unittest`/off-process Python probes; на live backend runtime и health-check это не повлияло.
+
+[2026-06-19] — Prod activity audit and generic web hardening on 178: routing fixed, search-stage stabilized, relevance still needs tightening
+
+Context:
+- Пользователь попросил одновременно добить хвосты и посмотреть, что реально происходит на prod, чтобы не плодить skills без подтверждённой пользы.
+- На тот момент незакрытым оставался generic web collection без явных URL, а также не было фактической картины, какие сценарии на prod используются чаще всего и какие ошибки повторяются.
+
+Prod activity snapshot:
+- Всего пользователей: 22.
+- Всего threads: 76, messages: 460, chat_tasks: 221.
+- За 7 дней: active users by threads = 20, active users by messages = 17, создано 64 threads, 412 messages, 197 chat_tasks.
+- Jobs: 8 всего, из них active = 4; за 14 дней job_runs = 1 success.
+- Самые частые assistant message kinds за 14 дней:
+  - `llm_or_unspecified` = 175;
+  - `file_response` = 31;
+  - `processing_status` = 28;
+  - `job_created` = 4;
+  - `dashboard_result` = 3;
+  - `collection_execution_result` = 3.
+- Самые заметные реальные error-классы за 14 дней:
+  - `timed out` на file/export follow-up и длинных upstream-path;
+  - `message_export_target_missing` на запросах вида `Собери файл / Отправь мне файл` без пригодного предыдущего ответа;
+  - `telegram_analytics_source_missing` в старом false-trigger классе;
+  - `web_collection_sources_not_found` на generic web без URL;
+  - `llm_reply_blocked_by_postguard` в отдельных generic-chat кейсах.
+
+Implemented:
+- В `search_web_source_candidates(...)` добавлен fallback `DuckDuckGo HTML -> Bing HTML`, чтобы generic web search-stage не умирал от DDG bot challenge.
+- Добавлено декодирование Bing redirect URLs (`u=a1...` -> real URL).
+- В `execute_web_collection_contract(...)` добавлена partial-source tolerance: один `403/blocked` источник больше не валит весь сбор, если хотя бы один другой источник успешно скачался.
+- В meta/reply добавлены `web_sources_skipped` и число пропущенных источников.
+- Создан отдельный skill `software-development/web-source-search-stage-hardening` под класс generic-web source discovery / fallback / partial-source failures.
+
+Verified:
+- Локально: `py_compile` — OK.
+- Локально: targeted `pytest` по fallback + partial-source tolerance + смежным collection regressions — `6 passed`.
+- На prod 178: targeted `unittest` по двум новым web regressions — OK.
+- После выкладки и рестарта backend health — OK.
+- Live round-trip на prod для generic web без URL теперь завершается `message_kind=collection_execution_result` с реальным CSV attachment.
+
+Important nuance:
+- Технически generic web path теперь живой, но quality/relevance ещё не идеальна: Bing fallback может возвращать нерелевантные или сервисные страницы, и это уже не runtime outage, а качество source ranking/query formulation.
+- По прод-активности не видно оснований создавать широкий новый зоопарк skills. Наиболее оправданным оказался только один новый skill: `web-source-search-stage-hardening`.
+- Для остальных болевых зон уже достаточно существующих skills:
+  - `artifact-delivery-contract-hardening`;
+  - `scheduled-job-delivery-diagnostics`;
+  - `chat-runtime-reply-routing`;
+  - `monitoring-request-routing`;
+  - `file-artifact-intent-routing`.
+
+Do not revisit without new data:
+- К идее, что generic web без URL можно считать полностью закрытым только по факту route-selection без live artifact.
+- К созданию новых skills без подтверждённого повторяющегося failure class на prod.
+
+[2026-06-19] — Generic web relevance hardening and explicit dashboard skill extraction
+
+Context:
+- После починки runtime-path `generic web without URL` пользователь попросил пойти дальше: улучшить качество найденных источников и отдельно оформить dashboard в явный skill, потому что технология и алгоритм уже есть, но в перечне он не читался как основной сценарий.
+
+Implemented:
+- В backend добавлены lightweight relevance heuristics для generic web search-stage:
+  - low-value URL filtering до fetch (`privacy`, `terms`, `servicesagreement`, `help`, `validate`, и т.п.);
+  - oversampling search results с последующей фильтрацией;
+  - post-fetch relevance selection по subject/title/text/url;
+  - сохранение runtime-устойчивости: partial-source tolerance не сломана.
+- Создан новый основной skill `software-development/dashboard-request-routing`.
+- Skill фиксирует отдельный dashboard contract:
+  - explicit dashboard intent required;
+  - routing split `dashboard / collection_then_dashboard / research_only / monitoring`;
+  - local-first source policy;
+  - stable dashboard envelope;
+  - visual-first delivery contract;
+  - anti-pattern guard против false dashboard trigger.
+
+Verified:
+- Локально: targeted regressions по search fallback / relevance filtering / partial-source tolerance — `5 passed` до известного teardown-noise.
+- На prod 178: targeted `unittest` по новым relevance checks — OK.
+- После выкладки backend health — OK.
+- Live generic-web probe на prod после relevance-hardening по-прежнему создаёт реальный CSV attachment.
+
+Important nuance:
+- Runtime-only heuristics улучшили качество, но настоящий скачок качества дало не дальнейшее ужесточение HTML parser, а переключение generic web discovery на existing local-first Hermes CLI search contour с HTML fallback.
+- На prod это потребовало отдельного исправления service env: `hermes` не был в PATH user-unit, поэтому backend надо было учить искать бинарь явно через `~/.local/bin/hermes` / `/home/hermes/.local/bin/hermes`.
+- После этого live generic web request по `LegalAI` начал возвращать предметные URL и реальный CSV c 5 содержательными строками.
+
+Do not revisit without new data:
+- К предположению, что один только HTML SERP parser даст стабильно качественный research-grade source discovery для любых тем.
+- К смешению dashboard skill с generic analytics prose или recurring monitoring logic.
+
+[2026-06-19] — Prod user-signal audit: short complaint followups and recurring-job dedupe
+
+Context:
+- Пользователь попросил перестать ориентироваться только на формально зелёные логи и проверить именно пользовательские сигналы: `где файл`, `не работает`, `непонятно`, одинаковые сообщения в разных чатах и другие паттерны, где `chat_task` может считаться закрытым, а UX по факту сломан.
+- Аудит на prod `178` снят из живой БД/рантайма через отдельный probe-скрипт, а не по ощущениям.
+
+Observed on prod:
+- За 30 дней: `236` chat-tasks, из них `205 completed` и `31 error`.
+- Топ user-visible error classes:
+  - `timed out` — `13`;
+  - `telegram_analytics_source_missing` — `4`;
+  - `message_export_target_missing` — `3`.
+- Реальные пользовательские сигналы в БД подтвердили класс `file delivery mismatch`:
+  - есть реальный follow-up `А где файл то?` после длинного apologetic assistant reply про повторную сборку документа;
+  - есть повторы `Отправь мне файл`, `Отправь повторно файл пожалуйста`, `Так дай файл в docx`.
+- В duplicate-audit найден отдельный operational failure class: один и тот же recurring monitoring request (`Поставь еженедельный сбор информации из СМИ в чате.`) повторялся в нескольких thread'ах, и prod уже содержал дубли активных monitoring jobs по сути одной и той же задачи.
+
+Implemented:
+- В backend добавлен новый runtime guard для short problem followups:
+  - короткие реплики вроде `не работает`, `где файл`, `непонятно`, `повтори ещё раз` теперь распознаются как focused follow-up class;
+  - для них строится суженный контекст из последнего содержательного user request + последнего содержательного assistant reply + текущей жалобы, вместо широкого повторного прогона всей истории.
+- В export routing расширены implicit file-followup markers:
+  - `А где файл?`, `где документ`, `не получил файл`, `повтори файл` и близкие формулировки теперь могут детерминированно переиспользовать предыдущий содержательный assistant answer и собрать export без лишнего LLM-круга.
+- В recurring monitoring path добавлена duplicate protection across chats:
+  - сравнение по `user_id`, normalized subject, `schedule_kind`, `days_of_week`, `time_of_day`, `timezone`;
+  - при совпадении backend возвращает `job_reused` и не создаёт второй активный job-клон.
+- Обновлены skills:
+  - `chat-runtime-reply-routing` — зафиксирован отдельный класс short complaint followups;
+  - `monitoring-request-routing` — добавлен guard против дублирования recurring jobs между чатами/threads.
+
+Verified:
+- Локально: targeted regressions по новым кейсам — `7 passed`.
+- На prod `178`: targeted `unittest` по 5 кейсам — `OK`:
+  - short problem followup detection;
+  - focused follow-up routing for complaint reply;
+  - implicit `где файл` export detection;
+  - direct `where-file` export execution path without HTTP auth dependency;
+  - recurring job dedupe across threads.
+- Backend `8791` на `178` перезапущен после выкладки; `/api/health` снова `ok`, `mode=hermes-api`, `users_count=22`, `threads_count=101`, `jobs_count=15`.
+
+Do not revisit without new data:
+- К идее, что `completed chat_task` сам по себе означает нормальный пользовательский результат.
+- К созданию нового recurring job по повторной формулировке того же monitoring request от того же пользователя без проверки существующего активного job.
+- К возврату short complaint followups (`где файл`, `не работает`, `непонятно`) в generic broad-history LLM path, если backend уже знает последний содержательный контекст.
+- К идее, что локальный Hermes CLI provider можно считать включённым на prod просто по факту его установки — нужно отдельно проверять PATH/runtime env user-service.
+
+[2026-06-20] — Layered task-bundle routing for mixed user requests: classification/selection live-verified through prod-user path
+
+Context:
+- Пользователь зафиксировал архитектурную проблему: живые запросы почти всегда комбинированные (`собери + проанализируй + выдай файл`), и попытка свести их к одному intent ломает routing.
+- Дополнительно пользователь попросил включить в модель отдельные смысловые компоненты `classification` и `selection / подбор`, но не как новые конкурирующие верхнеуровневые ветки, а как части analysis-stage внутри общего pipeline.
+- Цель была не теоретическая: нужно было довести это до реального runtime-контура и прогнать сценарии именно в роли пользователя на prod `178.104.207.89`.
+
+Decision:
+- Для mixed user requests верхнеуровневым каркасом считать не один intent, а `task bundle` с жёсткими слоями:
+  - `root_class`
+  - `stages`
+  - `source_kind`
+  - `deliverable_kind`
+  - `cadence`
+  - `analysis_modes`
+- `classification` и `selection` трактовать как `analysis_modes` внутри `data_pipeline`, а не как отдельные route-ветки, конкурирующие с collection/export/monitoring.
+- Monitoring subject при явной формулировке в текущем сообщении (`по теме LegalAI`) брать прямо из current message, а не из fallback `отслеживай тему из текущего чата`.
+
+Implemented:
+- В `services/backend/policies/chat_routing_policy.json` расширены rules для mixed collection-analysis phrasing и subject extraction на связки вида `по теме ... , классифицируй / подбери / сравни ...`.
+- В `services/backend/app.py` добавлены:
+  - `infer_collection_analysis_modes(...)`
+  - `build_collection_task_layers(...)`
+  - передача `analysis_modes` + `task_layers` в collection contract/meta
+  - расширенный `looks_like_collection_request(text, attachments)` для mixed analysis/file запросов по web и attachment path
+  - использование explicit current-message subject в recurring monitoring path.
+- В `services/backend/test_smoke.py` добавлены/обновлены регрессии на:
+  - combined request `collect + classify + select + file`
+  - attachment analysis request `проанализируй файлы + классифицируй + отдай csv`
+  - recurring monitoring with explicit current-message subject.
+- Skills обновлены:
+  - `collection-proposal-routing` — зафиксированы `analysis_modes` и `task_layers`
+  - `monitoring-request-routing` — зафиксирован приоритет explicit subject из current message.
+
+Verified:
+- Локально: `py_compile` — OK.
+- Локально: targeted `unittest` по 4 новым/связанным кейсам — `OK`.
+- На prod `178` backend выкачан и перезапущен в canonical runtime env; `/api/health` = `ok`.
+- Live probe через временного prod-user `layer-live-20260620@demo.local` подтвердил:
+  - combined web request `собери + классифицируй + подбери + csv` -> `message_kind=collection_execution_result`, `downstream=chat:web_collection_result`, real CSV attachment, HTTP 200;
+  - contract/meta содержит `root_class=data_pipeline`, `stages=[acquisition, analysis, delivery]`, `analysis_modes=[classification, selection, comparison]`;
+  - follow-up `А где файл?` -> `message_kind=file_response`, attachment реально возвращён;
+  - first recurring request `Поставь еженедельный мониторинг ... по теме LegalAI` -> `job_created` с subject `LegalAI`;
+  - повтор того же monitoring request в другом thread -> `job_reused`, дубликат не создан.
+
+Implication:
+- Для текущего живого контура устойчивее не пытаться заранее придумать все task classes, а удерживать ограниченный набор execution-каркасов и наращивать только analysis modifiers внутри них.
+- `classification` и `selection` уже можно считать не «идеей на будущее», а live-проверенным analysis layer внутри `data_pipeline`.
+
+Do not revisit without new data:
+- К модели, где `classification` и `selection` оформляются как отдельные competing top-level routes рядом с collection/export/monitoring.
+- К fallback subject `отслеживай тему из текущего чата`, если текущий monitoring request уже содержит явную тему.
+
+[2026-06-20] — Explicit external dashboard requests should bypass local clarification and go straight to web dashboard path
+
+Context:
+- После cleanup осталось одно повторяемое UX-замечание: запрос вида `Собери из интернета данные по рынку LegalAI и дай дашборд` в local-first policy всё ещё уходил в `clarification_request`, хотя пользователь уже явно выбрал внешний источник.
+- Это был уже не runtime-crash, а routing/UX хвост: backend сначала строил local dashboard clarification, а внешний web dashboard path не включался автоматически при явном `из интернета`.
+- Отдельно учтено ограничение prod-контура: live UI login через текущие известные demo-учётки не подтвердился, поэтому финальная живая верификация делалась через server-side smoke в canonical runtime env и health-check боевого backend-процесса.
+
+Decision:
+- Для dashboard-запросов с явным external-source intent (`из интернета`, `по открытым источникам`, `внешний обзор`, URL и близкие маркеры) backend не должен сперва требовать локальное уточнение.
+- Если общий dashboard route уже выбран, глобальный источник доступен, а local-first ветка вернула только `clarification_request`, при явном external intent нужно сразу переключаться в `build_global_dashboard_reply(...)`.
+- `local_only` policy при этом не трогать: она должна по-прежнему честно блокировать global fallback и отдавать clarification.
+
+Implemented:
+- В `services/backend/app.py` добавлен helper `dashboard_request_prefers_global_sources(text)`.
+- В `maybe_build_dashboard_reply(...)` добавлен guard: если local-first local reply = `clarification_request`, но текст явно просит внешний сбор, backend сразу идёт в global `web_research` dashboard path.
+- В `services/backend/test_smoke.py` добавлена регрессия на запрос без explicit `source_mode`, но с формулировкой `Собери из интернета данные ... и дай дашборд`, который теперь обязан возвращать `dashboard_result`, а не clarification.
+
+Verified:
+- Локально: `python3 -m py_compile services/backend/app.py services/backend/test_smoke.py` — OK.
+- Локально: `python3 -m pytest services/backend/test_smoke.py -q -k 'global_only_dashboard or internet_dashboard or local_only_dashboard or dashboard_result_for_dashboard_output or collection_route_preempts_dashboard_and_recurring'` — `2 passed`.
+- На prod `178`: обновлённые `app.py` и `test_smoke.py` выложены в `/home/hermes/workspace/hermes-web-mvp-react-8793/services/backend/`.
+- На prod `178`: targeted `unittest` в canonical env через `bash scripts/runtime_env.sh ...` по связанным кейсам (`is_dashboard_request`, `dashboard output`, `collection route priority`) — OK.
+- Боевой backend `8791` после выкладки живой: `/api/health` вернул `status=ok`, `mode=hermes-api`, `users_count=24`, `threads_count=154`, `jobs_count=18`.
+
+Open questions:
+- Отдельно стоит позже добить product-level path для live UI login/smoke под технической учёткой, чтобы финальные acceptance-проходы меньше зависели от ручного поиска валидного пользователя на prod.
+
+Do not revisit without new data:
+- К поведению, где явный запрос `из интернета ... дай дашборд` сначала уходит в локальное уточнение только потому, что policy по умолчанию `local_first`.
+- К попытке лечить этот кейс через ещё один phrase-level special route вне общего dashboard-flow: фикс должен жить внутри существующего policy-switch в `maybe_build_dashboard_reply(...)`.
+
+[2026-06-20] — Live cleanup pass: market-subject routing fixed and Telegram export now returns a real file in UI
+
+Context:
+- После live user-smoke стало видно, что один и тот же запрос `Собери из интернета данные по рынку LegalAI и дай дашборд` в старых thread'ах ещё мог уходить в `clarification_request`, хотя более поздние прогоны уже проходили.
+- Параллельно вскрылся отдельный продуктовый хвост по Telegram-сценарию: backend честно запускал TG API и отдавал статус, но не прикладывал реальный файл выгрузки обратно в chat/UI.
+- Пользовательский приоритет был не в новых архитектурных развилках, а в добивке живых кейсов до рабочего состояния в prod-контуре `178`.
+
+Agreed:
+- Формулировки вида `по рынку X` должны считаться валидным subject extraction path для collection/dashboard запросов, а не приводить к `missing_fields`.
+- Telegram collection path должен завершаться не только текстовым подтверждением, но и реальным attachment-файлом, если запрос просит `csv/xlsx/json`.
+- Для TG path сохраняется backend-level singleflight: новый export не должен стартовать, пока не завершён предыдущий вызов к однопоточному TG API.
+
+Implemented:
+- В `services/backend/policies/chat_routing_policy.json` расширены `subject_patterns`:
+  - добавлен path `по рынку ...`;
+  - добавлены stop-markers для `дай дашборд` / `построй дашборд`, чтобы subject не захватывал хвост action-фразы.
+- В `services/backend/test_smoke.py` добавлена жёсткая регрессия: запрос `Собери из интернета данные по рынку LegalAI и дай дашборд.` должен давать `subject=LegalAI`, `output_format=dashboard`, `source_kind=web`, без `missing_fields`.
+- В `services/backend/app.py` добавлена нормализация Telegram rows и generation реального collection attachment из ответа TG API.
+- В `services/backend/test_smoke.py` обновлён Telegram smoke: теперь проверяется не только вызов API и singleflight lock, но и наличие реального CSV attachment.
+- Локальные правки выкачены на prod `178`, backend `8791` перезапущен в canonical env через `../../scripts/runtime_env.sh`.
+
+Verified:
+- Локально: `python3 -m py_compile services/backend/app.py services/backend/test_smoke.py` — OK.
+- Локально: targeted `pytest -k 'telegram_collection or dashboard_output or internet_dashboard'` — `2 passed`.
+- На prod `178`: targeted `unittest` по dashboard subject extraction и Telegram collection attachment — OK.
+- На prod `178`: backend `8791` после рестарта живой, `/api/health` вернул `status=ok`, `mode=hermes-api`, `threads_count=160`, `users_count=25`.
+- Live user-path через UI подтверждён:
+  - новый chat с запросом `Собери из интернета данные по рынку LegalAI и дай дашборд.` завершился `dashboard_result`, без clarification;
+  - новый chat с запросом `Собери данные из Telegram-каналов @b1_news, @Axenix_Ru ...` вернул assistant message с реальным UI attachment `collection_ит-консалтинг_*.csv`.
+- Direct prod probe подтвердил analysis-layer path:
+  - combined request `собери + классифицируй + подбери + csv` завершился `collection_execution_result` с реальным CSV attachment;
+  - follow-up `Проанализируй предыдущий файл...` отработал как нормальный ответ по данным собранного файла.
+
+Open questions:
+- Отдельно стоит позже ужесточить message/meta contract для обычных аналитических follow-up ответов: сейчас часть из них приходит без специального `message_kind`, хотя по content/path работают корректно.
+- Полноценный live upload-case `пользователь загружает свой файл через UI -> агент анализирует файл` всё ещё лучше перепроверить отдельным прогоном, когда понадобится именно attachment-from-user contour.
+
+Update 2026-06-20 13:53 UTC:
+- Первый хвост закрыт: generic LLM follow-up ответы теперь получают `message_kind=chat_response` через `enrich_assistant_meta(...)`, а не остаются без типа.
+- Проверка на prod `178` подтверждена live probe в thread `184`: follow-up `Проанализируй предыдущий файл...` завершился `chat_response`, с заполненным `token_accounting` и без зависания в `processing_status`.
+- Второй хвост тоже закрыт на runtime-уровне: attachment-from-user contour проверен direct prod probe — upload запроса `Собери из этих файлов csv...` завершился `collection_execution_result` с реальным CSV attachment `collection_note-txt_20260620_135124.csv`.
+
+Do not revisit without new data:
+- К модели, где TG export считается «закрытым», если в чате есть только текст `Сообщений получено: N`, но нет реального файла.
+- К subject extraction, где `по рынку X и дай дашборд` снова разваливается на `subject=X и дай дашборд`.

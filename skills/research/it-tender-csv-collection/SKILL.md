@@ -71,6 +71,25 @@ Current grounded status for `B2B-Center`:
 
 Other sources such as Bidzaar, Roseltorg, and Fabrikant should still be added only after separate live verification. Do not claim they are included just because they were discussed earlier.
 
+## Intake Normalization For Business-Language Requests
+
+Before collecting anything, normalize the user's wording into a strict collection contract.
+
+For this class of request, treat the following as sufficient signals rather than asking unnecessary follow-ups:
+- `excel`, `эксел`, or `excel (csv)` -> normalize to working output format `csv` unless the user explicitly requires native `.xlsx`.
+- multi-line blocks after phrases like `Нужна информация:` -> treat each non-empty line as an output field/column request.
+- phrasing like `по закупкам в части ...`, `по закупкам в сфере ...`, or `по закупкам по ...` -> treat the trailing phrase as the subject/domain filter.
+- an explicit marketplace list (`bidzaar`, `roseltorg`, `fabrikant`, `b2b-center`, `etp.gpb`, `zakupki.mos`, `zakupki.gov`) -> treat source scope as already specified; do not ask `какие источники?` again.
+
+A prompt of this shape should usually be treated as a complete collection contract, not as an under-specified request:
+- source list is present;
+- period is present;
+- domain filter is present;
+- output format is present in business language;
+- output columns are given as a list.
+
+Ask follow-ups only when one of those elements is actually missing, not when it is expressed in natural business wording.
+
 ## Practical Collection Workflow
 
 1. Fix the time window.
@@ -184,6 +203,12 @@ Default to `не указано` unless quantity is clearly shown.
 
 4. Public search results may surface adjacent categories such as certificates, licenses, or security-related services.
 Treat them as included only if they still match the user's practical IT-services intent.
+
+5. Business phrasing like `с 01.06.2026` should be treated as the start of a period, not as a request for one exact publication day.
+If the user gives only `since` wording, collect for the range from that date through the current run date unless they explicitly narrow the end date.
+
+6. Source reachability may differ by contour.
+If `zakupki.gov.ru` is unreachable or times out in the live runtime but another configured source (for example `B2B-Center`) still returns rows, the run should remain successful: deliver the main CSV plus a separate status CSV that explains which source failed and which one produced rows.
 
 ## Suggested User-Facing Framing
 

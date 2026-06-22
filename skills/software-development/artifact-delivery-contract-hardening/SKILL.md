@@ -91,5 +91,39 @@ Do not close the task until you have all of the following:
 ## Hermes Web / local-first note
 In local-first chat systems, prefer hardening the existing backend message/export flow before adding new services or separate export daemons. Reuse the current message metadata contract and extend the current routing logic rather than introducing a second artifact pipeline.
 
+### Strong preference: reuse the standard message-attachment route
+If the backend generates a new artifact during task execution, do **not** invent a bespoke download surface unless there is a hard product requirement.
+
+Preferred pattern:
+1. write the artifact under the existing allowed data/artifact directory,
+2. place it in `attachments` metadata on the assistant message,
+3. ensure serialization injects a standard `download_url` like `/api/messages/<message_id>/attachments/<index>`,
+4. live-verify the same download path the UI already knows how to render.
+
+Why this matters:
+- it avoids a second delivery contract,
+- it keeps auth/token handling inside the existing attachment flow,
+- it turns generated artifacts into normal chat outputs instead of a special-case export subsystem.
+
+### Collection-task rule
+For collection-style requests (`collect/scrape/gather data from sources and give it in csv/json/xlsx`), the acceptance contract is two-stage:
+- incomplete request -> honest `clarification_request`,
+- complete request -> real execution result with an attachment.
+
+Do not accept a design where a complete structured collection request still stops at a contract/plan when the source type is already executable in the current stack.
+
+Add guards for both states:
+- if required fields like source list / subject / output format / columns are missing, return clarification,
+- if they are present and the source type is supported, require a generated artifact and downloadable attachment.
+
+## Pitfalls
+- Creating a new artifact file but forgetting to surface it through the normal message attachment serializer.
+  - Symptom: file exists on disk, but UI shows no downloadable attachment.
+- Returning `collection_contract` for a fully specified executable web request.
+  - If the runtime can already fetch the source type, this is still a delivery failure, not a successful implementation.
+- Verifying only the assistant text and not the actual attachment download route.
+  - For generated artifacts, always test the real GET to the attachment URL.
+
 ## Support files
 - `references/hermes-web-false-file-claims.md` — concrete evidence and acceptance pattern from a live Hermes Web case where the model claimed a file without attachments.
+- `references/hermes-web-collection-artifact-delivery.md` — concrete backend/runtime pattern for collection requests that must end in a real attachment via the standard message-attachment flow.

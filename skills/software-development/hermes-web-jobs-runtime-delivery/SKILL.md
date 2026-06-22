@@ -45,6 +45,11 @@ For a reported missing recurring task:
 - check whether a real job row exists for that user;
 - check chat-task/task-run records separately from jobs.
 
+For a reported false-positive recurring task:
+- inspect the exact user message that triggered chat-task completion;
+- distinguish a real scheduling intent ("поставь", "на регулярной основе", "ежедневно", "еженедельно") from an ordinary research/search request ("подбери", "найди", "собери перечень");
+- verify whether the backend classified the request from the current user message or from broad recent context that may include assistant text.
+
 Important: chat success text is not evidence of persistence.
 
 ## 2. Verify job existence and access separately
@@ -94,6 +99,8 @@ After fixes:
 - Stale `activeJobId` in saved UI state can recreate a blank screen even after backend fixes.
 - Fixing `toLocaleString()` alone is not enough if defaults/fallbacks still create jobs in UTC.
 - Historical UTC jobs can remain in the UI after the fix; classify them as legacy data unless new jobs reproduce the drift.
+- False-positive recurring creation can come from classifying against `recent_context` that includes assistant replies. For chat-to-job creation, the create/don't-create decision must be driven by the current user message's explicit scheduling intent; prior context is safe only for subject extraction after intent is already established.
+- A useful regression pair is: (1) explicit scheduling request still creates a job; (2) ordinary research/search phrasing about monitoring sources does not.
 
 # Definition of done
 
@@ -108,6 +115,7 @@ Only call it done when all are true:
 # References
 
 - `references/chat-recurring-job-gap.md` — concise reproduction pattern for the failure mode where chat claimed a recurring task was scheduled but no persisted job existed, plus the paired visibility/UI pitfalls discovered during live verification.
+- `references/chat-recurring-job-false-positive.md` — prod pattern where ordinary research requests were wrongly converted into recurring monitoring because classification used recent context instead of explicit scheduling intent in the current user message.
 
 # What to record in decision-log
 

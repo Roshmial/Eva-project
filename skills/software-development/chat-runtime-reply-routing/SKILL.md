@@ -24,6 +24,16 @@ Use this skill when you see any of the following:
 2. The backend already has enough local state to satisfy the request: previous assistant message, export endpoint, generated file path, existing attachment metadata.
 3. The system has a model fallback chain and long per-attempt timeouts are causing bad UX.
 4. The runtime supports `MEDIA:` or attachment metadata and must not confuse those with export requests.
+5. The user sends a short complaint/follow-up like `где файл`, `не работает`, `непонятно`, `повтори ещё раз` after a substantive assistant reply.
+
+For these short complaint follow-ups, do not throw the whole thread back into broad LLM reasoning. Prefer a focused follow-up context built from:
+- the latest substantive user request;
+- the latest substantive assistant answer;
+- the short complaint itself.
+
+Important runtime guard: an *empty/default* `request_policy` object must **not** disable this focused-follow-up path. In Hermes-style runtimes the frontend/backend often sends a policy envelope like `source_mode=''`, `model_preference='auto'`, empty `explicit_source_ids`, and empty `connector_targets`. Treat that as **no effective override**. Only a policy with real source/model constraints should block the focused complaint-recovery path.
+
+This keeps the runtime from losing the user's real complaint inside a long chat history and is especially important for file delivery and post-failure recovery.
 
 # Recommended implementation pattern
 
@@ -105,13 +115,34 @@ After focused tests pass, run the full backend smoke suite.
 - Do not apply the maximum timeout to every step in a model fallback chain.
 - Do not stop after patching code; verify both the targeted regression and the full smoke suite.
 
-# Verification checklist
+## Verification checklist
 
 - User reply requesting a file produces a completed assistant message, not a stuck pending/error state.
 - The resulting assistant message contains exactly one export attachment with correct metadata.
 - Attachment download/open path works through the same mechanism as other assistant-generated files.
 - Model-attempt metadata shows the timeout used per attempt.
+- Assistant message metadata carries token accounting for every reply path: exact usage when the provider returned it, and estimated response tokens when exact usage is unavailable.
 - Backend smoke tests pass after the change.
+
+## Token accounting rule
+
+Для Hermes-style chat runtime полезно писать token accounting не только для чистого LLM-answer path, но и для deterministic backend replies тоже.
+
+Минимум, который стоит сохранять в assistant meta:
+- `token_accounting.response_text_tokens_estimated`
+- `token_accounting.estimator`
+- `token_accounting.llm_usage_exact`
+
+Если upstream/provider реально вернул usage, дополнительно сохранять:
+- `token_accounting.llm_prompt_tokens`
+- `token_accounting.llm_completion_tokens`
+- `token_accounting.llm_total_tokens`
+
+Практический смысл:
+- exact usage нужен для маршрутов, где ответ действительно строился через model/provider;
+- estimated usage нужен как fallback для deterministic routes, чтобы в логах и postmortem не было пустых дыр по расходу и длине ответа.
+
+Это особенно важно при mixed routing, где часть ответов идёт через LLM, а часть — через backend handlers (`file_response`, `job_created/job_reused`, `clarification_request`, `dashboard_result`, `collection_execution_result`).
 
 # Support files
 
