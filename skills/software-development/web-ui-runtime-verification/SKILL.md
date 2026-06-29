@@ -6,10 +6,17 @@ description: Проверка и доведение local-first web UI по жи
 # Когда использовать
 
 См. также:
-- `references/hermes-web-acceptance-pitfalls.md` — pitfalls для случаев, когда runtime уже зелёный, а acceptance остаётся хрупким из-за onboarding modal, устаревших smoke-ожиданий, неверных demo-учёток или слишком жёстких мгновенных assertions.
-- `references/live-user-smoke-auth-and-runtime-notes.md` — практические заметки для случаев, когда server-side smoke зелёный, а повторная проверка именно через пользователя расходится из-за live DSN/runtime/auth path.
-- `references/file-delivery-and-runtime-acceptance.md` — как доводить UI/file-delivery сценарии до реально подтверждённого результата: не останавливаться на `task completed`, проверять attachment в message meta и в самом UI, и отличать старые thread'ы до фикса от новых post-fix прогонов.
-- `references/chat-task-tail-closure.md` — как добивать последние acceptance-хвосты: выставлять terminal `message_kind` для generic follow-up ответов, проверять upload-driven artifact flow до реального файла и правильно патчить LLM-вызов в backend smoke-тестах до `POST /messages`.
+- `references/hermes-web-acceptance-pitfalls.md` — acceptance pitfalls.
+- `references/split-live-contour-discipline.md` — не смешивать live UI и backend/DB; проверять реальный UI-host.
+- Для per-user acceptance сначала докажи ownership exact thread/job/screen; одноимённый объект другого пользователя не считается проверкой.
+- `references/live-user-smoke-auth-and-runtime-notes.md` — live auth/runtime notes.
+- `references/file-delivery-and-runtime-acceptance.md` и `references/message-viewer-vs-chat-rendering.md` — file-delivery и viewer-vs-chat rendering.
+- `references/dashboard-runtime-acceptance-and-language-guards.md` — dashboard payload/UI guards.
+- `references/chat-task-tail-closure.md` — closure-проверки и `message_kind`.
+- `references/live-runtime-privacy-and-restart-pitfalls.md` — privacy и restart pitfalls.
+- `references/backend-restart-and-presentation-followup-pitfalls.md` — backend restart через wrapper/env, presentation follow-up после clarification, и защита от slide explosion при re-export.
+- `references/per-user-delivery-vs-foreign-thread-verification.md` — per-user thread/delivery discipline.
+
 - Live contour with frontend proxy to remote backend: before declaring a UI fix done, verify where `/api` really goes (`VITE_API_BASE_URL`, reverse-proxy config, `HERMES_WEB_FRONTEND_BACKEND_BASE`, process env). Patch and restart that real backend contour, not only the local code copy.
 - For admin/settings screens that "save" but visually revert, run a full round-trip on the real backend target: GET current state -> PATCH intended change -> inspect PATCH response -> verify follow-up GET/hydration payload.
 - Session/auth acceptance is a separate check from JS-console cleanliness: a live UI can show `Сессия истекла. Войдите снова.` even when browser console is clean. Verify `/api/auth/login`, `/api/me`, stored token/cookie, and whether the frontend points at the runtime you actually patched.

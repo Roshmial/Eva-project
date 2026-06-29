@@ -37,6 +37,14 @@ Do not diagnose product bugs until you have proved all of the following:
 
 ## Canonical workflow
 
+### Acceptance accounting rule
+
+When the task is to finish a specific product slice (for example, a Sprint UI/backend contract change), separate two verdicts explicitly:
+- product-layer completion: code landed, build/test proof exists, and the intended UI/backend contract is implemented;
+- runtime-layer completion: the live contour also passes end-to-end acceptance.
+
+If live acceptance is blocked by runtime/storage/upstream issues, do not erase real product progress. Report the product slice as code-complete only when build/test/code-level proof is real, then name the runtime blocker separately and continue with contour recovery.
+
 1. Establish the canonical contour.
 - Write down the intended tuple: frontend port, backend port, runtime/sidecar port.
 - Check live listeners and map each listener back to cwd or process command line.
@@ -78,8 +86,14 @@ Do not diagnose product bugs until you have proved all of the following:
 
 6. Finish with a hygiene pass.
 - Remove or stop stale legacy listeners that can steal traffic or create false diagnostics.
+- If a service occasionally restarts into `Address already in use`, treat that as a restart-hygiene defect, not just bad luck. Add a pre-start cleanup/wait step for the service's own listener on its canonical port, then verify with two consecutive controlled restarts and a fresh journal window.
 - Record the restart order and the canonical contour in a runbook and decision log.
 - Note any dangerous duplicate DB files, backup DBs, or legacy data directories that may confuse future runs.
+
+7. Validate health-contract semantics, not just HTTP 200.
+- Distinguish liveness from workload. A field like `running=0` may only mean there are no active tasks right now; it does not prove a scheduler or worker thread is dead.
+- For background workers, expose and verify explicit `started` / `alive` / `state` signals separately from workload counters like `running` or `active_tasks`.
+- When a health field is misleading, fix the contract before escalating it as a runtime outage.
 
 ## Restart order
 
@@ -135,6 +149,27 @@ Countermeasure:
 
 ### Pitfall: auth/session writes conflict under DuckDB concurrency
 A local-first backend can look healthy in unit tests yet still throw intermittent 500s on `login`, `bootstrap`, or session restore when multiple requests mutate `sessions` concurrently. In DuckDB this often surfaces as `TransactionContext Error: Conflict on tuple deletion!` during revoke/cleanup/touch paths.
+
+### Pitfall: live DuckDB file corruption derails acceptance and gets misread as a product regression
+A local-first runtime may fail mid-acceptance because the canonical DuckDB file has become unreadable or partially corrupt. Symptoms can look like random chat-task failure, stuck pending messages, checksum/read errors, or endpoint instability even though the product code for the current sprint is already correct.
+
+Countermeasure:
+- stop the live backend before touching the DB file;
+- make a quarantine backup of the current canonical DuckDB file first;
+- test the source DB in read-only mode and salvage data into a new clean DuckDB file instead of editing the corrupt file in place;
+- initialize the new DB schema first, clear any seed rows, then bulk-copy readable tables into the clean file;
+- reset sequence objects to values above the copied max ids before swap-in, otherwise the repaired runtime may fail later on fresh inserts;
+- only after the repaired DB passes basic auth/bootstrap/thread reads should you resume feature acceptance;
+- keep the corrupt file and the repair artifact side by side until live validation is complete.
+
+### Pitfall: local Hermes Web runs in `hermes-api` mode, but the real blocker is a missing local API server rather than the Web backend itself
+A local acceptance contour can look like a Web-backend regression when the actual problem is simpler: backend `8791` is alive, but `127.0.0.1:8642` is not listening and the backend has no valid `HERMES_WEB_HERMES_API_KEY`. In that state chat tasks fail for contour reasons, not because the current sprint changed rendering or task logic.
+
+Countermeasure:
+- verify the dependency chain explicitly for `hermes-api` mode: backend listener, API server listener on `8642`, API key env seen by the backend process;
+- do not patch around this by weakening the Web backend contract or silently changing the product path;
+- if the current Hermes gateway process cannot be restarted safely because it owns the active operator session, bring up a temporary isolated Hermes API server with a separate `HERMES_HOME`, copied `config.yaml` / `.env` / auth state, and explicit `API_SERVER_ENABLED=true`, `API_SERVER_KEY`, `API_SERVER_PORT=8642`, `API_SERVER_HOST=127.0.0.1`;
+- then restart only the local Web backend with matching `HERMES_WEB_HERMES_API_BASE_URL` and `HERMES_WEB_HERMES_API_KEY`, and re-run a minimal real chat round-trip before returning to feature acceptance.
 
 Countermeasure:
 - treat session maintenance as a serialized critical section, not as harmless background bookkeeping;
@@ -238,9 +273,11 @@ A good outcome should leave behind:
 - optional reference notes under `references/` for contour-specific quirks.
 
 ## References
+- `references/duckdb-backup-first-salvage.md` — backup-first recovery pattern when live acceptance is blocked by DuckDB corruption; includes product-vs-runtime accounting and sequence-reset reminder.
 - `references/restart-safe-hermes-web-contour.md` — restart-safe pattern for Hermes Web + CopilotKit + TG-API: systemd user units, launcher PATH, private env files, sidecar venv bootstrapping, and simulated-restart verification.
 - `references/8793-copilotkit-runtime-hygiene.md` — concrete lessons from the Hermes Web `8793/8791/8794` contour: stale sibling backend, proxy drift, file/message open-link fixes, admin health schema bug, and browser-runtime path discipline.
 - `references/runtime-env-and-acceptance-account.md` — canonical contour parameterization via shared env, alternate-port portability, dedicated acceptance account, and onboarding-modal handling in live browser acceptance.
 - `references/duckdb-session-conflicts-and-registry-reactivation.md` — live failure pattern for threaded DuckDB auth/session writes plus the registry-sync reactivation rule for canonical source classes.
 - `references/runtime-diagnostics-and-frontend-relocation.md` — how to separate endpoint-path latency from whole-host saturation, plus the narrow-step rules for moving frontend to a different server.
 - `references/auth-admin-endpoint-latency-audit.md` — post-health audit pattern for ranking authenticated/admin endpoints, spotting hidden bridge/sync work, and choosing the next pre-migration backend fixes.
+- `references/local-hermes-api-sidecar-for-web-acceptance.md` — isolated `HERMES_HOME` pattern for bringing up a temporary local Hermes API server on `8642` without killing the operator’s active gateway session.

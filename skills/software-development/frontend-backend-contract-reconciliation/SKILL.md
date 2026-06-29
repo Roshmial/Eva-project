@@ -84,6 +84,8 @@ Do not trust assumptions from memory, old notes, or prior UX discussions until t
 - frontend expects `data_policy.processing_policy/source_registry`, backend now exposes `dashboard_policy + data_sources + llm_routing`
 - backend still supports request fields like `model_preference` and `source_mode`, but the chat UI stopped exposing them
 - admin editor still saves two old endpoints, while backend now wants a single normalized policy patch
+- backend writes structured `message_kind=dashboard_result` payloads with `meta.dashboard`, but the chat message component only renders `content`, attachments, or artifact links
+- CSS and visual grammar classes for dashboard sections exist in the frontend bundle, but no React branch actually binds `meta.dashboard` into rendered UI
 
 ## Good repair pattern
 
@@ -98,6 +100,8 @@ This is often safer and faster than rewriting all components immediately.
 - Do not claim success from source code alone; always rebuild and inspect the artifact.
 - Do not confuse bootstrap payloads with admin payloads if the backend serves related data in different shapes.
 - Do not stop after fixing the crash if the user's real complaint was broader UX regression.
+- Do not assume that because dashboard grammar, CSS classes, or backend `dashboard_result` metadata exist, the chat surface actually renders the dashboard. Verify the live message renderer branch explicitly.
+- For structured chat artifacts, compare three things separately: stored message metadata in DB/API, frontend component conditions, and final runtime rendering. A failure in any one of the three can collapse a visual artifact into plain text.
 
 # Verification checklist
 
@@ -108,7 +112,10 @@ This is often safer and faster than rewriting all components immediately.
 - built bundle contains restored user-facing labels and current endpoint path
 - built bundle no longer contains removed helper name
 - backend tests covering the related capability still pass
+- if the issue is a structured chat artifact, inspect one real stored message and confirm the frontend render path consumes the same metadata keys (`message_kind`, `meta.dashboard`, attachments/artifacts) that the backend actually writes
+- if CSS classes for the artifact already exist, verify they are reachable from a live component branch rather than assuming styling implies rendering support
 
 # Reference files
 
 - `references/hermes-web-contract-drift-case.md` — concrete example of reconciling Hermes Web frontend with renamed admin endpoints and reshaped chat/admin policy payloads.
+- `references/dashboard-result-chat-render-drift.md` — example of backend-produced `dashboard_result` metadata silently collapsing to plain text because the chat message component ignored `meta.dashboard`.

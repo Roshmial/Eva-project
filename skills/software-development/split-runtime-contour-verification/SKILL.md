@@ -57,7 +57,28 @@ Then determine which exact unit, working directory, env override, and backend ta
    - For backend: check health/service-info endpoints directly on the backend host/port.
    - Prefer live runtime evidence over assumptions from source layout.
 
-4.1 Verify the effective runtime environment, not only unit drop-ins.
+4.0 Before drawing conclusions from DB inspection, prove which data contour the live UI is actually using.
+   - Do not assume the named prod PostgreSQL host is the source of truth for the visible UI.
+   - Verify whether the current frontend/runtime is backed by:
+     - local DuckDB under the frontend/backend service working tree;
+     - remote PostgreSQL;
+     - another split runtime entirely.
+   - If a user reports "UI still broken" after a DB cleanup, first confirm that the inspected DB is the one serving that UI.
+   - Treat "fixed in PostgreSQL on host A" and "confirmed in UI on host B" as different claims until the contour link is proven.
+
+4.1 If the change touched backend routing, structured-response logic, policy loaders, or other nontrivial server behavior, verify the deploy payload includes adjacent runtime assets, not just the main entrypoint.
+   - Do not assume copying `app.py` or rebuilding the frontend is enough.
+   - Check for required neighbor files such as:
+     - `policies/*.json`
+     - prompt/config payloads
+     - scripts invoked by the service at runtime
+     - fixture or contract files loaded from relative paths
+   - After rollout, verify both:
+     - the new code markers are present on the target host; and
+     - the referenced support files actually exist at the expected relative paths.
+   - If the service fails after an otherwise clean code sync, inspect logs immediately for missing-file startup errors before assuming a bad restart or environment issue.
+
+4.2 Verify the effective runtime environment, not only unit drop-ins.
    - If the service starts via a shell wrapper (`run_*.sh`, `runtime_env.sh`, `source ~/.hermes/.env`, etc.), inspect those files before trusting `systemctl cat` alone.
    - Read the live process environment from `/proc/$PID/environ` for the running service when a header, origin, target URL, or model route does not match the unit-level expectation.
    - Treat `systemd` Environment lines and shell-sourced `.env` files as separate configuration layers; the shell layer may silently override the apparently correct unit/drop-in values.
@@ -133,3 +154,5 @@ For Misha, contour mistakes are high-cost because they create fake progress. Whe
 - See `references/hermes-web-contour-pitfalls.md` for a compact example of the dev/prod split pattern and the verification cues that caught the wrong-host mistake.
 - See `references/chat-error-leak-triage.md` for the fast triage pattern when HTML/SVG garbage appears in Telegram/chat and may come from agent/provider error propagation rather than the live web contour.
 - See `references/frontend-proxy-backend-base.md` for the Hermes Web MVP React pattern where `HERMES_WEB_FRONTEND_BACKEND_BASE` controls the frontend `/api/*` proxy target and must be set in the frontend systemd unit when frontend and backend are on different hosts.
+- See `references/deploy-payload-adjacent-assets.md` for the rollout pattern where the main backend file is updated correctly but the service still fails because a newly required adjacent policy/config file was not deployed with it.
+- See `references/ui-db-contour-split.md` for the specific case where a live UI looked like "prod on PostgreSQL" from the outside but was actually served from a separate DuckDB-backed runtime contour.

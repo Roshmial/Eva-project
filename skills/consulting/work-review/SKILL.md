@@ -50,6 +50,16 @@ Use this skill for:
    - trade-offs,
    - recommended next step.
 
+## Delivery rules for Misha in audit/review mode
+- If the request is an audit, review, or maturity assessment, deliver the full assessment package in one response by default.
+- Do not end with an unsolicited "if you want, I can also ..." expansion when the missing item is already an obvious part of the audit package.
+- If the user explicitly points to a concern area (for example files, UX, delivery, or operations), include it as its own section in the same review instead of leaving it as an optional follow-up.
+- Separate clearly:
+  - what is confirmed and working;
+  - what is weak or immature;
+  - what must be improved first.
+- Treat this as a done-style consulting deliverable: complete the baseline review, then mention optional deeper follow-up only if it is truly a separate phase rather than an omitted part of the current answer.
+
 ## Evidence-Bound Vendor / Market Research
 Use this pattern when the work question is a vendor landscape, platform selection, regulatory scan, or technology-market research.
 

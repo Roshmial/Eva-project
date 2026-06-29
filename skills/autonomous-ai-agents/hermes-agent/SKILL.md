@@ -631,17 +631,25 @@ here; full developer notes live in `AGENTS.md`, user-facing docs under
 
 ### Delegation (`delegate_task`)
 
-Synchronous subagent spawn — the parent waits for the child's summary
-before continuing its own loop. Isolated context + terminal session.
+Version-sensitive area: verify the current runtime/tool contract before
+planning around wait semantics.
+
+In the current Hermes runtime exposed to this agent, `delegate_task`
+starts child work in the background and returns immediately; the child
+summary re-enters the conversation later as its own message. Do not poll
+or wait synchronously unless the current docs/runtime explicitly say
+otherwise. Isolated context + terminal session still apply.
 
 - **Single:** `delegate_task(goal, context, toolsets)`.
 - **Batch:** `delegate_task(tasks=[{goal, ...}, ...])` runs children in
   parallel, capped by `delegation.max_concurrent_children` (default 3).
 - **Roles:** `leaf` (default; cannot re-delegate) vs `orchestrator`
   (can spawn its own workers, bounded by `delegation.max_spawn_depth`).
-- **Not durable.** If the parent is interrupted, the child is
-  cancelled. For work that must outlive the turn, use `cronjob` or
-  `terminal(background=True, notify_on_complete=True)`.
+- **Not durable.** If the parent session/turn is interrupted or closed,
+  active children can be discarded. For work that must outlive the turn,
+  use `cronjob` or `terminal(background=True, notify_on_complete=True)`.
+- **Practical rule:** dispatch the subagent, continue with other work,
+  and verify any claimed side effects yourself when the summary arrives.
 
 Config: `delegation.*` in `config.yaml`.
 

@@ -93,6 +93,8 @@ Proposal/composition включать только по explicit intent.
 - recurring_job
 - generic_chat
 
+Важная оговорка: этот порядок не должен применяться механически. Если в запросе уже есть явный recurring monitoring intent с cadence/schedule, `recurring_job` должен подниматься выше `collection_contract / clarification`, иначе runtime создаёт ложный product-bug: пользователь просил регулярную задачу, а backend отвечает как будто речь только о one-shot сборе.
+
 ## Contract fields
 
 Минимальный collection-contract должен уметь хранить:
@@ -174,7 +176,15 @@ Proposal/composition включать только по explicit intent.
 3. Generic web blocked by missing URLs
 Пользователь явно просит сбор из интернета, но система возвращает искусственный blocker `нужен список URL`, хотя search-stage уже допустим.
 
-4. Collection competes with dashboard/job routing
+4. Sources found, documents unavailable
+Search/discovery уже нашёл релевантные ссылки, но downloader/fetch-stage не смог вытащить тексты. В таком случае не надо возвращать голый `web_collection_documents_unavailable`, если runtime уже может отдать полезный partial artifact со списком найденных источников.
+
+Практический fallback:
+- serialise найденные URLs/titles в реальный artifact;
+- честно отметить, что документы недоступны, но source list собран;
+- если requested format = `xlsx`, а xlsx runtime недоступен, degrade to `csv`, а не падать вторичным runtime-error.
+
+5. Collection competes with dashboard/job routing
 Один и тот же запрос одновременно начинает трактоваться как сбор, дашборд и recurring job.
 
 ## Verification checklist
@@ -196,6 +206,7 @@ Proposal/composition включать только по explicit intent.
 References:
 - `references/runtime-remediation-chat-tasks-dashboard-telegram-2026-06-20.md`
 - `references/telegram-singleflight-runtime-notes.md`
+- `references/prod-bugfix-routing-notes-2026-06-24.md`
 
 ## Common pitfalls
 

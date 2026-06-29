@@ -18,6 +18,7 @@ agent:
   service_tier: ''
   tool_use_enforcement: auto
   task_completion_guidance: true
+  parallel_tool_call_guidance: true
   environment_probe: true
   environment_hint: ''
   coding_context: auto
@@ -74,6 +75,7 @@ terminal:
   modal_mode: auto
   cwd: /home/hermes/workspace
   timeout: 180
+  daemon_term_grace_seconds: 2.0
   env_passthrough: []
   home_mode: auto
   shell_init_files: []
@@ -107,7 +109,7 @@ browser:
   allow_private_urls: false
   engine: auto
   auto_local_for_private_urls: true
-  cdp_url: http://127.0.0.1:9224
+  cdp_url: ''
   dialog_policy: must_respond
   dialog_timeout_s: 300
   camofox:
@@ -120,7 +122,7 @@ browser:
   cloud_provider: local
   use_gateway: false
 checkpoints:
-  enabled: false
+  enabled: true
   max_snapshots: 20
   max_total_size_mb: 500
   max_file_size_mb: 10
@@ -130,13 +132,14 @@ checkpoints:
   min_interval_hours: 24
 context_file_max_chars: null
 file_read_max_chars: 100000
+mcp_discovery_timeout: 1.5
 tool_output:
   max_bytes: 50000
   max_lines: 2000
   max_line_length: 2000
 tool_loop_guardrails:
   warnings_enabled: true
-  hard_stop_enabled: false
+  hard_stop_enabled: true
   warn_after:
     exact_failure: 2
     same_tool_failure: 3
@@ -154,6 +157,19 @@ compression:
   protect_first_n: 3
   abort_on_summary_failure: false
   codex_gpt55_autoraise: true
+  in_place: false
+kanban:
+  dispatch_in_gateway: true
+  dispatch_interval_seconds: 60
+  failure_limit: 2
+  worker_log_rotate_bytes: 2097152
+  worker_log_backup_count: 1
+  orchestrator_profile: ''
+  default_assignee: ''
+  max_in_progress_per_profile: null
+  auto_decompose: true
+  auto_decompose_per_tick: 3
+  dispatch_stale_timeout_seconds: 14400
 prompt_caching:
   cache_ttl: 5m
 openrouter:
@@ -222,6 +238,7 @@ auxiliary:
     api_key: ''
     timeout: 30
     extra_body: {}
+    language: ''
   tts_audio_tags:
     provider: auto
     model: ''
@@ -279,6 +296,7 @@ display:
   tui_agents_nudge: true
   bell_on_complete: false
   show_reasoning: false
+  reasoning_full: false
   memory_notifications: 'on'
   streaming: false
   timestamps: false
@@ -294,6 +312,7 @@ display:
   skin: default
   language: ru
   tui_status_indicator: kaomoji
+  cli_refresh_interval: 1.0
   user_message_preview:
     first_lines: 2
     last_lines: 2
@@ -508,6 +527,7 @@ command_allowlist:
 - recursive delete
 - stop/restart hermes gateway (kills running agents)
 quick_commands: {}
+platform_hints: {}
 hooks: {}
 hooks_auto_accept: false
 personalities: {}
@@ -525,20 +545,14 @@ security:
   acked_advisories: []
   allow_lazy_installs: true
 cron:
+  provider: ''
+  chronos:
+    portal_url: https://portal.nousresearch.com
+    callback_url: ''
+    expected_audience: ''
+    nas_jwks_url: ''
   wrap_response: false
   max_parallel_jobs: null
-kanban:
-  dispatch_in_gateway: true
-  dispatch_interval_seconds: 60
-  failure_limit: 2
-  worker_log_rotate_bytes: 2097152
-  worker_log_backup_count: 1
-  orchestrator_profile: ''
-  default_assignee: ''
-  max_in_progress_per_profile: null
-  auto_decompose: true
-  auto_decompose_per_tick: 3
-  dispatch_stale_timeout_seconds: 14400
 code_execution:
   mode: project
   timeout: 300
@@ -566,10 +580,13 @@ network:
 gateway:
   message_timestamps:
     enabled: false
+  max_inbound_media_bytes: 134217728
   strict: false
   media_delivery_allow_dirs: []
   trust_recent_files: true
   trust_recent_files_seconds: 600
+  api_server:
+    max_concurrent_runs: 10
   platforms:
     telegram:
       streaming: false
@@ -636,13 +653,13 @@ platform_toolsets:
   - browser
   - clarify
   - code_execution
+  - context_engine
   - cronjob
   - delegation
   - file
   - image_gen
   - kanban
   - memory
-  - messaging
   - session_search
   - skills
   - terminal
@@ -660,7 +677,6 @@ platform_toolsets:
   - file
   - image_gen
   - memory
-  - messaging
   - session_search
   - skills
   - terminal
@@ -699,25 +715,3 @@ image_gen:
   provider: openai-codex
   use_gateway: false
   model: gpt-image-2-medium
-
-# ── Fallback Model ────────────────────────────────────────────────────
-# Automatic provider failover when primary is unavailable.
-# Uncomment and configure to enable. Triggers on rate limits (429),
-# overload (529), service errors (503), or connection failures.
-#
-# Supported providers:
-#   openrouter   (OPENROUTER_API_KEY)  — routes to any model
-#   openai-codex (OAuth — hermes auth) — OpenAI Codex
-#   nous         (OAuth — hermes auth) — Nous Portal
-#   zai          (ZAI_API_KEY)         — Z.AI / GLM
-#   kimi-coding  (KIMI_API_KEY)        — Kimi / Moonshot
-#   kimi-coding-cn (KIMI_CN_API_KEY)   — Kimi / Moonshot (China)
-#   minimax      (MINIMAX_API_KEY)     — MiniMax
-#   minimax-cn   (MINIMAX_CN_API_KEY)  — MiniMax (China)
-#   bedrock      (AWS IAM / boto3)     — AWS Bedrock (Converse API)
-#
-# For custom OpenAI-compatible endpoints, add base_url and key_env.
-#
-# fallback_model:
-#   provider: openrouter
-#   model: anthropic/claude-sonnet-4

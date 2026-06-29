@@ -51,8 +51,15 @@ You must verify all three layers:
 - Confirm the account exists and inspect `is_active` / `deleted_at` / role fields.
 - If the user exists, is active, and is not deleted, then the likely causes narrow to credentials or request formatting rather than UI visibility or account state.
 - Use the backend runtime's own venv/interpreter for DB probes if that environment carries `psycopg` and the service DSN; do not rely on system Python.
+- If the user supplied a screenshot of a live `internal_server_error`, treat that screenshot as primary evidence that the symptom is real. Do not overrule it with a generic smoke-user login; pivot immediately to that exact account/runtime path.
 
-3. Inspect frontend session handling.
+4. Inspect the first post-login bootstrap path, not just `/api/auth/login`.
+- A visible login-screen `internal_server_error` can be caused by a successful login followed by failure in the first authenticated read (`/api/bootstrap`, `/api/me`, `/api/threads/:id`, startup chat selection, profile hydration).
+- Check backend logs around the exact timestamp and identify the first authenticated route after login.
+- For chat-first UIs, verify whether the frontend auto-opens the most recent thread; if so, inspect that thread's messages/files payloads before assuming auth failure.
+- When needed, create a temporary server-side session for the affected user and load the UI with that token to prove the real post-login path without needing the user's password.
+
+5. Inspect frontend session handling.
 - Find where token is stored and cleared.
 - Verify whether token is removed only for explicit auth failures (`invalid_token`, `auth_required`) or for any bootstrap error.
 - If token is cleared on generic init/data-loading failures, fix that first.
@@ -92,6 +99,7 @@ For this user, prefer finishing the live runtime verification end-to-end instead
 
 - `references/runtime-auth-json-contract.md` — condensed checklist and lessons from a live Hermes Web auth/reset + HTML-to-JSON debugging pass.
 - `references/live-account-triage-and-bind-checks.md` — compact checklist for split-host runtimes: verify external bind after restart and separate account-state problems from bad credentials.
+- `references/post-login-thread-bootstrap-500.md` — pattern note for cases where login succeeds but the first authenticated thread/bootstrap read crashes and surfaces as login-screen `internal_server_error`.
 
 ## Completion standard
 

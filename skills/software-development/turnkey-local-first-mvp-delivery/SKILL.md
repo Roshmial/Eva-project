@@ -62,6 +62,8 @@ Typical triggers:
    - Verify not only read endpoints but also write paths relevant to the requested feature.
    - For admin/reference work, include history endpoints in the live check set, not just list/detail/create/update.
    - Add at least one regression check for the exact endpoint or flow that failed, so the same hole is covered in smoke tests next time.
+   - If the task is a semantic/product-hardening sprint (statuses, entity boundaries, user-visible contract), do not stop at docs. Wire the baseline into backend serializers/API payloads, frontend rendering/copy, and at least one focused regression test for the new semantics.
+   - When live verification on the current local DB is polluted by legacy demo/seed state, do not guess or fake success. Spin up an isolated temporary runtime on a clean temp DB/data dir, verify the changed contract there, and report the old DB contamination as a separate legacy issue rather than as failure of the new feature itself.
    - If something is still failing, report it as incomplete rather than implying the feature is done.
 
 9. Keep authenticated bootstrap resilient.
@@ -78,6 +80,8 @@ Typical triggers:
    - When a browser/runtime workaround becomes necessary for acceptance (for example, env-wrapping fontconfig/fonts or similar local dependencies), turn it into a canonical project script instead of leaving the recipe buried in chat history.
    - If you created temporary probes under `tmp/` to diagnose the issue, promote the one proven end-to-end smoke into a permanent regression script under the project and document the official launch path.
    - After a bug fix, verify the repaired flow twice when relevant: once at direct API level, and once through the real browser/UI path.
+   - When prod is split across hosts/ports, explicitly verify the real frontend contour and the real backend contour separately before calling the system fixed. Do not report backend-only success as full prod acceptance.
+   - If the user provides live credentials for acceptance and login fails with `401 invalid_credentials`, first verify that the exact account exists in the live user store and that you are testing the correct email before attributing the failure to the feature under repair.
 
 11. Logging and version-awareness must be considered before closure.
    - Update decision-log for architectural changes.
@@ -103,6 +107,9 @@ Typical triggers:
    - For complete data-collection requests, do not stop at `collection_contract` if the user asked to collect/configure/export. The backend must continue into an executable downstream or an explicit execution-plan artifact. In the current local-first contour this means: Telegram requests should create a task-specific channel list and call the existing `TG-API /export`; tender requests should create a task-specific source-list artifact and return honest active-vs-placeholder source status instead of implying full collection already exists.
   - Keep top-level routing mutually exclusive for data-driven requests. If a turn is recognized as collection/execution work, it must not also wander into dashboard, recurring-job, or generic-chat execution in the same pass. Preferred priority is: `collection_execution` > `collection_contract` > `message_export` > `dashboard` > `recurring_job` > `generic_chat`.
   - Do not require explicit URLs for every open-web collection request at contract stage. If the user clearly asks to gather from the internet / open sources / websites but does not provide URLs, treat that as a generic `web` collection request, materialize a task-specific search/source manifest, and continue into a search→fetch→normalize→artifact pipeline instead of bouncing back with a fake "need URL list" blocker.
+  - When web source discovery succeeds but document extraction fails for all candidates, do not stop at a technical partial result like `url/title/status`. Return a useful fallback artifact: a `source_shortlist` package with at least domain, source URL, search query, source rank / selection order, availability level, and error reason. Then enrich that package with weak-content previews already available inside the same local-first contour — search-result snippets, page `meta description`, or `og:description` — before considering any new infrastructure. The user should be able to continue manual review from the file without redoing source discovery from scratch.
+  - If some web sources yield usable document rows but others fail fetch/extraction, do not collapse back to a full-success artifact that silently drops the failed half. Prefer a single hybrid artifact containing both `document_row` entries and `source_shortlist` entries, with explicit row typing and partial-result metadata.
+  - For web-collection verification, distinguish product behavior from old HTTP immediate-dispatch test races. If an endpoint-created chat task stays `running` while a direct deterministic task path proves the routing/output is correct, treat that as smoke-harness noise until proven otherwise; verify the user-visible artifact and message metadata before calling it a product regression.
   - For proposal-like collection requests (commercial proposal draft, cost estimate, resource estimate, prior-submission comparison), the collection contour should not stop at rows/files alone. Plan for a second-stage composition layer: normalize requirements/evidence, find direct or partial analogs from prior materials, and clearly separate confirmed facts, analog-based estimates, and hypotheses.
   - Guard proposal composition behind explicit intent. Do NOT trigger the proposal/cost/resource composition layer just because `КП`, `проект КП`, or similar wording appears inside the topic, file name, or dataset subject. Require an explicit action + proposal/estimate phrase (for example: `подготовь КП`, `сформируй проект КП`, `оцени стоимость`, `оцени ресурсы`). Regular collection requests like `собери в csv по теме проект КП ...` must stay on the normal dataset/file path.
   - When explicit proposal composition is triggered, prefer a composition artifact format (for example `md`) ahead of generic file-export heuristics. Do not let broad `в файл` / `документ` / `файл` export detection silently turn a proposal-composition request into an unrelated generic export format.
@@ -133,10 +140,18 @@ Typical triggers:
    - what is confirmed working,
    - what is partially implemented,
    - what remains to verify.
+   - what is consciously out of scope because it is an optional extension rather than unfinished work.
+
+12. For Misha, treat the done boundary as part of the deliverable.
+   - Do not finish a "под ключ" task and then immediately continue with automatic "improvements" unless the user explicitly asked for the next layer.
+   - Before closing, decide yourself which operational tails are mandatory for a credible done state: minimum observability, verification, regression coverage, runtime/docs/decision-log sync when relevant.
+   - Include those mandatory tails inside the same delivery pass instead of surfacing them one by one as post-hoc enhancements.
+   - Once the minimal credible contour is closed, stop at that boundary and report optional hardening/optimization only as explicit follow-on options.
 
 # Pitfalls
 
 - Declaring success after schema patches without live endpoint checks.
+- Finishing a supposedly "под ключ" task and then immediately reframing obvious closure work as a new round of improvements; if the extra layer is required for a credible done state, include it before closure.
 - Leaving reference data as frontend constants while only partially mirroring them in backend.
 - Forgetting that DuckDB is stricter than SQLite on GROUP BY and aggregate queries.
 - Calling a state "clean bootstrap" while old demo rows still exist in operational tables.
@@ -152,6 +167,7 @@ Typical triggers:
 # Notes
 
 Session-specific notes and examples can be stored under `references/` when a particular delivery produces reusable API/data-shape lessons.
+- See `references/split-prod-contour-live-verification.md` for split-host prod acceptance: verify real frontend and backend contours separately, and validate exact live account identity before treating `401 invalid_credentials` as a product bug.
 - See `references/admin-reference-users-audit-versioning.md` for concrete notes on delivering admin CRUD with visible audit/version UI, Russian error mapping, and DuckDB migration/query pitfalls.
 - See `references/local-browser-runtime-and-ui-regression-smoke.md` for a compact pattern on stabilizing localhost browser verification, separating runtime issues from product issues, and promoting temporary Playwright probes into canonical regression scripts.
 - See `references/multi-user-hardening-version-contract.md` for a compact acceptance and implementation pattern for optimistic locking, shared helper-entity uniqueness, and migration-safe local-first schema tightening.
@@ -162,4 +178,7 @@ Session-specific notes and examples can be stored under `references/` when a par
 - See `references/universal-collection-and-composition-contour.md` for the universal source→processing→artifact contour, mutually exclusive route selection, generic web-search manifests without mandatory explicit URLs, and analog-backed proposal/cost/resource composition.
 - See `references/temporary-external-auth-flow.md` for a compact pattern on exposing a one-time external authorization page for downstream API access, including explicit user-facing labeling, conditional 2FA step handling, single-use links, and post-success UI state.
 - See `references/collection-request-execution-downstreams.md` for the pattern where collection requests must continue past contract parsing into a real downstream: Telegram task-specific channel lists + `TG-API /export`, and tender source-list artifacts with honest active/placeholder coverage.
+- See `references/collection-request-execution-downstreams.md` for the pattern where collection requests must continue past contract parsing into a real downstream: Telegram task-specific channel lists + `TG-API /export`, and tender source-list artifacts with honest active/placeholder coverage.
+- See `references/web-collection-fallback-shortlist-and-previews.md` for the layered fallback pattern when open-web source discovery succeeds but fetch/extraction fails: structured source shortlist first, then weak-content previews from search snippets and page metadata.
 - See `references/proposal-composition-trigger-guard.md` for the guard pattern that keeps proposal/cost/resource composition behind explicit intent, prevents false triggers from bare `КП` topic mentions, and preserves the canonical runtime-env restart path for prod verification.
+- See `references/semantic-baseline-sprint-verification.md` for the pattern where a sprint/phase must be closed as an implemented semantic baseline: wire docs + backend + frontend + focused regression together, and use a clean temporary runtime when the existing local DB is polluted by legacy seed/demo state.

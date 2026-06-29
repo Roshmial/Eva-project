@@ -37,13 +37,28 @@ A passing build is necessary but not sufficient. Treat runtime prop/handler drif
    - Prefer a local dev/preview frontend wired to the intended backend if the user-facing surface is not yet redeployed.
    - Use Playwright/browser automation to click through the exact affected path.
    - Capture console/page errors; runtime `ReferenceError`/missing handler defects often surface only here.
+   - If Playwright Chromium is blocked only by missing shared libraries and you do not have sudo, use a local user-space bootstrap instead of stopping: `apt download` the needed Ubuntu packages, unpack them with `dpkg-deb -x` under the project, assemble `LD_LIBRARY_PATH`, and launch browser automation through that wrapper. Capture the package list / wrapper pattern in a skill reference, not as an environment complaint.
+   - Once the browser starts, verify that the app actually hydrated into the intended screen. A launched browser that still shows login/empty root is not an acceptance pass.
 
 4. Test the full user path, not just the broken screen.
    - Navigate into the target screen from the real sidebar/top-level nav.
    - Then move back out into another screen.
    - Then return to chat and confirm the app still renders and navigation still works.
 
-5. For file preview, verify end-to-end.
+5. Verify ownership of the live data you are accepting.
+   - Do not treat a successful backend run in any thread as proof that the user can see the result.
+   - Before declaring a dashboard, report, or chat artifact "working in UI", confirm the target thread belongs to the intended live user/account.
+   - If the artifact lives under a different `user_id` or email, treat that as a contour/acceptance miss, not a UI success.
+   - For dashboard acceptance specifically, verify that the intended user's threads actually contain at least one assistant message with the expected `message_kind` such as `dashboard_result` before telling the user to look in the UI.
+   - If necessary, inspect runtime storage or API responses to map `thread_id -> user_id/email` and verify you are testing the same chat surface the user is looking at.
+   - When the user refers to "the last new thread" or another human label, resolve it explicitly by `user/account + title bucket + updated_at`, not by grabbing the last thread overall.
+   - Inspect the actual last 4-6 messages in chronological order before diagnosing the bug; many acceptance misses come from reasoning about the wrong assistant step.
+   - If the complaint is "dashboard is empty / not informative / talks about the agent", classify the problem before changing code: renderer defect, transport defect, semantic payload defect, or follow-up routing defect.
+   - For contested cases, fetch `/api/threads/<id>` as the live user/session and compare the HTTP payload with the DB payload and the frontend renderer contract.
+   - For export/download acceptance, prove that the same credentials work on both surfaces before blaming the export path: compare direct backend login and public-frontend `/api/auth/login` with the same user/password. If backend login succeeds but the public frontend proxy returns `401`, classify the blocker as auth/runtime contour mismatch first, not a document-export defect.
+   - If direct API export works but token injection into the browser yields `Сессия истекла` or the public login form rejects known-good credentials, treat that as session-source or auth-secret divergence between contours. Separate "artifact contract works" from "public UI can authenticate into that contour" in your final verdict.
+
+6. For file preview, verify end-to-end.
    - Create or use a real file belonging to the current acceptance user.
    - Open profile → files.
    - Click the open action.
@@ -96,11 +111,19 @@ Look for polling logic tied to active thread/screen state. Prefer:
 - Treating `npm run react:build` as proof that runtime props are correct.
 - Testing the wrong backend because the frontend host also has old/dev ports nearby.
 - Assuming a named live port is serving your latest code without checking the serving process, cwd, and current built asset names/hashes.
+- Resolving "latest thread" loosely and diagnosing the wrong chat, wrong title bucket, or wrong assistant step.
+- Seeing a green `dashboard_result` and calling the UI path successful without checking whether the sections contain real subject matter rather than fallback/route scaffolding.
+- Misclassifying a short follow-up such as "по этой теме" as a fresh web collection request when it should transform the previous substantive answer into a dashboard.
+- Running ad-hoc backend Python against the repo without the live runtime environment, then diagnosing the wrong database. On Hermes Web prod, direct `app` imports may default to local DuckDB when `HERMES_WEB_BACKEND_DSN` / related runtime env are not exported, even though the live backend serves Postgres. For live acceptance or backfill/reply actions, either go through the live HTTP surface with a valid session or mirror the running backend env before importing `app`.
+- Declaring a dashboard follow-up fixed just because the assistant returned text. For this class of bug, confirm the assistant message metadata shows the intended transform path (for example `downstream=dashboard:previous_answer_transform`) rather than a fresh collection route or a generic fallback success.
 - Opening a task/job modal from admin/users before its metadata is hydrated, then misdiagnosing the resulting blank state as a pure backend defect.
 - Fixing the first broken screen but not checking whether the same change broke navigation back to chat/profile.
 - Verifying preview through markup inspection instead of a real uploaded file.
 - Declaring mobile fixed without an actual narrow viewport run.
 - Leaving overlay/backdrop pointer interception in place after adding helpful onboarding UI.
+- Treating a browser run as successful just because Chromium launched. If the page lands in `401` / expired-session login state or renders an empty root, acceptance is still blocked; switch to a real login flow and only then drive UI-state/navigation.
+- Calling a public UI export path broken when the real defect is contour auth divergence: the same user can log into direct backend `:8791` but not through public frontend `/api/auth/login`. In that case fix or escalate runtime/auth wiring before judging the export button or file delivery path.
+- Proving export only through direct API and then implying public UI acceptance is done. Keep those as separate claims unless the same contour and session source were verified.
 
 # Known durable pattern from this class of incidents
 
@@ -119,3 +142,6 @@ Do not finish with only code changes. A completed task in this class should incl
 
 - See `references/june-2026-jobs-mobile-refresh.md` for a concrete acceptance pattern covering jobs screen runtime-prop drift, mobile nav visibility, profile file preview, and chat auto-refresh verification.
 - See `references/8803-user-job-modal-hydration.md` for the 8803-specific pattern: verify exact live port ownership, confirm built asset rollover, and treat blank `Назначить задачу` modals as a possible jobs-metadata hydration race.
+- See `references/bi-dashboard-followup-routing-and-acceptance.md` for the pattern where the apparent UI/dashboard problem is actually one of four classes: wrong target thread, semantic dashboard fallback, transport mismatch, or follow-up routing failure such as `text -> dashboard` being misrouted into fresh web collection.
+- See `references/local-playwright-user-space-runtime.md` for the user-space Playwright bootstrap pattern: local `apt download` + `dpkg-deb -x` + `LD_LIBRARY_PATH` wrapper when browser acceptance is blocked by missing shared libraries and sudo is not available.
+- See `references/public-vs-direct-auth-split.md` for the Hermes Web pattern where direct backend login succeeds, public frontend proxy login fails, and document-export acceptance must be split into artifact-contract proof vs public-auth contour proof.

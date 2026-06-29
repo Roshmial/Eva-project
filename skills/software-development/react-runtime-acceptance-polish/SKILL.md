@@ -38,8 +38,19 @@ description: "Live-приёмка и финальная полировка local
 - Проверить фактический shape данных: это может быть массив или объект вида `{ items: [...] }`.
 - Helpers для options должны поддерживать оба варианта.
 - Сохранять fallback на текущее пользовательское значение, если оно историческое и уже не входит в текущий справочник.
+- Если локальный код уже исправлен, а live UI всё ещё показывает старые label/type/placeholder, не списывай это сразу на browser cache или неудачную сборку. Сначала проверь, не живёт ли этот dataset в persisted runtime-справочнике (`reference_items`/аналог) и не продолжает ли backend отдавать старую версию через `/api/bootstrap`.
+- Для встроенных system datasets вроде `job_templates` проверяй не только кодовый source-of-truth, но и синхронизацию persisted данных при старте. Однократный seed без последующего refresh — частая причина, почему live форма продолжает рендерить старые поля даже после корректного frontend patch.
+- Если UI подозрительно показывает старый form-contract, делай тройную проверку: (1) что backend live bootstrap реально отдаёт нужные label/type/rows/layout; (2) что frontend после reload читает свежий payload; (3) что финальный DOM формы действительно рендерит нужный control (`textarea` vs `input`) и нужные размеры.
 
-5. Onboarding проверять отдельным тестовым пользователем
+5. Для structured UI-артефактов проверять последний mile renderer, а не только backend contract
+- Если backend уже возвращает `message_kind` вроде `dashboard_result`, `clarification_request` или другой structured payload, этого недостаточно для product-готовности.
+- Нужно отдельно проверить, что экранный renderer реально читает нужный `message.meta.*` ключ, а не показывает только `content` fallback.
+- Сигнал разрыва контракта: в данных есть полноценная структура (`summary_cards`, `sections`, `sources` и т.п.), а пользователь на экране видит только обычный текстовый пузырь.
+- При такой диагностике сначала ищи gap в message/component renderer, а не объясняй проблему ограничениями LLM или пользовательским запросом.
+- Если visual browser-pass временно заблокирован окружением, не останавливайся на `build ok`: дополнительно проверь live-served bundle/asset, что новый renderer действительно попал в отдаваемый production JS, и честно пометь verification как частично ограниченную средой.
+- Для chat/file/recurring UX допустим fallback-путь приёмки: подтвердить affected payload через live HTTP/API, проверить что frontend уже отдаёт новый production asset с нужными renderer markers, а для спорного path временно seeded acceptance-thread создать и затем удалить после проверки, чтобы не оставлять мусор в runtime.
+
+6. Onboarding проверять отдельным тестовым пользователем
 - Отсутствие modal у текущего пользователя не доказывает баг и не доказывает фикс.
 - Для first-run сценария использовать пустого пользователя без целей, ограничений и контекста.
 - После проверки по возможности вернуть runtime в стандартный тестовый аккаунт; если не удаётся, честно отметить, под кем осталась инструментальная сессия.
@@ -80,3 +91,5 @@ description: "Live-приёмка и финальная полировка local
 
 Session-specific примеры и конкретные проверки держать в `references/`.
 Для Hermes Web React 8792 см. `references/hermes-web-react-8792-acceptance.md`.
+Для combined recurring/file UX см. `references/combined-recurring-file-acceptance.md`.
+Для кейсов, где live UI продолжает показывать старый form-contract из persisted runtime-справочника, см. `references/runtime-reference-sync-and-live-form-verification.md`.

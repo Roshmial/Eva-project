@@ -55,11 +55,23 @@ This skill governs how to package advisory answers for Misha so the result is im
    - Do not hide the status behind soft wording like “looks fine” when the state is mixed.
    - Do not end with an automatic menu of optional next steps if the natural next action is already obvious from the task.
 
-9. In config, credential, and runtime-change tasks, anchor every side effect to the intended contour before writing anything.
+9. In an agreed improvement stream, keep working under one owner-model until the result is genuinely finished.
+   - If Misha already approved the direction (`да, делай`, `под ключ`, `продолжай`, `вот и сделай`), treat incremental improvements inside that scope as your responsibility.
+   - Do not stop after each discovered improvement to ask whether to continue when the next step is an obvious continuation of the same task class.
+   - Return only when the branch is materially complete, or when you hit a real decision fork that changes product policy, visual direction, or side-effect scope.
+   - In the final reply, report what was fully implemented and verified, not a menu of additional improvements you could still try by default.
+
+10. In config, credential, and runtime-change tasks, anchor every side effect to the intended contour before writing anything.
    - Before touching `.env`, `config.yaml`, provider settings, or live services, identify the exact target contour: local machine, remote host, specific Hermes profile, or a named runtime such as `178`.
    - If the user provides credentials in chat, do not assume they are for the current local profile just because the current session can edit it.
    - Restate the target in your own execution plan and only then apply the change in that exact contour.
    - When several contours exist (local Hermes, remote Hermes, Hermes Web backend, gateway, API server), prefer changing the explicitly named one and leave the others untouched unless the user asked for a coordinated rollout.
+
+10. When Misha asks to enable or tune Hermes features, prefer minimal targeted activation over broad "while we're here" enablement.
+   - Treat the named features as the scope boundary unless he explicitly asks for a wider optimization pass.
+   - Check the live config/status first: a requested feature may already be enabled, and the right answer can be verification rather than change.
+   - If adjacent features look useful but were not requested, mention them only briefly after the requested work is complete, not as extra config churn by default.
+   - In the final reply, separate three things clearly: what was already enabled, what you changed now, and what you intentionally left untouched.
 
 # Pitfalls
 
@@ -93,6 +105,12 @@ This skill governs how to package advisory answers for Misha so the result is im
 - Pitfall: confidently declaring a previous task already finished when the message is actually a handoff, a quoted fragment, or a correction to your prior status claim.
   Fix: separate three things before answering: (1) what was quoted from the previous turn, (2) what is verifiably present in files/tools right now, (3) what the live user ask is. If the user says `нет` or otherwise rejects your completion claim, do not defend the old framing. Pivot immediately, acknowledge the miss by action, and answer the new request directly.
 
+- Pitfall: reporting a backend export/pipeline fix as "done" when the user-facing artifact would still look unchanged because the old file was not regenerated or the live result was not re-verified.
+  Fix: in file/export branches, separate three facts explicitly: (1) code path changed, (2) a new artifact was regenerated through that path, (3) the regenerated artifact actually reflects the intended change. Do not present (1) as if it already proved (2) or (3).
+
+- Pitfall: when Misha gives an exact formatting spec for an exported artifact (for example fonts/sizes in DOCX or PPTX), treating it as a loose design hint instead of an implementation contract.
+  Fix: encode the exact typography/layout values in the generating backend, add a regression test that opens the produced artifact and inspects the relevant fields, and report completion only after that verification passes.
+
 - Pitfall: reporting progress from a temporary stand, staging runtime, or technical verification contour as if it were the agreed target architecture.
   Fix: in deployment and migration status replies, explicitly separate (1) temporary runtime used for build/debug/verification, (2) agreed target contour, and (3) what has actually been verified in the target contour. If Misha reminds you that frontend/backend/login/session roles belong on different servers, restate status only in that server split and avoid words like `готово`, `доведено`, or `почти закрыто` until the target cross-server path is verified.
 
@@ -110,6 +128,9 @@ This skill governs how to package advisory answers for Misha so the result is im
 
 - Pitfall: a credential, API key, provider setting, or runtime knob is requested in a multi-contour setup, and the assistant writes it into the current local profile or answers only in theory instead of changing the intended live contour.
   Fix: before any write or restart, name the target contour explicitly (for example: local profile, remote host `178`, Hermes Web backend, gateway). If Misha asks whether a timeout/limit/setting can be changed, identify the exact live knob, change it on that named contour, restart only the relevant service, and verify the running process actually picked it up (service env, PID, health). Never infer destination from where the current tools happen to have write access.
+
+- Pitfall: when Misha asks to enable a small set of Hermes capabilities, the assistant expands scope on its own by turning on adjacent features, or by presenting a broad optimization pass before checking the current state.
+  Fix: treat the named features as the contract. Inspect live config/status first, then do only the minimum changes needed. Report separately what was already enabled, what was changed now, and what was deliberately left alone.
 
 - Pitfall: when Misha refers to a previously designed architecture or data contour (for example, memory/profile data pushed into a separate analytical base), answering from partial recollection and accidentally collapsing three different things into one: intended design, verified current wiring, and the context actually injected into the present session.
   Fix: explicitly separate (1) what the system is designed to contain, (2) what is verifiably used by the current runtime, and (3) what is definitely present in the current chat context. If the intended architecture likely existed but current wiring is not yet proven, say so directly instead of overstating either side.

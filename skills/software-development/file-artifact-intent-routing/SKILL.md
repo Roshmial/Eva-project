@@ -101,6 +101,34 @@ Generic file/export markers тоже лучше держать в policy layer, 
 
 Не принимать дизайн, где полный request остаётся на уровне plan/contract.
 
+## Analytical file requests
+
+Отдельно обрабатывай класс запросов, где пользователь уже приложил файл и просит не export, а аналитический dashboard по данным:
+- проанализируй лиды CRM
+- построй дашборд продаж за месяц
+- разложи выручку по менеджерам / каналам / этапам
+
+Для таких запросов файл — это не только deliverable, а ещё и источник данных. Поэтому routing должен идти не в generic file-preview path, а в request-aware dataset analytics path.
+
+Базовая последовательность:
+1. Detect attached dataset as source-of-truth.
+2. Use the user request text to infer analysis intent, а не только format файла.
+3. Distinguish хотя бы:
+   - generic dataset overview;
+   - CRM / funnel analysis;
+   - sales / revenue performance.
+4. Prefer business sections over schema-only sections:
+   - funnel by stage;
+   - amount / revenue profile;
+   - period dynamics;
+   - breakdown by manager / channel / segment;
+   - short conclusions.
+5. Fallback to generic dataset overview only when business roles cannot be inferred.
+
+Local-first правило: не тащить тяжёлые внешние зависимости только ради простого tabular dashboard, если существующий runtime может прочитать CSV/JSON и базовый XLSX встроенными средствами.
+
+См. также `references/dashboard-file-analytics.md`.
+
 ## Verification checklist
 
 - [ ] generic `дай файл` routes to export path
@@ -108,6 +136,21 @@ Generic file/export markers тоже лучше держать в policy layer, 
 - [ ] response with file claim always has attachment/path/url
 - [ ] collection request with complete inputs returns real artifact
 - [ ] live runtime proof confirms download handle works
+- [ ] for structured exports, verification checks payload content, not only HTTP `200` / file presence / byte size
+- [ ] if the request means "export the previous answer", followup phrases like `да, лучше сразу в файл` still resolve to deterministic `message_export`, not to generation of a brand-new file
+
+## Structured export verification
+
+Для `CSV/XLSX/DOCX/PPTX` недостаточно доказательства уровня "endpoint вернул 200" или "файл скачался".
+
+Минимум проверки зависит от формата:
+- `CSV/XLSX`: открыть содержимое и убедиться, что в нём есть ожидаемые колонки и строки, а не пустой/служебный лист;
+- `DOCX/HTML/Markdown`: проверить, что внутри нормализованное user-facing content, а не сырой planning/service blob;
+- `PPTX`: проверить не только число слайдов, но и содержимое slide XML / extracted text, чтобы табличные или структурные данные реально попали в презентацию.
+
+Если live contour split (`public frontend -> remote backend`), финальным доказательством считать именно public export path плюс содержательную проверку артефакта.
+
+См. также `references/structured-export-live-verification.md`.
 
 ## Common pitfalls
 
@@ -116,6 +159,8 @@ Generic file/export markers тоже лучше держать в policy layer, 
 3. Смешивать file intent с обычным explanatory answer.
 4. Проверять только текст сообщения, а не attachments metadata.
 5. Вводить второй export-pipeline вместо reuse существующего message-attachment path.
+6. Для приложенного табличного файла строить только schema preview (`строк/колонок/типы`), игнорируя пользовательский аналитический intent.
+7. Для числовых CRM/sales файлов сразу тянуть новые внешние библиотеки или отдельный сервис, хотя текущий local-first backend может покрыть базовую аналитику встроенным dataset path.
 
 ## Recommended companion skills
 

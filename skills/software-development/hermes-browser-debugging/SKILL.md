@@ -69,6 +69,8 @@ When local Linux mode has false-success navigation:
 - Do not conclude "fixed" from passing unit tests alone.
 - Do not conclude "fixed" from `title` alone when snapshot is empty.
 - Do not treat a successful `browser_navigate` followed by `Connection refused` on snapshot/eval as a frontend regression first; check for a stale configured CDP override before reopening app code.
+- If the page now renders the shell of a feature (for example a dashboard card/frame) but the interior is empty, stop treating it as a browser-runtime problem first. Inspect the live application payload and compare its exact shape with what the React renderer expects.
+- For dashboard-like UIs, verify not only that `message.meta.dashboard` exists, but whether the renderer supports the real grammar form coming from runtime (`section.kind`, `items`, plain-string list items, `{text, meta}` items, and chart sections encoded as `kind='bar_list'` / `kind='pie_list'` with data under `items`). A visible shell with no content often means a contract mismatch, not missing data.
 - Distinguish two CDP-override failure classes:
   - unreachable at session creation time -> preflight can degrade immediately to local Chromium;
   - reachable during `navigate` but dead by the next `snapshot` / `eval` -> add runtime recovery, not just preflight health checks.
@@ -116,3 +118,4 @@ If local browser verification is explicitly required and the Hermes wrapper show
 ## References
 - `references/local-cdp-live-navigation-fix.md` — concrete reproduction, diagnosis, and repair pattern for false-success local navigation.
 - `references/cdp-override-mid-session-recovery.md` — diagnosis and recovery pattern for CDP overrides that survive preflight but die before the next browser command.
+- `references/dashboard-shell-no-data-contract-check.md` — when the browser can show the dashboard container but the content is empty: inspect live payload shape and align renderer expectations to runtime grammar.

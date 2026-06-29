@@ -38,6 +38,7 @@ A smoke script should fail on real user-facing regressions, not because it assum
    - Prefer selectors that reflect user intent, such as section buttons and stable ids, over brittle positional selectors.
    - When a smoke fails on labels/placeholders/button text, inspect the current UI contract before retrying. Typical drift signals are renamed placeholders, renamed action buttons, tabbed profile sections, or create-forms that moved into a modal.
    - If the interface has materially diverged from a legacy smoke contract, prefer a React/UI-specific acceptance script over forcing the new UI to imitate stale selectors.
+   - For chat-first Hermes Web style UIs, verify whether upload controls are intentionally hidden behind a `Файлы` panel/button and whether send is now a glyph-only action such as `↑`. Update the smoke to follow the user path, not to assume an always-visible `<input type="file">` or a button literally named `Отправить`.
 
 5. Re-run full acceptance after each repair.
    - Require the script to go green end-to-end.
@@ -80,3 +81,4 @@ Minimum completion bar:
 
 - See `references/hermes-web-mvp-selector-drift.md` for a concrete example of smoke drift caused by profile/admin tab restructuring in Hermes Web MVP.
 - See `references/hermes-web-mvp-react-smoke-drift-patterns.md` for React-era drift examples: ambiguous nav labels, renamed placeholders/buttons, modalized create flows, and file/open-link acceptance checks.
+- See `references/chat-upload-and-glyph-send-drift.md` for the specific drift pattern where upload moved behind `Файлы`, the message placeholder shortened to `Сообщение`, and the send action became a glyph-only `↑` button.

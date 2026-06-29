@@ -64,6 +64,20 @@ If frontend and backend are split, treat them as separate deploy targets even if
 If you patch locally, do not assume prod changed: first copy the changed files to the owning host, verify a few exact patch markers in the remote file contents, then restart or rebuild only the service that owns that code.
 For Hermes Web style contours, verify deployment per surface: backend prompt/API changes can be validated on the backend host with targeted tests and health checks even when the prod frontend lives on a different host.
 
+## 2a. Public-frontend auth mismatch: verify proxy target before touching users or passwords
+
+When login succeeds on a local backend URL but fails on the public frontend URL, do not assume bad credentials yet.
+First prove whether the public frontend proxies `/api` to the same backend you are testing locally.
+
+Required checks:
+- inspect the public frontend service/unit and its effective backend target (`HERMES_WEB_FRONTEND_BACKEND_BASE`, launcher log line, or equivalent);
+- compare direct login against the backend-owner URL and against the public frontend proxy URL;
+- inspect the backend-owner live DSN/env before changing users or passwords.
+
+If the public frontend proxies to a remote backend-owner, create or reset smoke users on that backend-owner DB, not in a local repo DB or a nearby dev contour. A successful local login is not evidence that the public surface sees the same auth state.
+
+Reference: `references/public-frontend-auth-mismatch.md`.
+
 ## 3. Patch the correct surface only
 
 - Frontend/UI text, selectors, layout, labels, build artifacts, proxy config: patch the frontend-owning host.

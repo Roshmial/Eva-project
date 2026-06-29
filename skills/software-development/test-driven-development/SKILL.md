@@ -309,6 +309,20 @@ terminal("pytest tests/test_feature.py::test_name -v")
 terminal("pytest tests/ -q")
 ```
 
+### When the test runner reports success but the wrapper exits dirty
+
+Sometimes a targeted test run prints a clean `OK`/`PASS`, but the outer shell process still exits non-zero afterward because of runner teardown noise, an extension crash, or another wrapper-level problem. Do **not** immediately treat that as a failed test assertion.
+
+Use this sequence instead:
+
+1. Read the actual test body of the output first — did the named tests report `ok`/`PASS`, or was there a real assertion/error?
+2. If the assertions passed but the process exited dirty afterward, re-run the same narrow test set through a minimal programmatic runner (for example `python - <<'PY' ... unittest.TextTestRunner(...) ... PY`) so you can separate test truth from shell-wrapper noise.
+3. Only after that, report the state in two layers:
+   - test logic result;
+   - process/wrapper noise, if still present.
+
+This keeps you from misclassifying a green targeted regression test as a red product failure.
+
 ### With delegate_task
 
 When dispatching subagents for implementation, enforce TDD in the goal:

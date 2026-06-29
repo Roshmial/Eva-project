@@ -64,6 +64,8 @@ The expected shape is:
    - Use the cronjob tool for recurring execution.
    - The cron prompt must be self-contained because cron runs in a fresh session.
    - Include exact workdir, source paths, expected output, filtering criteria, and delivery behavior.
+   - For `no_agent=true` script jobs, remember that Hermes cron does not accept an arbitrary absolute script path at create time: the script must live under `~/.hermes/scripts/` and the cron config should reference only the filename or relative path there.
+   - If the real source file belongs in a project workdir, keep a project copy for normal editing/testing and a cron copy under `~/.hermes/scripts/`; verify the cron copy, not just the workspace copy.
    - If one part of the message is optional but expensive or failure-prone to gather, split it into a helper job and feed the result into the main brief via `context_from`.
    - For internal self-improvement jobs, state the guardrails explicitly in the prompt: this is for improving the agent, not for advising the user; prefer skill updates over noisy reports; avoid changing user memory unless the signal is truly about the user.
    - If the user expects internal jobs to be more analytical, prefer an explicit reasoning-model override on those jobs instead of assuming the profile's default route is enough.
@@ -94,11 +96,16 @@ Avoid:
 
 ## Pitfalls
 
+- For Misha's user-facing recurring briefs, do not assume that a complaint about a "missing section" is a delivery bug. First inspect the final cron output artifact itself and compare it with collector/payload inputs. If the missing block is already absent in the saved cron markdown, the fault domain is the prompt/output contract, not Telegram delivery.
+- In split contours, do not mix hosts when diagnosing recurring jobs. If the frontend/UI runs on the local server but the backend/API is remote, verify each layer in its real contour and state explicitly which side is confirmed. Do not report "frontend/backend updated" as one combined fact unless both contours were actually checked.
+- When designing Telegram digests for Misha, avoid over-pruning the operator transparency layer. A clean client digest is good, but removing all technical summary can make the monitor operationally opaque. Prefer a compact factual footer when needed: found total messages, non-empty count, skipped empty/media-only count, requires-review count, collector/API status, and whether state/since advanced.
 - Do not outsource summarization to OpenAI or another external API unless explicitly requested. Use the current Hermes agent/model for the analysis step.
 - Do not create a manual OS cron/Task Scheduler instruction when Hermes cron is available.
 - Do not claim the pipeline works until the data source/API returns real data or a clear authorization/configuration blocker is proven.
 - Do not treat “there is a refresh script” or “the app wrote one new row” as proof that the reporting hub is current. Verify that the scheduled refresh job exists and that the destination counts/timestamps have caught up with the source system.
 - If authentication is blocked by a human-required code/2FA, stop at that boundary and report it as a blocker rather than fabricating downstream success.
+- For `no_agent=true` cron scripts, do not assume the scheduler can execute the script from an arbitrary project path. Hermes cron expects scripts under `~/.hermes/scripts/`; if creation fails on an absolute path, fix it by copying/writing the script there and then recreate the job.
+- Do not treat `cronjob action='run'` returning success as the final proof for script jobs; confirm the persisted output under `~/.hermes/cron/output/<job_id>/` and inspect the rendered report text.
 - Do not update incremental state before deciding whether the current batch was successfully processed, unless the user has accepted “collect even if summarize fails” semantics.
 - In user-facing recurring jobs, do not leak raw MEDIA syntax, markdown image placeholders, send_message traces, tool logs, or “skill created” style service chatter into the delivered message.
 - If a Telegram post is supposed to be two messages, encode that explicitly in the workflow: image first, caption second; do not collapse it into one captioned media message unless the user asked for that format.
@@ -122,3 +129,4 @@ Before calling the setup complete, confirm:
 - `references/separate-helper-job-pattern.md` — split an optional/fragile content block into a helper cron job and feed it into the main brief via `context_from`.
 - `references/misha-cron-delivery-and-clean-output.md` — Misha-specific rules for test-window delivery, clean user-facing output, and two-message Telegram image posts.
 - `references/internal-agent-improvement-jobs.md` — how to create and verify cron jobs that improve the agent itself, including local delivery default, skill-resolution checks, and post-trigger verification.
+- `references/hermes-cron-script-job-verification.md` — practical notes for `no_agent=true` script jobs: required `~/.hermes/scripts/` placement, dual-copy workflow, and persisted-output verification.

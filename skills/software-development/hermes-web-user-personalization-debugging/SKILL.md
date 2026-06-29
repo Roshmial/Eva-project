@@ -109,6 +109,59 @@ Preferred order:
 
 If old smoke credentials fail, do not over-interpret that as a memory issue. Fall back to direct DB + runtime metadata inspection.
 
+# Memory hygiene: what should and should not live here
+
+In this contour, `interaction_memory_json` should hold only **stable interaction rules** that improve future conversations, for example:
+- language preference;
+- desired tone or depth;
+- preferred brevity / structure of answers;
+- stable communication constraints;
+- explicit roles the user assigns to the agent.
+
+It should **not** accumulate subject-matter content such as:
+- KPI trees or metric taxonomies;
+- CSV / Excel fragments, field lists, or reporting layouts;
+- channels, media sources, monitoring topics, market/vendor interests;
+- dashboard or export preferences that really belong to one current workflow;
+- long factual summaries from prior requests;
+- ad hoc work context that belongs to the current thread, not to the user's long-term interaction style.
+
+Practical contract for Hermes Web:
+- keep interaction logic and user-assigned agent roles;
+- drop task/domain noise, output templates, and subject-matter preferences;
+- prefer empty memory over weak or broad memories that can hijack routing or interpretation.
+
+Why this matters: overloaded personalization can cause wrong task interpretation. A concrete failure class is URL requests like "что по ссылке" being hijacked by unrelated memory about BI, TCO, metrics, dashboards, or prior file-analysis work. Treat that as a personalization hygiene bug, not just a bad answer.
+
+When auditing a bad response, inspect whether the user memory contains noisy domain content before assuming the model or browser layer is the root cause.
+
+## Stronger writeback rule for user-facing products
+
+If the product is a user-facing Hermes Web contour, do not let auto-writeback store "templates of what to output" as if they were stable user preferences. In particular, be suspicious of memories about:
+- dashboard shapes;
+- export/file formats;
+- recurring monitoring topics;
+- domain or industry interests;
+- exact report columns/fields.
+
+Those often look like preferences in isolation but are really instructions from one specific task. They belong in the current thread or job configuration, not in long-lived per-user personalization.
+
+## Heuristic writeback guardrails
+
+If Hermes Web auto-extracts interaction memory from chat history, broad lexical triggers are dangerous. Be suspicious of heuristics keyed on generic words like:
+- `важно`
+- `лучше`
+- `нужно`
+- `работаю`
+- `роль`
+
+These often capture ordinary task content instead of durable interaction preferences.
+
+Safer auto-writeback patterns:
+- bias toward explicit preference language such as `предпочитаю`, `по умолчанию`, `не люблю`, `зови меня`;
+- reject long fragments, numeric/tabular snippets, CSV-like lines, and list-like business content;
+- prefer an empty result over storing weak or domain-heavy memories.
+
 # Pitfalls
 
 - Do not confuse global agent memory with Hermes Web per-user personalization.
@@ -117,6 +170,8 @@ If old smoke credentials fail, do not over-interpret that as a memory issue. Fal
 - Do not use only prompt-building code; correct code still does not prove the live server is using it.
 - Do not diagnose from dashboard responses alone; special routes often behave differently.
 - Do not claim memory is disabled unless DB, prompt path, and message metadata all support that conclusion.
+- Do not keep rich subject-matter context in `interaction_memory_json`; that can silently poison later answers on unrelated requests.
+- Do not debug bad URL answers only at the browser layer; first rule out noisy personalization causing source-irrelevant completions.
 
 # Good evidence to report back
 
@@ -144,3 +199,4 @@ Avoid overclaiming beyond the evidence.
 # References
 
 - See `references/runtime-verification-checklist.md` for a compact live-check checklist and evidence interpretation template.
+- See `references/interaction-memory-hygiene-and-url-misrouting.md` for a concrete live incident where overgrown user memory polluted URL interpretation and required DB cleanup plus heuristic tightening.

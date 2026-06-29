@@ -81,6 +81,19 @@ Treat these as separate paths:
 - export intent from the user;
 - media attachment markers in generated assistant text.
 
+### Additional export guard for long substantive requests
+
+Do not classify a long, content-heavy engineering request as `message_export` just because it contains words like `excel`, `xlsx`, `file`, or `document`.
+
+Typical false-positive class:
+- the user asks to rewrite or fix a script that builds an Excel file;
+- the message includes code fences, library names (`python`, `pandas`, `sql`), or transformation verbs (`переделать`, `доработать`, `переписать`, `исправить`);
+- the request is about producing new logic/content, not exporting the previous assistant answer.
+
+Practical guard:
+- keep export-routing blocked for messages with discussion/code-transform markers;
+- especially suppress export detection on long requests that mention file formats only as part of the work subject.
+
 ## 5) Budget timeout by attempt position, not one flat timeout for all tries
 
 Bad pattern:

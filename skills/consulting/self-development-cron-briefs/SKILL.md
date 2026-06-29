@@ -53,6 +53,8 @@ Trigger this skill when the task includes any of the following:
    - Prefer formulations like "выписать 3–5 мелких хвостов и закрыть один" over artificial shortcuts like "разобрать короткий список", unless the list clearly already exists.
    - Do not let small goals drift into generic self-help wording or abstract framing.
    - On Thursday and Friday, it is useful to add one short weekend-planning note with one realistic idea, as long as it stays lightweight and does not compete with the day's main plan.
+   - In scheduled cron delivery, the final rendered brief must read as complete one-way output. If the prompt contains a slot like `one short final question`, reinterpret it as a soft closing line, not as a literal question to answer now.
+   - Default rule for non-interactive cron briefs: do not end with a question mark and do not ask `Ок такой план?`, `хочешь сам выбрать фокус?`, or close variants.
 
 6. Adapt the brief to the day type.
    - Weekdays: main goal is usually work/productivity-oriented.
@@ -178,10 +180,13 @@ For leisure suggestions in Moscow:
 - Letting the main goal and a small goal collapse into the same action family, so the message repeats one idea at two scales instead of separating focus and support.
 - On Thursday/Friday, giving no weekend look-ahead at all or suggesting unrealistic travel that does not fit a normal weekend from Moscow.
 - Forcing a leisure recommendation every time, even when weather or relevance is weak.
-- Letting the daily brief drift into polished lifestyle-copy wording instead of a short live Telegram message.
+- let the daily brief drift into polished lifestyle-copy wording instead of a short live Telegram message.
 - Pasting raw long URLs instead of hiding them under short inline labels.
 - Linking a destination as a plain map point when the useful user action is actually a route from home.
-
+- In a scheduled cron run, ending with a literal question or invitation to answer now (for example `Ок такой план?`, `или сегодня сам хочешь выбрать фокус?`). Cron delivery is one-way: the brief should feel complete as-is and must not pretend the agent is waiting for a reply.
+- Reusing the same closing formula across several days just because the prompt once asked for a final question.
+- In non-interactive cron contexts, treating the prompt's `final question` slot literally instead of converting it into a soft declarative close such as `Если захочешь, потом можно самому переопределить фокус дня.`
+- Letting prompt instructions override delivery reality: if a cron prompt explicitly asks for a `final question`, the skill must win and the agent should convert that slot into a non-question close instead of following the prompt literally.
 - Forcing a leisure recommendation every time, even when weather or relevance is weak.
 
 # Verification checklist
@@ -192,6 +197,7 @@ Before declaring the task done, verify:
 - manual test output matches the requested style;
 - links in Telegram-facing daily briefs are rendered as short inline markdown labels rather than raw pasted URLs;
 - if the brief contains a route, the route link format actually matches the intended outcome (route vs point), and Yandex route links use coordinates where relevant;
+- in scheduled cron delivery, the final line is a soft declarative close rather than a literal question, and the message does not end with a question mark unless the user explicitly asked for interactive wording;
 - daily starts with `Доброе утро, Миша!`;
 - daily has exactly 1 main goal and 2 small goals;
 - weekly uses the compact 5-block structure;

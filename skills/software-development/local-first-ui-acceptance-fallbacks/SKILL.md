@@ -56,6 +56,12 @@ Never collapse those into one blanket "works" statement.
    - Assert structural elements (`table`, headers, cells, preview nodes, buttons, etc.).
    - Assert the *absence* of the old broken token/path where relevant.
 
+5a. If **both** primary browser acceptance and local headless fallback are blocked, switch to an asset/API proof path instead of pretending the UI was seen.
+   - Confirm the live frontend URL serves the newly built asset hash.
+   - Confirm the served asset contains the new UI markers (component strings, button labels, headings).
+   - Confirm live API payloads contain the exact data shape the new renderer depends on.
+   - Use this as grounded runtime evidence that the fix is deployed and wired, but label it explicitly as **not full visual acceptance**.
+
 6. Report results in three buckets.
    - Confirmed: what the isolated and real checks proved.
    - Blocked/adjacent incident: what prevented full live acceptance.
@@ -77,6 +83,7 @@ A good result looks like this:
 - Do **not** over-mock: the goal is real frontend code plus minimal mocked API state, not a synthetic unit test disguised as acceptance.
 - Do **not** hide the adjacent incident. The fallback proves the feature; it does not erase the runtime problem.
 - If a tokenized download URL or similar contract is intentionally richer than a previous exact assertion, relax the test to the stable invariant (`startswith`, required fields present) instead of forcing a brittle exact string.
+- If only asset hash + live payload evidence is available, say exactly that. It proves deploy/wiring and renderer reachability markers, but it does **not** prove screenshot-level readability or final screen geometry.
 
 # Verification checklist
 

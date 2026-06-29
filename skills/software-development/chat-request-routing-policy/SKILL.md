@@ -50,7 +50,8 @@ metadata:
 - marker lists;
 - source keyword rules;
 - schedule keyword rules;
-- subject/field extraction patterns.
+- subject/field extraction patterns;
+- business-function grammar для recurring dashboard-классов: function labels, request/column markers, metric groups, preferred sections, agent-facing instructions.
 
 Это должен быть data-file, а не размазанный код.
 
@@ -63,6 +64,7 @@ metadata:
 - attachment serialization;
 - job creation;
 - delivery.
+- Для business dashboards backend должен максимум читать policy/spec, делать best-effort metric extraction и собирать envelope/prompt, а не зашивать полные business rules в растущий Python `if/else`.
 
 ## Practical rule
 
@@ -83,6 +85,7 @@ metadata:
 - новый phrasing пользователя поддерживается изменением policy-data;
 - skill описывает, как этот класс запросов должен вести себя;
 - backend-код не получает ещё один хаотичный `elif` под частный текстовый кейс.
+- для исследовательских dashboard-маршрутов есть отдельная reference-заметка: `references/research-dashboard-routing.md`.
 
 ## Bad outcomes
 
@@ -98,6 +101,23 @@ metadata:
 - [ ] backend не дублирует policy по нескольким местам
 - [ ] existing regressions на file / monitoring / collection / proposal проходят
 - [ ] route priority остаётся взаимоисключающим
+- [ ] исследовательские dashboard-запросы не блокируются преждевременным collection-intake
+- [ ] короткие follow-up реплики про источник (`из интернета`, `с сайта`, `по открытым источникам`) наследуют предыдущую содержательную постановку, а не стартуют новый пустой intake
+
+## Research dashboard routing guardrail
+
+Для запросов класса `проанализируй тему / рынок / историю ... и построй дашборд` backend не должен слишком рано переключаться в режим form-intake с вопросами вроде:
+- `откуда собираем`;
+- `что именно собирать`;
+- `какие поля обязательны`.
+
+Это внутренняя логика pipeline, а не пользовательская постановка. Для такого класса запросов policy должна вести себя так:
+- если тема распознана и deliverable = `dashboard`, по умолчанию допускается `web` / открытые источники как action-ready default;
+- `dashboard` не требует обязательной схемы полей на входе, если пользователь просит анализ/обзор, а не dataset-экспорт;
+- уточнение допустимо только как мягкое улучшение качества, а не как блокирующий prerequisite без явного основания;
+- короткий source-only follow-up после неудачного clarification должен склеиваться с предыдущей содержательной user-постановкой и переоцениваться как единый research request.
+
+Критерий: система должна мыслить в логике пользовательской задачи (`разберись в теме и покажи картину`), а не в логике внутреннего `collection_contract`.
 
 ## Common pitfalls
 

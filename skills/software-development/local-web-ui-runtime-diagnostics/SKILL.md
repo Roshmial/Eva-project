@@ -104,6 +104,25 @@ Important distinction:
 - "served file is new, DOM is old" => stale browser/runtime state;
 - "served file and DOM are new, but screen still wrong" => actual app logic/rendering defect.
 
+## Browser-wrapper vs real app execution pattern
+
+If browser tools report `(empty page)` or a white screen, do not jump straight from that symptom to "React did not render".
+
+Use this separation:
+1. Fetch the live `index.html` and built JS/CSS assets directly from the target origin.
+2. Confirm the mount path exists in the served JS.
+   - Good probes: `createRoot(`, `document.getElementById("root")`, unique login/onboarding strings.
+3. Execute the served bundle in an isolated DOM runtime such as `jsdom` with minimal browser shims.
+   - The goal is not visual acceptance.
+   - The goal is to answer a narrower question: does the live bundle populate `#root`, and with what first screen?
+4. Compare the results across layers.
+   - `jsdom` populates `#root` but browser wrapper still shows white/empty page => likely visual/layout/browser-runtime artifact, not proof of early mount failure.
+   - `jsdom` also leaves `#root` empty or throws during eval => now you have evidence for a real frontend boot/runtime defect.
+5. Report that distinction explicitly.
+   - "served bundle executes and mounts login DOM" is different from "screen is visually acceptable in a real browser".
+
+Important: treat `jsdom` execution as a diagnostic discriminator, not as a substitute for final UX acceptance.
+
 ## Verification standard
 
 A runtime pass is only complete when you have all of these:
@@ -196,4 +215,4 @@ Also keep origin handling explicit:
 
 ## Notes
 
-See `references/react-controlled-state-live-runtime.md` for a concise recipe for React controlled-state fixes where submit logic lives in a different component scope. See `references/hermes-web-admin-runtime-smoke.md` for a concrete Hermes Web pattern using a frontend proxy on `8790`, backend auth on `8788`, and token-based shell verification. See also `references/frontend-proxy-hang-pattern.md` for the specific hung-proxy diagnostic and fix pattern. This reference overlaps partially with browser-debugging skills; keep the overlap focused on local web-app runtime diagnosis rather than generic browser setup.
+See `references/react-controlled-state-live-runtime.md` for a concise recipe for React controlled-state fixes where submit logic lives in a different component scope. See `references/hermes-web-admin-runtime-smoke.md` for a concrete Hermes Web pattern using a frontend proxy on `8790`, backend auth on `8788`, and token-based shell verification. See `references/frontend-proxy-hang-pattern.md` for the specific hung-proxy diagnostic and fix pattern. See `references/browser-empty-page-vs-jsdom-mount.md` for the discriminator pattern where browser tools show an empty page but direct execution of the served bundle still mounts DOM. This reference overlaps partially with browser-debugging skills; keep the overlap focused on local web-app runtime diagnosis rather than generic browser setup.

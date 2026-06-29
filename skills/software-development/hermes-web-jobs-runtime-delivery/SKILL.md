@@ -74,6 +74,40 @@ If the user described a blank screen:
 - use browser console after each action;
 - treat live JS exceptions as blockers, even if some DOM still rendered.
 
+## 3a. When the complaint is about bad text shown in the UI, verify the frontend contour before chasing cron/backend outputs
+
+Use this branch when the user reports that the web screen showed internal reasoning, duplicated blocks, raw prep text, or a mixed `analysis + final` reply.
+
+1. Verify the exact user-facing frontend contour first.
+- Confirm the real frontend port/service the user is looking at.
+- Confirm which backend/API that frontend proxies to.
+- Do not inspect unrelated local ports or a different backend contour just because they are familiar.
+
+2. Distinguish three artifacts that may disagree.
+- preserved cron/job output files;
+- backend message payload returned by `/api/threads` or equivalent;
+- frontend-rendered text after `messageDisplayText` / markdown rendering / UI post-processing.
+
+3. If preserved cron output is clean but the UI showed leaked internal text, do not conclude the user was mistaken.
+- The bad text may live in persisted message `content` for the chat/thread even when cron output files look normal.
+- The frontend may also be rendering raw assistant `content` instead of a safe display field.
+
+4. Read the frontend renderer path directly.
+- Inspect the function that maps a message object to visible text (`messageDisplayText`, `renderMarkdownContent`, equivalent).
+- Check whether the UI renders `message.content` as-is with only cosmetic cleanup.
+- Treat that as a real product bug if assistant/internal prep text can reach the database or API.
+
+5. Prefer a contract fix over regex-only cleanup.
+- Best fix: backend exposes a dedicated safe field such as `display_text` / `final_text` for user-facing rendering.
+- Frontend should prefer that safe field over raw `content`.
+- A frontend regex that strips obvious prep markers is only a fallback guard, not the main contract.
+- If you implement this fix, carry it through the whole delivery path: assistant meta enrichment, message serialization/backfill for legacy rows, cron/job output extraction, and the frontend renderer. See `references/safe-display-contract.md`.
+
+6. Lock the fix with a narrow regression trio.
+- Add one serializer test proving raw `content` may still contain leaked prep text while `display_text` is safe.
+- Add one delivery extraction test proving cron/job output cleanup uses the same safe display path.
+- Add one compatibility test proving threads/jobs endpoints still serialize the affected message family without 500s.
+
 ## 4. Fix backend truth before frontend cosmetics
 
 Priority order:
@@ -92,7 +126,59 @@ After fixes:
 - validate next-run time is shown in Moscow time;
 - keep legacy jobs separate in the analysis so they do not mask whether new behavior is fixed.
 
+# Recurring-core implementation pattern
+
+When the task is not just a one-off UI bug but a broader recurring/jobs core pass, use this sequence instead of jumping straight into screen polish:
+
+1. Backend contract first.
+- Normalize job run states before touching the UI.
+- At minimum separate:
+  - `running`
+  - `completed`
+  - `completed_with_limitations`
+  - `empty_result`
+  - `failed`
+- Add user-facing fields in serialized runs/jobs so the frontend does not infer meaning from raw status alone.
+
+2. Jobs surface second.
+- Wire the jobs list/detail/history to the normalized backend contract.
+- Show last-run reason, delivery summary, result kind, and timestamps explicitly.
+- Separate delivery route (`recipients`) from personal subscription state (`job_subscriptions`) in the UI.
+
+3. Recurring message family third.
+- For job/monitoring outputs in chat threads, attach a normalized recurring summary envelope in message metadata rather than relying on free-form text.
+- Prefer a stable family like `job_delivery` / `processing_status` plus a compact `recurring_summary` block containing status, reason, result kind, delivery summary, and whether result/limitations exist.
+- Then render that envelope as a dedicated recurring summary block in chat UI.
+
+4. Stuck/recovery policy fourth.
+- Do not leave old `running` / `pending` states ambiguous forever.
+- Add a time-based threshold for stale `chat_tasks` / `job_runs`.
+- Reuse the current backend lifecycle: recover stuck `chat_tasks` inside the existing claim/processor path rather than introducing a separate daemon.
+- In serializers, convert stale `running` into a user-visible stuck/failed state with an explicit reason and detail.
+
+5. Verify by narrow subsets, not by hoping the whole suite explains itself.
+- Add targeted smoke tests for:
+  - run-state serialization,
+  - recurring summary envelope,
+  - stuck recovery.
+- Use `py_compile` and frontend build as the regression bar even when a wider backend suite still contains unrelated red tests.
+
+## Additional pitfall: recurring/job messages need real time context for stale-state classification
+
+If you implement stuck detection for `processing_status` or other recurring message families, do not rely only on message `meta`.
+
+Typical trap:
+- the stale-state classifier looks for `created_at` / `started_at`,
+- but `serialize_message()` passes only parsed `meta_json`,
+- so old pending messages still render as `running` forever even though the logic appears present.
+
+Correct pattern:
+- pass the persisted row timestamp (`row.created_at`, or equivalent real message timestamp) into the recurring-summary / surface helper explicitly;
+- then verify with a targeted smoke test that an old `processing_status` serializes as stuck/failed, not still `running`.
+
 # Pitfalls
+
+- `references/recurring-core-contract-and-stuck-control.md` — concrete recurring-core implementation pattern: backend run contract, chat recurring summary envelope, subscriptions-vs-recipients split, and stuck recovery wired into existing chat-task lifecycle.
 
 - "Assistant said done" is not proof. The model may promise scheduling while no job was persisted.
 - A list that loads can hide broken detail fetches.
@@ -116,6 +202,7 @@ Only call it done when all are true:
 
 - `references/chat-recurring-job-gap.md` — concise reproduction pattern for the failure mode where chat claimed a recurring task was scheduled but no persisted job existed, plus the paired visibility/UI pitfalls discovered during live verification.
 - `references/chat-recurring-job-false-positive.md` — prod pattern where ordinary research requests were wrongly converted into recurring monitoring because classification used recent context instead of explicit scheduling intent in the current user message.
+- `references/safe-display-contract.md` — safe user-facing rendering contract for leaked assistant/job delivery text: backend `display_text`, frontend preference order, and the minimal regression trio.
 
 # What to record in decision-log
 

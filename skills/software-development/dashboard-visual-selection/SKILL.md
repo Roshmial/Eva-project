@@ -51,6 +51,28 @@ then:
 - keep `bar_list` as a secondary precision view if useful,
 - place the composition chart before text-heavy explanation blocks.
 
+### Market-overview anti-bias heuristic
+
+If the analytical intent is `market_overview`, do not reuse history-style fallback sections by default.
+
+Prefer sections about:
+- players / brands / vendors,
+- market signals,
+- positioning,
+- pricing/product accents,
+- constraints or caveats.
+
+Avoid generic history scaffolding like:
+- `Ключевые этапы и поворотные точки`
+- `Смена практик и подходов`
+
+unless the request truly contains history/evolution markers.
+
+A practical fallback pattern for market-overview is:
+- first visual section: `bar_list` with market signals or players,
+- supporting section: `text_list` with concise conclusions,
+- optional comparison/matrix only when the source content actually compares segments or criteria.
+
 ### Factor-analysis heuristic
 
 If a factor section has:
