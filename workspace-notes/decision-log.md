@@ -5916,3 +5916,117 @@ Implication:
   1. `создай/настрой регулярную задачу` -> create/update job;
   2. `запусти сейчас / выполни сейчас` -> manual run существующей job.
 - Для PPTX дальнейшее уплотнение теперь надо делать через controlled packing и semantic condensation, а не через новый кейс-специфичный хардкод под BI/ITFM.
+
+[2026-06-30] — PPTX product split: core generation stays fast in chat, advanced presentation design moves to a dedicated user/project mode
+
+Context:
+- По теме PPTX agreed разделить два продуктовых контура: быстрый и полезный core-режим внутри основного чата и отдельный capability-first режим для более тяжёлой и дизайнерской работы с презентациями.
+- Пользователь отдельно уточнил, что advanced-режим должен жить в собственной UI-вкладке, но с управляемым переходом из основного чата без потери user/project context.
+
+Agreed:
+- Core PPTX остаётся chat-first маршрутом для быстрого делового результата; в него переносим только улучшения качества и надёжности генерации.
+- `Дизайнер презентаций` делается отдельной UI-вкладкой и отдельным user/project contour с собственными job/artifact/workspace-процессами.
+- Переход из основного чата в `Дизайнер презентаций` должен быть штатным сценарием: переносить пользователя, проект, исходную постановку, материалы и при необходимости draft/template/deck.
+- Тяжёлые advanced-функции (`template fill`, `beautify`, `native enhance`, audio/narration/transitions и т.п.) держать в дизайнерском режиме, а не тащить в core-маршрут по умолчанию.
+
+Rejected:
+- Не превращать основной PPTX route в `ppt-master inside`; core не должен наследовать весь тяжёлый presentation-workflow ради полноты возможностей.
+- Не делать `Дизайнер презентаций` полностью изолированным продуктом без связки с чатом; важен плавный handoff chat -> designer -> chat.
+
+Open questions:
+- Позже отдельно оценить, может ли генерация дашбордов пойти по той же модели: быстрый core в чате + отдельный user/project mode для более сложного dashboard-workflow.
+
+[2026-06-30] — Hermes Web PPTX quality contour: read-back/semantic validation доведены до export artifact meta и user-facing chat/file UI
+
+Context:
+- По core PPTX пользователь попросил не останавливаться на генерации файла, а довести quality contour до реального product path: кнопка `Выгрузить PPTX`, artifact/meta, file cards и decision-log.
+- Работа шла внутри текущего local-first Hermes Web контура без вынесения логики в отдельный сервис: backend `services/backend/app.py`, frontend `services/frontend-react/src/App.jsx` и `styles.css`.
+
+Agreed:
+- Кнопка `Выгрузить PPTX` должна использовать тот же усиленный backend path, а не отдельный упрощённый export-контур.
+- Для generated/exported `.pptx` нужен многоступенчатый quality contour: structural read-back -> semantic validation -> quality summary -> прокидка в artifact/meta -> user-facing UI сигнал.
+- UI должен показывать quality status кратко и прикладно: без технического шума, но с явным различением `ok` / `degraded` / `failed`.
+
+Rejected:
+- Не оставлять quality только во внутреннем backend helper без доставки в пользовательский file/artifact path.
+- Не вводить новый внешний presentation-service или отдельный quality-pipeline вне текущего Hermes Web backend/frontend контура.
+
+Implemented:
+- В backend core PPTX добавлены:
+  - `validate_generated_pptx(...)` для read-back проверки готового `.pptx` через intake;
+  - `validate_generated_pptx_semantics(...)` для expected slide count / required titles checks;
+  - `summarize_pptx_validation_quality(...)` для machine-readable verdict `ok/degraded/failed`.
+- В export pipeline добавлен единый `build_message_export_result(...)`, чтобы `buffer`, `validation` и `quality` не терялись между helper-ами.
+- `quality` и `validation` прокинуты в:
+  - attachment metadata `build_message_export_attachment(...)`;
+  - top-level `meta` для `generated_file_response`;
+  - top-level `meta` для обычного `message_export` reply.
+- Во frontend `App.jsx` добавлен user-facing quality rendering для файлов результата:
+  - helper-ы `fileQualityStatus`, `fileQualityChipClass`, `fileQualityLabel`, `fileQualityDetail`;
+  - quality badge и короткое пояснение в assistant file cards;
+  - quality badge и пояснение в `ThreadFilesPanel`;
+  - quality section в `FilePreviewModal`.
+- В `styles.css` добавлены стили `assistant-quality-row` для компактного отображения статуса.
+- В backend tests добавлен контрактный regression test на сохранение `quality` в `thread_files` для generated `.pptx`.
+
+Verified:
+- Backend targeted tests: `3 tests OK` для artifact/meta + thread_files quality propagation.
+- Frontend: `npm run react:build` прошёл успешно (`vite build`, production bundle собран).
+- Ранее по этой же ветке backend regression suite по PPTX core/read-back/semantic/quality path также проходил (`21 tests OK`).
+- Прямой code-path подтверждён для реальной кнопки UI:
+  - frontend `onExportMessage(message, 'pptx')`;
+  - backend route `GET /api/messages/<id>/export?format=pptx`;
+  - export path использует усиленный PPTX pipeline.
+
+Open questions:
+- Следующий шаг — live UI acceptance на рабочем runtime: проверить, как `ok/degraded/failed` выглядят в реальном чате и не требуют ли ещё более коротких пользовательских формулировок.
+- Если degraded/failed начнут часто встречаться на prod-кейсах, следующий уровень — retry/fallback policy, а не новый параллельный export stack.
+
+[2026-06-30] — Hermes Web prod: подтверждённые баги пользователя Виктория
+
+Контекст
+- Продовый contour: frontend `95.182.85.233:8803`, backend `178.104.207.89:8791`, PostgreSQL.
+- Проверка проведена на live user `Виктория` (`user_id=3`), включая UI, API и данные в prod БД.
+
+Подтверждено
+- `Новый чат` у Виктории может падать даже на обычном сообщении (`как дела?`) с ошибкой `collection_output_format_unsupported`.
+- Это не баг поиска как такового: обычный chat-turn ошибочно уходит в data-collection contour, где artifact builder поддерживает только `json/csv/xlsx`.
+- Для job-thread `Мониторинг СМИ по HR` (`job_id=23`, `thread_id=246`) последний message/date в треде корректно обновились до `2026-06-30 14:35:14 МСК`, но в thread-list слева показывалось старое `26.06 16:01`.
+- Root cause по дате: frontend sidebar берёт `freshness_at` раньше `updated_at`, а backend `/api/threads` для job-thread оставляет `freshness_at` старым, если новое сообщение не прошло через узкий `source=job_run/hermes_cron` фильтр.
+- Для того же HR monitoring manual/new run вместо нормального execution result доставлялось сообщение вида `Задача создана`, то есть delivery path путал run-result и job-creation message.
+- Сообщение HR monitoring от `2026-06-29 09:19:30` подтвердилось как слабый plain-text digest без нормальной клиентской разметки; это отдельная product-formatting проблема, не тождественная багам routing/freshness/delivery.
+
+Решение / направление фикса
+- Чинить отдельно три контура: `Новый чат` routing, manual-run delivery для recurring/job-thread, freshness/date semantics для thread-list.
+- Форматирование HR digest считать отдельной полировкой после устранения функциональных багов.
+
+[2026-06-30] — Hermes Web PPTX cover-status: quality banner выводится на титульном слайде только для проблемных export-случаев
+
+Context:
+- После вывода `quality` в UI пользователь уточнил практический сценарий: для fast-build PPTX важнее не только UI-сигнал, но и явная пометка внутри самого файла, потому что итоговый `.pptx` всё равно часто идёт как черновик для дальнейшей ручной сборки из шаблона.
+- Пользователь отдельно выбрал минимальный и быстрый вариант: показывать статус только на титуле и только для проблемных случаев, без усложнения продукта дополнительными режимами.
+
+Agreed:
+- На титульном слайде показывать служебный quality banner только если итоговый статус `degraded` или `failed`.
+- Для `ok` не добавлять никакую служебную плашку, чтобы не засорять нормальные документы.
+- Пометка на титуле трактуется как внутренний рабочий сигнал для чернового export, а не как полный product-grade review workflow.
+
+Implemented:
+- В `services/backend/app.py` внутри `build_message_export_pptx(...)` добавлен second-pass patching:
+  - сначала `.pptx` рендерится как раньше;
+  - затем считается `validation + semantic + quality`;
+  - если статус `degraded/failed`, файл повторно открывается, и на первый слайд добавляется компактный banner `Статус сборки: ...` с коротким пояснением.
+- Для banner введено правило маппинга warning codes -> короткие пользовательские формулировки:
+  - `slide_count_mismatch` -> `число слайдов отличается от ожидаемого`;
+  - `missing_required_titles` -> `часть обязательных разделов не найдена`.
+- После встраивания баннера файл пересохраняется и повторно валидируется, чтобы не публиковать неподтверждённый patched artifact.
+
+Verified:
+- `2 focused tests OK`:
+  - проблемный `.pptx` получает banner на титуле;
+  - `ok`-файл не получает banner.
+- `4 regression tests OK` по quality propagation в export/meta/thread files.
+- Frontend build повторно проходит: `npm run react:build` -> `vite build OK`.
+
+Open questions:
+- Позже на live runtime стоит визуально проверить, не слишком ли заметен титульный banner для внутренних черновиков и не нужно ли делать его ещё компактнее по высоте/контрасту.

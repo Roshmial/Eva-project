@@ -57,6 +57,7 @@ A passing build is necessary but not sufficient. Treat runtime prop/handler drif
    - For contested cases, fetch `/api/threads/<id>` as the live user/session and compare the HTTP payload with the DB payload and the frontend renderer contract.
    - For export/download acceptance, prove that the same credentials work on both surfaces before blaming the export path: compare direct backend login and public-frontend `/api/auth/login` with the same user/password. If backend login succeeds but the public frontend proxy returns `401`, classify the blocker as auth/runtime contour mismatch first, not a document-export defect.
    - If direct API export works but token injection into the browser yields `Сессия истекла` or the public login form rejects known-good credentials, treat that as session-source or auth-secret divergence between contours. Separate "artifact contract works" from "public UI can authenticate into that contour" in your final verdict.
+   - If the browser-side session is expired but you still need live acceptance under a specific user and you have DB access, prefer extracting that user's freshest non-revoked session token from `sessions` and injecting it into browser `localStorage` over guessing credentials or reusing stale test tokens. Verify the user identity in the sidebar after reload before trusting the session.
 
 6. For file preview, verify end-to-end.
    - Create or use a real file belonging to the current acceptance user.
@@ -124,6 +125,7 @@ Look for polling logic tied to active thread/screen state. Prefer:
 - Treating a browser run as successful just because Chromium launched. If the page lands in `401` / expired-session login state or renders an empty root, acceptance is still blocked; switch to a real login flow and only then drive UI-state/navigation.
 - Calling a public UI export path broken when the real defect is contour auth divergence: the same user can log into direct backend `:8791` but not through public frontend `/api/auth/login`. In that case fix or escalate runtime/auth wiring before judging the export button or file delivery path.
 - Proving export only through direct API and then implying public UI acceptance is done. Keep those as separate claims unless the same contour and session source were verified.
+- Restarting a live Hermes Web backend from inside the active Hermes gateway/session with `systemctl --user restart ...` and treating the tool-side block as a product incident. If gateway-side restart is blocked, prefer a narrow process restart that relies on `Restart=always` or another already-provisioned supervisor pattern, then verify new PID plus `/api/health`.
 
 # Known durable pattern from this class of incidents
 
@@ -145,3 +147,4 @@ Do not finish with only code changes. A completed task in this class should incl
 - See `references/bi-dashboard-followup-routing-and-acceptance.md` for the pattern where the apparent UI/dashboard problem is actually one of four classes: wrong target thread, semantic dashboard fallback, transport mismatch, or follow-up routing failure such as `text -> dashboard` being misrouted into fresh web collection.
 - See `references/local-playwright-user-space-runtime.md` for the user-space Playwright bootstrap pattern: local `apt download` + `dpkg-deb -x` + `LD_LIBRARY_PATH` wrapper when browser acceptance is blocked by missing shared libraries and sudo is not available.
 - See `references/public-vs-direct-auth-split.md` for the Hermes Web pattern where direct backend login succeeds, public frontend proxy login fails, and document-export acceptance must be split into artifact-contract proof vs public-auth contour proof.
+- See `references/victoria-session-token-and-safe-backend-restart.md` for the concrete prod pattern: recover a real user browser session from the freshest non-revoked DB token, separate expired-session noise from UI defects, and restart the backend safely via supervised PID turnover when in-band `systemctl --user restart` is blocked by the active runtime.

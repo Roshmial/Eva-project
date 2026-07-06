@@ -117,8 +117,14 @@ For daily briefs, explicitly instruct the cron prompt to:
 - prefer practical advice over abstract framing;
 - avoid presenting several competing priorities as equally important;
 - suggest indoor alternatives when Moscow weather is wet/cold;
-- use session_search to inspect the last 3 daily brief outputs before drafting a new one when repetition risk matters;
+- use session_search to inspect a long enough tail of recent daily briefs before drafting a new one when repetition risk matters; for this workflow, 10 recent morning briefs is a better default than 3 when the goal is to catch recycled leisure/support ideas;
+- do not stop at session_search snippets. Snippets are only discovery. Before drafting, extract the final assistant text for the last 10 real morning briefs and make a compact working list of: main-goal category, small-goal categories, concrete objects/places/media/games, and weekend idea.
+- if the retrieval path only surfaced snippets or mixed prompt text, treat the anti-repeat check as incomplete and keep digging until the actual final brief texts are visible.
 - treat both wording repetition and idea repetition as real failures, not cosmetic issues;
+- explicitly track repeated concrete objects, not just categories: the same place, the same game, the same article/video/media item, the same weekend-destination family, or the same fallback micro-activity still counts as repetition even if the wording changes;
+- treat repeating the same concrete place or the same concrete game within roughly 14 days as a hard failure unless the user explicitly asked to revisit it;
+- if a concrete suggestion appeared recently, force a different category instead of paraphrasing the same idea again;
+- for known sticky fallback ideas, it is acceptable to name them explicitly in the prompt as temporary bans until the rotation stabilizes;
 - do not repeat the same main-goal category on adjacent days;
 - if yesterday or the day before used "навести порядок в делах", "разобрать задачи", "разобрать планы" or a very close equivalent, force a different main-goal category today;
 - make the main goal concrete enough that the end-state by evening is obvious;
@@ -155,6 +161,14 @@ For daily briefs, explicitly instruct the cron prompt to:
 - if the suggestion is a destination from Misha's home, prefer a route link over a plain map point;
 - for Yandex route links from home, prefer coordinate-based `rtext` deep links rather than address-string route links when practical;
 - if the generated text sounds too polished, symmetrical, or lifestyle-editorial, treat that as a quality failure and tighten toward shorter Telegram-native phrasing.
+- explicitly ban generated micro-constraints and fake optimization language in user-facing Russian. By default, avoid constructions like `один мессенджер`, `одну почту`, `одно сообщение`, `одна мелочь`, `один вопрос`, `один слот`, `один блок`, `ровно 20 минут`, or similar count-based wording unless the number is genuinely important for meaning.
+- if removing `один/одна/одно` still leaves an unnatural sentence, rewrite the whole recommendation instead of only swapping one word.
+- avoid weak placeholder nouns when a normal everyday object can be named more directly: `вопрос`, `момент`, `история`, `хвост`, `штука`, `что-то важное`.
+- weather phrasing must stay semantically clean: describe the weather first, then add at most one matching practical note. Do not glue unrelated ideas with fake cause-and-effect connectors like `так что`, `поэтому`, or `из-за этого`. Example of bad logic: `к вечеру возможен дождь, так что воду лучше взять`.
+- weather retrieval must be source-verified, not snippet-verified. Search-result snippets, news rewrites of another forecast, and SERP previews are discovery only.
+- for Moscow weather, first find a candidate forecast page, then fetch the actual page content with a tool that can read it directly (`terminal` with HTTP fetch, `browser_*`, or another raw page read). Do not present precise conditions like `облачно`, `дождь`, `+18…+23` as verified if they came only from snippet text.
+- if direct page fetch fails, either keep the weather line explicitly lower-confidence (`по snippet-ам похоже...`) or simplify it to only what was actually confirmed. Do not quietly convert snippet hints into confident factual wording.
+- when iterating on style, verify against one fresh generated brief at a time and report one verdict on that latest run. Do not show Misha a chain of multiple intermediate cron outputs as if they were parallel final candidates.
 
 For leisure suggestions in Moscow:
 - provide no more than one option;
@@ -169,8 +183,9 @@ For leisure suggestions in Moscow:
 - Creating a second cron job instead of refining the current one.
 - Letting the brief drift into abstract self-help language.
 - Using artificial phrases such as "сменить контекст" for leisure or small-step transitions.
-- Repeating the same small-goal template across days even when the wording changes.
-- Suggesting aimless outdoor activity in bad weather instead of a concrete indoor or destination-based option.
+- Repeating a concrete fallback object across different days while pretending the brief is varied. Typical failure mode: the wording changes, but the same nearby place or the same browser game comes back again.
+- Using too short a recall window for repetition control, so the prompt only avoids yesterday's phrasing but still recycles the same concrete idea inside 1–2 weeks.
+- Checking only categories (walk/game/article) instead of the specific object inside that category.
 - Pasting long raw URLs into a Telegram-facing daily brief when a short inline markdown link would be cleaner and more readable.
 - Using a Yandex route deeplink built from address strings when this workflow is more reliable with coordinate-based route links.
 - Treating a map point link as an acceptable substitute when the user explicitly needed a built route.
@@ -181,6 +196,10 @@ For leisure suggestions in Moscow:
 - On Thursday/Friday, giving no weekend look-ahead at all or suggesting unrealistic travel that does not fit a normal weekend from Moscow.
 - Forcing a leisure recommendation every time, even when weather or relevance is weak.
 - let the daily brief drift into polished lifestyle-copy wording instead of a short live Telegram message.
+- letting the model escape one banned phrasing pattern only by replacing it with another generated count-based pattern such as `одно сообщение`, `одна мелочь`, `один денежный хвост`, or `одна партия`.
+- fixing a bad `один/одна` sentence cosmetically instead of rewriting the whole recommendation in normal chat Russian.
+- writing a weather line with a fake cause/effect bridge, for example `к вечеру возможен дождь, так что воду лучше взять`, where the practical note does not actually follow from the stated weather detail.
+- when testing style refinements, showing the user several intermediate cron outputs and discussing them as if they were competing final versions instead of judging only the latest run.
 - Pasting raw long URLs instead of hiding them under short inline labels.
 - Linking a destination as a plain map point when the useful user action is actually a route from home.
 - In a scheduled cron run, ending with a literal question or invitation to answer now (for example `Ок такой план?`, `или сегодня сам хочешь выбрать фокус?`). Cron delivery is one-way: the brief should feel complete as-is and must not pretend the agent is waiting for a reply.
@@ -193,8 +212,12 @@ For leisure suggestions in Moscow:
 
 Before declaring the task done, verify:
 - the job exists in only one active version for that purpose;
-- the chosen delivery mode matches the user's actual test semantics (`origin` for normal Misha test periods, `local` only for explicitly silent tests);
-- manual test output matches the requested style;
+- the recent-history scan is long enough to catch concrete-object repetition, not just adjacent-day wording repetition;
+- the anti-repeat check was performed against the actual final texts of recent briefs, not only session_search snippets or prompt fragments;
+- the weather line is backed by a directly fetched forecast page or is explicitly worded as lower-confidence when only snippets/news rewrites were available;
+- the generated brief does not reuse the same concrete leisure/support object from the recent history window unless there is an explicit reason;
+- the generated brief does not quietly reuse the same weekend-destination family or fallback support idea under slightly different wording;
+- if the prompt was tightened to ban sticky fallback ideas, a manual rerun actually stops using them;
 - links in Telegram-facing daily briefs are rendered as short inline markdown labels rather than raw pasted URLs;
 - if the brief contains a route, the route link format actually matches the intended outcome (route vs point), and Yandex route links use coordinates where relevant;
 - in scheduled cron delivery, the final line is a soft declarative close rather than a literal question, and the message does not end with a question mark unless the user explicitly asked for interactive wording;
@@ -206,3 +229,5 @@ Before declaring the task done, verify:
 # Support files
 
 See `references/style-and-rollout.md` for concrete wording constraints and rollout notes from the May 2026 self-development cron refinement session.
+
+See `references/concrete-anti-repeat-for-daily-briefs.md` for a concrete debugging pattern when users complain that the daily brief keeps reusing the same specific leisure/support ideas across different days.

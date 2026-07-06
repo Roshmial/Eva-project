@@ -180,10 +180,16 @@ hermes cron list            List jobs (--all for disabled)
 hermes cron create SCHED    Create: '30m', 'every 2h', '0 9 * * *'
 hermes cron edit ID         Edit schedule, prompt, delivery
 hermes cron pause/resume ID Control job state
-hermes cron run ID          Trigger on next tick
+hermes cron run ID          Queue a specific job for the next scheduler tick
+hermes cron tick            Run due jobs once immediately, then exit
 hermes cron remove ID       Delete a job
 hermes cron status          Scheduler status
 ```
+
+Important operational distinction:
+- `hermes cron run ID` marks one job to run on the next scheduler tick.
+- `hermes cron tick` executes a scheduler tick now and is the fastest verification path after cron/runtime fixes when waiting for the next real schedule would leave the result unverified.
+- If jobs are expected to fire automatically, verify the gateway/scheduler is actually running; a normal CLI chat session does not drive cron by itself.
 
 ### Webhooks
 
@@ -838,6 +844,7 @@ and logs — avoids shell-escaping backslashes in bash.
 - **Tools/skills:** `/reset` starts a new session with updated toolset
 - **Config changes:** In gateway: `/restart`. In CLI: exit and relaunch.
 - **Code changes:** Restart the CLI or gateway process
+- **Cron/runtime fixes:** after changing cron-related code or delivery wiring, do not wait passively for the next real schedule if verification matters. First confirm the gateway is running, then use `hermes cron tick` for an immediate scheduler pass. This validates the scheduler path itself; `hermes cron run ID` alone only queues a job for the next tick.
 
 ### Skills not showing
 1. `hermes skills list` — verify installed

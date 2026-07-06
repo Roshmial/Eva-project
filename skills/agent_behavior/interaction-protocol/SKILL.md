@@ -26,6 +26,13 @@ The agent must verify that the response is in the user's requested language (Rus
 ### 4. Self-Verification Loop
 Before delivering a response, the agent must perform a mental-check: "Does this response contain the tool call I promised? Does it explain the failure if the tool failed?".
 
+### 5. Backend-Specific Tool Failures Require a Pivot, Not Repetition
+When a tool reports an environment/backend limitation, treat that as a routing signal.
+- Example: `web_extract` returning `DuckDuckGo (ddgs) is a search-only backend and cannot extract URL content` means extraction will keep failing on the same path.
+- Do not retry the same `web_extract` pattern against more URLs in that turn.
+- Pivot immediately to a tool that fits the environment: `browser_*` for interactive page reads, `terminal`/`curl` for plain fetches, or narrower `web_search` queries when only search is available.
+- If the limitation blocks the requested level of verification, say so explicitly instead of quietly downgrading evidence.
+
 ## Pitfalls to Avoid
 - Using "I am working on it" as a placeholder for a failed tool call.
 - Assuming a-tool will work just because the command was typed (always check the output).
@@ -66,7 +73,15 @@ Before reporting tests as passed, confirm all three points:
 - the selector/runner matches the framework in use (`pytest -k` vs `unittest`, etc.).
 If a filtered run executed zero tests or used the wrong runner flags, report it as a failed verification attempt and rerun with a valid command before claiming coverage.
 
-### 9. Verification Scope Must Match the Claim
+### 9. Search Snippets Are Discovery, Not Verification
+Search-result snippets (`web_search`, SERP previews, snippet text inside HTML search results) are only a candidate-discovery layer.
+Do not treat them as sufficient proof for exact dates, opening hours, direct-link correctness, or artifact-specific details when the task explicitly requires verified/current facts.
+- A snippet may be stale, truncated, mixed across pages, or point to a generic listing page instead of the exact event/artifact page.
+- If the request requires `working direct link`, `точная дата/время`, `точно на этой неделе`, `current`, or similar, confirm from a page-fetch/browser/raw-HTTP read of the actual target URL before stating it as verified.
+- If the environment blocks that verification path, narrow the claim (`нашла кандидата по snippet, но точную дату/страницу не довела`) or return fewer verified items instead of filling quota with inferred facts.
+- Never let quota pressure or formatting pressure convert discovery guesses into verified entries.
+
+### 10. Verification Scope Must Match the Claim
 Do not describe a narrow or targeted check as if it proved the whole product/runtime/user journey.
 Before using phrases like `всё работает`, `добила кейсы`, `финальное тестирование`, `подтверждено через пользователя`, or `закрыто`, verify that the evidence actually matches that scope.
 - If only a subset was checked, say exactly that: `проверила targeted smoke`, `проверила 2 live scenarios`, `остальные кейсы не перепроверялись`.
@@ -86,7 +101,15 @@ When the reported problem is about a web product, admin panel, or login experien
 - In local-first or split-runtime setups, confirm the contour first: which host/port is frontend, which is backend, and which hop the user actually touches.
 - If you validated only the backend/API, say `backend жив, но пользовательский UI flow ещё не проверен` instead of implying the login or screen itself was checked.
 
-### 11. Do Not Close Artifact-Specific Acceptance with Proxy Evidence
+### 11. User-Specified Source or Contour Overrides the Previous Plan
+If the user narrows or corrects the source/contour (`не ЕИС, а Roseltorg`, `не API, а UI`, `не docs, а live runtime`, `не агрегатор, а первоисточник`), treat that as an immediate routing change, not as a minor clarification.
+- Stop extending the previous search path just because some queries are already in flight or the previous source looked easier.
+- In the very next substantive step, switch tools and evidence collection to the newly specified source/contour.
+- When summarizing, explicitly mark the old path as secondary / exploratory / discarded instead of continuing to reason from it as if it were still primary.
+- If the new source is blocked (`login`, `CAPTCHA`, no access, broken runtime), say that directly and only then fall back to secondary sources with the limitation spelled out.
+- Do not answer a source-specific request with evidence mainly gathered from a different contour unless you label it as indirect evidence.
+
+### 12. Do Not Close Artifact-Specific Acceptance with Proxy Evidence
 If the user asked to improve or verify a specific artifact/case (`этот .pptx`, `этот export`, `этот сценарий`, `именно этот файл`), do not mark the task complete from proxy evidence alone.
 - Green regression tests, health checks, DB sync, and generic runtime probes prove only the mechanism, not the requested artifact outcome.
 - If the artifact was not re-generated / re-opened / re-compared after the fix, keep the wording narrow: `механизм исправлен и проверен`, `предметная приёмка именно этого артефакта ещё не завершена`.

@@ -309,6 +309,21 @@ terminal("pytest tests/test_feature.py::test_name -v")
 terminal("pytest tests/ -q")
 ```
 
+### Dependency-aware verification in project repos
+
+If a targeted test fails because the current interpreter is missing a project dependency, do not immediately classify it as a product regression.
+
+Use this sequence:
+
+1. Check whether the dependency is declared by the project (`requirements.txt`, `pyproject.toml`, etc.).
+2. If it is declared, create or activate the project-local virtual environment and install the declared dependencies there.
+3. Re-run the same narrow test set inside that environment before reporting the feature as broken.
+4. Report the result in two layers:
+   - product/test outcome;
+   - environment/setup issue, if one existed.
+
+This preserves TDD discipline while avoiding false negatives caused by using the wrong interpreter for the repo.
+
 ### When the test runner reports success but the wrapper exits dirty
 
 Sometimes a targeted test run prints a clean `OK`/`PASS`, but the outer shell process still exits non-zero afterward because of runner teardown noise, an extension crash, or another wrapper-level problem. Do **not** immediately treat that as a failed test assertion.

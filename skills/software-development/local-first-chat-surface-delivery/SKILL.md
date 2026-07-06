@@ -89,6 +89,11 @@ Frontend должен трактовать их как отдельные сос
 - В source selection явно исключай service/artifact сообщения: `processing_status`, `file_response`, error/fallback replies.
 - Исключай пустые и служебные тексты вроде `Готовлю ответ…` и fallback-ответы наподобие `Не удалось получить ответ...`.
 - Для regression-проверки смотри не только наличие файла, но и `exported_message_id` плюс `preview_excerpt`: они должны ссылаться на последний содержательный ответ, а не на предыдущий export/error.
+- Если backend добавляет quality/validation для generated/exported artifacts, не оставляй их только внутри export helper-а: доводи поля до attachment metadata, top-level `file_response` meta и `thread_files`, иначе UI не сможет показать одинаковый статус в чате, drawer и preview modal.
+- Для user-facing file cards держи короткий и прикладной словарь статусов (`ok` / `degraded` / `failed`) с человеческими подписями, а не сырые backend-структуры.
+- Если generated `.pptx` — это быстрый внутренний draft для дальнейшей ручной сборки, допустимо встраивать compact quality banner прямо в титульный слайд, но только для проблемных случаев `degraded/failed`; `ok`-артефакты оставляй чистыми без служебной плашки.
+- Если встраиваешь такой banner в сам artifact, делай это вторым проходом после первичной validation/quality оценки и затем повторно валидируй пересобранный файл, чтобы не заявлять статус для неподтверждённого patched `.pptx`.
+- Для таких flows минимальный regression-набор должен проверять два слоя сразу: backend contract propagation (`attachments` / `thread_files` / `file_response.meta`) и frontend production build; для artifact-embedded warning отдельно проверяй, что проблемный `.pptx` получает титульную пометку, а `ok`-файл — нет.
 
 ## Timeout triage for background chat tasks
 
@@ -121,6 +126,7 @@ Frontend должен трактовать их как отдельные сос
 
 - `references/chat-surface-acceptance-checklist.md` — короткий live-checklist для приёмки chat UI после правок.
 - `references/export-flow-and-timeout-regression.md` — памятка по регрессиям export/file-response и скрытым 60-second timeout в background chat tasks.
+- `references/pptx-quality-artifact-ui.md` — памятка по доведению backend quality/validation до chat file cards, `thread_files` и preview modal.
 
 # Что приложить при повторяемых кейсах
 
