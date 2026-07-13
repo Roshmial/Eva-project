@@ -31,6 +31,35 @@ People use Hermes for software development, research, system administration, dat
 
 **Docs:** https://hermes-agent.nousresearch.com/docs/
 
+## Source of truth, docs retrieval, and live verification
+
+When the task is about Hermes itself, treat the official docs as the source of truth — but verify against the live runtime too, because the installed CLI may expose newer commands, aliases, or help text than an older local summary.
+
+Recommended verification order:
+
+1. Check the live CLI first.
+   - `hermes --help`
+   - `hermes <subcommand> --help`
+   - `hermes tools list`
+   - `hermes status`
+   - `hermes cron status`
+   - `hermes config path`
+
+2. Then read the official docs page for the same surface.
+   - Prefer a raw HTTP fetch from `terminal` (`python requests`, `curl`) when you need exact current docs text.
+   - Use `browser_navigate` / `browser_snapshot` when the docs page is dynamic or you need to inspect rendered navigation.
+
+3. If `web_extract` fails because the environment uses a search-only backend such as `ddgs`, do not keep retrying extraction on docs URLs.
+   - Pivot immediately to `terminal` + HTTP fetch or to browser tools.
+   - State clearly that the docs were verified through raw fetch/browser rather than `web_extract`.
+
+4. For behavior-changing operations, verify the real effect after the change.
+   - Tool enable/disable changes usually require a fresh session (`/reset` in chat, relaunch in CLI).
+   - Gateway/runtime changes often require restart.
+   - Cron fixes should be checked with `hermes cron status` and then `hermes cron tick` when immediate verification matters.
+
+This sequence is high leverage because many Hermes troubleshooting mistakes come from checking only one surface: only docs, only stale skill text, or only guessed CLI behavior.
+
 ## Quick Start
 
 ```bash

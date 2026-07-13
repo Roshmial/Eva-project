@@ -95,11 +95,33 @@ Preferred order:
 - approximate budget;
 - procedure family if known: 44-ФЗ, 223-ФЗ, запрос цен, corporate/commercial;
 - any remembered suffix/prefix of the number.
-2. build a candidate set from the most stable pair first, usually `buyer + date window`.
-3. reconcile the remaining hints against each candidate instead of searching for an exact one-shot match.
-4. report mismatches explicitly: for example “buyer and subject match, but dates do not” or “number suffix matches, but subject is different”.
+2. if the user remembers a supplier INN, supplier legal name, or winner tax ID, treat that as a top-tier anchor immediately and pivot the search around it before spending more time on fuzzy name variants.
+3. build a candidate set from the most stable pair first, usually `buyer + date window`, then intersect with supplier identity when available.
+4. reconcile the remaining hints against each candidate instead of searching for an exact one-shot match.
+5. report mismatches explicitly: for example “buyer and subject match, but dates do not” or “number suffix matches, but subject is different”.
 
 Do not force a false exact answer when the evidence really points to two mixed memories from adjacent procedures.
+
+### Supplier-identity correction rule
+
+When the user gives a remembered supplier name that may be distorted by memory or transliteration, actively verify whether a legal entity anchor exists behind it:
+- INN;
+- exact legal name from registries;
+- likely spelling drift such as `Аплабс` vs `Аплэб` or similar phonetic memory errors.
+
+Once the INN is confirmed, prefer the legal entity identity over the fuzzy remembered brand spelling in every downstream search.
+
+## Source Breadth Rule for Historical Procurement Reconstruction
+
+If the user explicitly says to search across all portals, do not keep the investigation centered on a single regional or native source.
+
+Required behavior:
+1. keep the original source in scope if it is a plausible home contour;
+2. immediately widen to external mirrors, tender aggregators, and procurement indexers;
+3. state clearly which sources were checked and which were blocked by auth / anti-bot / timeout;
+4. avoid presenting a candidate from one portal as “the answer” when the user has explicitly asked for broad cross-source confirmation.
+
+This matters most when the first plausible match comes from a Moscow or regional contour but the user believes the real record could live in another marketplace, a mirror, or a commercial/corporate listing.
 
 ## Corporate / Commercial Contour Pattern
 
@@ -123,6 +145,33 @@ If browser access to a marketplace is blocked or unstable:
 - pivot to direct HTTP checks and external indexers instead of repeatedly retrying browser search.
 
 The durable lesson is not “browser does not work”, but “for hostile marketplaces, browser may confirm the blocking state while direct card verification still remains useful”.
+
+## Moscow Supplier Portal mirror pattern
+
+For Moscow / near-Moscow small procurement contours, do not stop at a mirror card if it already leaks the primary-source jump target.
+
+Practical pattern discovered in live work:
+- `market.mosreg.ru/Trade/ViewTrade/<id>` can expose a direct `href` to the primary source on `zakupki.mos.ru/auction/<registry>`;
+- the mirror page may also expose the buyer, title, MCK/NMCK, status, and source-platform note in static HTML even before you open the primary source;
+- the primary-source page on `zakupki.mos.ru` may look empty in raw HTTP because it is JS-rendered, while the browser surface or `browser_console(expression='document.body.innerText...')` can still recover the actual session card contents.
+
+Recommended sequence for this contour:
+1. open the mirror card and inspect raw HTML for:
+   - direct primary-source `href`;
+   - mirror trade id;
+   - registry / auction id;
+   - buyer;
+   - title;
+   - status / deadline / MCK.
+2. then open the primary `zakupki.mos.ru/auction/<id>` page in the browser;
+3. if the rendered page is visually noisy, use browser text extraction to pull the decisive fields;
+4. specifically check whether the primary page reveals:
+   - final status;
+   - winner / supplier;
+   - last price;
+   - attached documents.
+
+This matters because the mirror can identify the object, but the primary page may be the first place where the winner is visible.
 
 ## User-Facing Reporting Rule for Ambiguous Matches
 

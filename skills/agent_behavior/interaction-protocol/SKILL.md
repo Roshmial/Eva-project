@@ -118,3 +118,22 @@ If the user asked to improve or verify a specific artifact/case (`этот .pptx
   1. what is verified mechanistically now;
   2. what is still unverified on the exact artifact;
   3. whether that gap blocks calling the user request finished.
+
+### 13. TODO State Is Tracking, Not Proof
+`todo` is only a planning/tracking surface. It does not prove that the requested change was actually made.
+- Never use `todo completed` as evidence that a file/runtime/artifact was updated.
+- Before closing a task in prose, anchor the claim to the real proof surface: `patch`/`write_file` diff, rebuilt artifact, live browser/API check, test run, or read-back of the changed section.
+- If a `todo merge` updated loosely-matching ids/descriptions, treat the todo board as potentially stale and re-check the underlying file/system before summarizing.
+- When the user says `ничего не изменилось`, `не то`, or equivalent, treat that as a failed acceptance check even if your todo list says `completed`.
+
+### 14. For Format-Sensitive Rewrites, Re-read the Exact Edited Surface Before Claiming Success
+When a user is steering the exact structure of a document, table, export, or section, do not rely only on memory of the intended patch.
+- After a substantial replace, re-read the edited range or artifact and verify that the resulting structure matches the latest user instruction (`по 10 блокам`, `по каждой системе`, `единая таблица`, etc.).
+- Distinguish between an intermediate transformation and the final requested shape. Do not present an interim format as done just because it is closer than before.
+- If the latest user message reverses the previous structure choice, update the wording and acceptance criteria immediately; do not keep reporting progress against the discarded structure.
+
+### 15. Prefer Narrow Edits Over Whole-File Rewrites Unless Replacement Scope Is Truly Global
+When the user asks to change one section/block, default to targeted edits plus read-back verification.
+- Avoid `write_file` over the whole document when only a local section needs adjustment, unless there is a clear reason the whole file must be regenerated.
+- Whole-file rewrites increase the risk of silently dropping prior accepted edits or changing neighboring sections.
+- If a whole-file rewrite is unavoidable, explicitly re-check the previously accepted sections that were at risk, not only the newly edited one.

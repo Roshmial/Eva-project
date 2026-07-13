@@ -8,6 +8,7 @@ description: Diagnose and fix Hermes local browser session issues, especially wh
 Use this when debugging Hermes browser tooling on local or local-first web apps, especially when:
 
 - `browser_navigate` reports success but `browser_snapshot` returns `(empty page)`.
+- `browser_navigate` echoes the requested URL/title, but `browser_console` shows the real page is still `about:blank` and the visual surface is just a white screen.
 - `browser_console(expression='window.location.href')` returns `about:blank` after a supposedly successful local navigation.
 - manual `agent-browser open <url>` appears to work, but follow-up `snapshot` or `eval` reads a blank document.
 - local frontend QA is blocked because browser tools cannot hold page state across commands.
@@ -29,6 +30,8 @@ Separate three failure classes cleanly:
      - snapshot text;
      - `window.location.href`;
      - a short `document.documentElement.outerHTML` sample.
+   - If `browser_navigate` claims the target URL/title but `browser_console` returns `about:blank`, treat the console result as source of truth for the live page state.
+   - Add one visual confirmation as well: if `browser_vision` shows a blank white frame and `browser_get_images` returns zero assets, that strengthens the case that the tab never truly navigated.
 
 2. Confirm whether the bug is in the wrapper or in the underlying CLI.
    - Re-run the same flow manually with `agent-browser` using the same session semantics the wrapper uses.
@@ -51,8 +54,19 @@ Separate three failure classes cleanly:
 5. Prefer a CDP-backed fix for local pages.
    - Launch a local Chromium-family browser with `--remote-debugging-port`.
    - Wait for `/json/version` and capture `webSocketDebuggerUrl`.
-   - Store that `cdp_url` in session state so subsequent snapshot/eval/click paths use the same live browser.
+   - If direct `agent-browser --cdp <ws>` works but Hermes browser tools still drift to `about:blank`, pin the main Hermes config to the same endpoint with `browser.cdp_url: http://127.0.0.1:<port>` instead of relying on ad-hoc per-session state.
+   - Treat this as the preferred local-first repair when an already-running dedicated CDP browser/service exists on the host.
    - Keep the fix local-first: do not jump to external browser SaaS when the local stack should handle localhost pages.
+
+5a. If DOM checks are healthy but screenshots are blank, treat rendering/runtime as a separate layer.
+   - A good `snapshot` plus correct `window.location.href` does not guarantee a good screenshot path.
+   - On Linux, if `browser_vision` or direct screenshot capture is blank while `snapshot`/`eval` are correct, check the local Chrome service environment first.
+   - Prefer a user-space runtime fix before inventing app-level explanations:
+     - `FONTCONFIG_PATH`
+     - `FONTCONFIG_FILE`
+     - `XDG_DATA_DIRS`
+     - `LD_LIBRARY_PATH`
+   - For stubborn headless Chrome services, add `--no-sandbox --disable-dev-shm-usage` to the service command line and restart the service before re-testing screenshots.
 
 6. Guard against stale CDP override state.
    - If `browser_navigate` appears to work but `browser_snapshot` / `eval` then fail with `CDP WebSocket connect failed` or `Connection refused`, suspect a dead `browser.cdp_url` / `BROWSER_CDP_URL` override.
@@ -106,13 +120,16 @@ A real fix should show all of the following on the same local page:
 - `browser_snapshot` returns non-empty content;
 - `browser_console(expression='window.location.href')` returns the actual page URL, not `about:blank`;
 - a short DOM sample contains expected page markup;
+- if the original symptom involved screenshots or `browser_vision`, re-check the visual path too; do not stop at a green DOM-only result;
 - cleanup removes any extra local browser process/profile created by the fix.
 
 # References
 
+- `references/persistent-local-cdp-and-blank-screenshot.md` — как чинить local browser contour, когда прямой `--cdp` уже работает, Hermes wrapper ещё дрейфует, а screenshot path отдельно ломается на Linux runtime.
 - `references/local-ui-wrapper-vs-app-qa.md` — как отделять ложную пустую local browser-session от реального бага приложения и не останавливать app QA слишком рано.
 - `references/about-blank-local-session-repro.md` — condensed reproduction pattern and debugging cues for the `open -> snapshot/eval -> about:blank` failure mode.
 - `references/local-auth-bootstrap-false-negatives.md` — как не спутать browser-runtime проблему с ложным auth-boot провалом из-за неверного localStorage key или некорректной token-injection проверки.
 - `references/local-screen-open-vs-login-state.md` — как для запросов вида «открой экран X» разделять реальное открытие целевого экрана, только login shell и auth-блокер при одновременной browser-session деградации.
 - `references/user-space-fontconfig-linux.md` — Linux workaround без root: как стабилизировать headless Chromium/Playwright/Hermes CDP через локальный `fontconfig` и шрифты в домашнем каталоге.
 - `references/stale-cdp-override-and-blank-screenshot.md` — как распознать мёртвый CDP override и что делать, когда `browser_vision` даёт пустой кадр при живой странице.
+- `references/navigate-success-but-live-tab-blank.md` — как диагностировать ложноположительный `browser_navigate`, когда payload выглядит успешным, а реальная вкладка остаётся `about:blank`.

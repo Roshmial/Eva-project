@@ -1,3 +1,191 @@
+[2026-07-12 09:40 UTC] — Delivery-first behavior tightened: safe local improvements auto-apply, adjacent branches are gated, final verification is mandatory
+
+Context:
+- Пользователь описал целевой режим работы как "ставлю задачу → агент делает под ключ → сам включает все полезные локальные улучшения → спрашивает только если риск/выход за рамки → отдельно допроверяет результат".
+- При анализе последних обсуждений выяснилось, что системная проблема была не в самих token-optimizations, а в общем execution-поведении: агент слишком легко превращал соседние идеи и архитектурные улучшения в новые активные ветки.
+- Пользователь отдельно указал, что полезные необязательные улучшения не надо выносить в согласование, если они локальные и безопасные; проблема — не в инициативе как таковой, а в плохой границе между local improvement и новой линией работ.
+
+Decision:
+- Изменить поведение по умолчанию в сторону delivery-first execution discipline.
+- Считать нормой, что агент:
+  - доводит requested result под ключ;
+  - автоматически включает small/safe local improvements;
+  - не открывает adjacent branches без необходимости;
+  - делает обязательный final verification pass перед финальной выдачей.
+- Спрашивать пользователя только когда изменение invasive / high-risk / architecture-or-core touching / scope-expanding.
+
+Implemented:
+- В `agent/prompt_builder.py` расширен `TASK_COMPLETION_GUIDANCE`:
+  - добавлены явные инструкции `Default to delivery, not exploration`;
+  - auto-apply small safe improvements inside current deliverable;
+  - stop-and-ask only for invasive/high-risk/out-of-scope changes;
+  - mandatory extra verification pass before final answer.
+- В `hermes_cli/goals.py` усилен `CONTINUATION_PROMPT_WITH_CONTRACT_TEMPLATE`:
+  - разрешены safe local improvements внутри текущего deliverable;
+  - запрещено открывать adjacent branches без необходимости для stated outcome;
+  - добавлен explicit final verification pass перед заявлением о завершении.
+- В `hermes_cli/goals.py` усилен `JUDGE_USER_PROMPT_WITH_CONTRACT_TEMPLATE`:
+  - small/safe improvements сами по себе не считаются completion;
+  - exploration of adjacent ideas / architecture changes / future improvements без выполнения Verification criterion → `CONTINUE`.
+
+Verified:
+- `pytest /home/hermes/apps/hermes-agent/tests/hermes_cli/test_goals.py -q` → `101 passed`
+- `pytest /home/hermes/apps/hermes-agent/tests/run_agent/test_run_agent.py -q` → `414 passed`
+- Live prompt check:
+  - system prompt contains delivery-first + safe-improvements + extra-verification rules
+  - goal continuation prompt contains safe-improvement gate + no-adjacent-branches + final-verification rule
+
+Boundary:
+- Это behavioral correction execution-layer, а не новый planner/framework.
+- Цель — изменить default operating behavior без запуска новой архитектурной ветки.
+
+[2026-07-11 21:25 UTC] — Mediation v1 bounded closeout: selector, contract, descriptor, reducer и reducer-level telemetry собраны в единый practical runtime path
+
+Context:
+- После серии быстрых wins по token-efficiency стало видно, что риск уже не в недореализованности отдельных оптимизаций, а в бесконечном цикле "ещё одно улучшение".
+- Пользователь явно попросил остановить режим постоянных micro-improvements и довести тему "под ключ" в рамках bounded v1.
+- К этому моменту уже были реализованы reuse/reference/delta, selector, policy contract и descriptor, но не было финальной точки сборки и сквозной reducer-level наблюдаемости.
+
+Decision:
+- Считать mediation v1 bounded-пакетом, а не бесконечной архитектурной программой.
+- В mediation v1 включить:
+  - selector policy `full/compact/reference/delta`;
+  - shared `policy_contract`;
+  - shared `mediation_descriptor`;
+  - общий `reduce_mediated_tool_result_content(...)` как runtime reducer;
+  - propagation descriptor в tool-result pipeline;
+  - reducer-level telemetry/report.
+- Не включать в v1:
+  - полный framework для всех tool families;
+  - глубокую унификацию multimodal branch;
+  - полную замену всех legacy-paths одним махом.
+
+Implemented:
+- В `tools/tool_result_storage.py` reducer-level telemetry расширена полями:
+  - `mediation_reducer_total`
+  - `mediation_reducer_chars_saved_total`
+  - `mediation_reducer_raw_chars_total`
+  - `mediation_reducer_policy_counts`
+  - `mediation_reducer_source_counts`
+  - а также `prompt_raw_chars_total` для корректных prompt-side ratios.
+- `reduce_mediated_tool_result_content(...)` теперь не только возвращает reduced content + descriptor, но и записывает reducer telemetry.
+- `format_tool_result_storage_telemetry_report()` теперь показывает reducer-level distribution и savings с корректными базами для ratio.
+- `run_agent.py` и `agent/tool_executor.py` используют общий reducer-path как operational integration point вместо разрозненной ручной compaction-логики.
+
+Verified:
+- `pytest /home/hermes/apps/hermes-agent/tests/tools/test_tool_result_storage.py -q` → `65 passed`
+- `pytest /home/hermes/apps/hermes-agent/tests/tools/test_output_normalizer.py -q /home/hermes/apps/hermes-agent/tests/run_agent/test_terminal_output_normalization.py -q /home/hermes/apps/hermes-agent/tests/run_agent/test_tool_name_db_persistence.py -q` → green
+- Live synthetic check reducer path:
+  - structured mediated payload: `859 -> 703` chars, saved `156`
+  - reference persisted block: `575 -> 177` chars, saved `398`
+  - combined reducer telemetry: `mediation_reducer_total=2`, `mediation_reducer_chars_saved_total=554`
+
+Boundary:
+- Тему mediation v1 считать закрываемой после этой точки без возврата в новый цикл локальных улучшений, если не появятся новые данные или новый scope.
+
+[2026-07-11 07:56 UTC] — General mediation backlog: развивать token-efficiency через общий core, опираясь на уже сделанные `tools`-наработки, без новых isolated patches
+
+Context:
+- После фиксации того, что terminal-normalizer — это только pilot для общей задачи, понадобилось перевести обсуждение в короткий рабочий backlog.
+- Пользователь отдельно уточнил два архитектурных ограничения:
+  1. учитывать уже сделанные работы в рамках `tools`;
+  2. не делать новые отдельные patch-ветки, а развивать общую логику с возможностью потом выделить её в plugin.
+- На этой основе полный mediation plan был ужат до исполнительского backlog в порядке выполнения.
+
+Agreed:
+- Развивать mediation не как набор новых tool-specific patches, а как общий runtime/tooling core.
+- Уже сделанные наработки в `tools` считать source material для extraction в common core, а не legacy-хвостом и не шаблоном для копирования.
+- Сразу проектировать границу между:
+  - core mediation contract и lifecycle;
+  - tool-specific strategy hooks;
+  - optional plugin extraction boundary.
+- Начинать реализацию с пакета:
+  1. общий contract + plugin boundary;
+  2. audit уже сделанных работ в `tools`;
+  3. extraction map `tools -> common core`;
+  4. canonical artifact registry.
+- Считать MVP завершённым после появления общего contract, extraction map, artifact registry, policy/selectors/listener lifecycle и обобщения terminal path в shared strategy contract.
+
+Rejected:
+- Не делать новый isolated patch под очередной tool без map-to-core.
+- Не копировать существующую `tools`-логику во второе место вместо extraction.
+- Не начинать с plugin-first рефакторинга до появления общего core contract.
+- Не переписывать весь agent loop до появления quick-win mediation foundation.
+
+Implemented:
+- Полный план обновлён с учётом `tools`-наработок и plugin seam.
+- Создан короткий execution backlog:
+  - `/home/hermes/workspace/.hermes/plans/2026-07-11_075653-general-mediation-execution-backlog.md`
+- Базовый развёрнутый план остаётся источником деталей:
+  - `/home/hermes/workspace/.hermes/plans/2026-07-11_075203-general-mediation-rtk-token-optimization-plan.md`
+
+Open questions:
+- Какие именно текущие `tools`-наработки войдут в `move to common core now`, а какие сначала останутся под strategy wrapper, нужно решить в отдельном audit-проходе.
+
+[2026-07-11 18:40 UTC] — Token-efficiency: текущая terminal-normalizer ветка признана только первым этапом общей задачи, а не полным решением «для всего»
+
+Context:
+- Исходная цель по мотивам RTK была шире, чем оптимизация terminal outputs: сделать mediation/оптимизацию токенов для всего agent flow, а не только для tool-specific ветки.
+- В ходе реализации был осознанно выбран низкорисковый первый срез: terminal tool results, persistence и live/persisted split.
+- Это дало быстрый практический эффект, но создало риск незаметно подменить исходную цель более узкой задачей.
+
+Decision:
+- Считать уже реализованную ветку output normalizer успешным pilot implementation только для terminal pipeline.
+- Не считать текущую реализацию завершением общей задачи token-efficiency «для всего».
+- Дальнейшие шаги планировать по трём отдельным зонам затрат токенов:
+  1. обработка LLM request;
+  2. работа tools для получения результата;
+  3. обработка результатов tools.
+
+What is already done:
+- По зоне 2 и 3 сделан сильный фундамент именно для terminal path:
+  - terminal output normalization;
+  - adapters по семействам команд;
+  - raw artifacts + metadata sidecar;
+  - concise vs persisted split;
+  - decision candidates / decision_log_blocks;
+  - config/env policy;
+  - telemetry и metrics по savings.
+- По зоне 1 пока есть только косвенный эффект: уменьшение terminal results, которые затем попадают в следующие LLM prompts.
+
+Quick wins agreed next:
+- Искать низкорисковые расширения, которые приближают систему к цели «для всего», а не бесконечно полировать только terminal branch.
+- В первую очередь смотреть на reuse уже сделанного паттерна для других heavy-text путей и на аккуратные улучшения request-side shaping без глубокой перестройки agent loop.
+
+Rejected framing:
+- Не считать текущую terminal-only реализацию окончательным ответом на исходный запрос «чтобы работало для всего».
+- Не смешивать успех пилота с завершением общей архитектурной цели.
+
+[2026-07-09 14:20 UTC] — Hermes state storage optimization: trigram FTS выключен по умолчанию, длинные tool outputs режутся при persistence, decision-log вынесен в отдельную policy
+
+Context:
+- Проверка live state.db показала размер около 2.08 GB при 117620 messages и 1348 sessions.
+- Основной источник роста — дублирование текста в полнотекстовых индексах: `messages_fts_trigram*` занимали около 0.95 GB, обычный `messages_fts*` — около 0.42 GB, сама таблица `messages` — около 0.49 GB.
+- По role breakdown основной объём дают `tool`-сообщения (70873), часто с очень длинными payload.
+- Отдельно выявлен организационный риск: decision-log местами начинал дублировать operational history вместо фиксации только решений.
+
+Decision:
+- В локальном Hermes trigram FTS отключён по умолчанию; длинные tool outputs при записи в state.db теперь сохраняются в сокращённом виде head+tail с явной пометкой о truncation.
+- Для decision-log введена отдельная policy: хранить решения, причины, rejected alternatives и ссылки на артефакты, но не копировать длинные логи и полную хронику диагностики.
+
+Why:
+- Это даёт наибольшую отдачу при умеренном риске: самый тяжёлый индекс убирается, а главный источник дальнейшего роста ограничивается на входе.
+- Поиск по русскоязычным и обычным латинским запросам сохраняется через основной FTS; для CJK long-substring search остаётся fallback через `LIKE`, если trigram не включён.
+- Decision-log перестаёт быть вторым дублем session history и возвращается к роли реестра решений.
+
+Rejected alternatives:
+- Не ограничиваться `VACUUM`: свободного места в БД было около 10 MB, то есть это не решало корневую причину.
+- Не делать сразу тяжёлую миграцию FTS на external-content/contentless схему: это сильнее меняет storage contract и повышает цену ошибки.
+
+Revisit when:
+- Если понадобится качественный substring/CJK search по длинным фрагментам, trigram можно включить обратно осознанно через env.
+- Если после ограничения tool outputs база всё равно будет расти слишком быстро, следующим этапом стоит смотреть на более глубокую перестройку FTS-схемы.
+
+References:
+- file: /home/hermes/workspace/decision-log-policy.md
+- code: /home/hermes/apps/hermes-agent/hermes_state.py
+- tests: /home/hermes/apps/hermes-agent/tests/test_state_db_storage_optimization.py
+
 [2026-06-25 17:58 UTC] — Hermes Web KPI/TG split: KPI получил точечный adaptive markdown render, а TG 24/25.06 подтверждён как data-shape defect старых job_delivery, не потеря сообщений
 
 Context:
@@ -6030,3 +6218,215 @@ Verified:
 
 Open questions:
 - Позже на live runtime стоит визуально проверить, не слишком ли заметен титульный banner для внутренних черновиков и не нужно ли делать его ещё компактнее по высоте/контрасту.
+
+[2026-07-06] — Домашний ПК как временная российская точка выхода через Tailscale
+
+Context:
+- Пользователь искал минимально затратный способ дать Еве российский egress без аренды отдельного VPS и без новой инфраструктуры.
+- Домашний контур пользователя находится за CGNAT, поэтому прямой входящий VPN на домашний роутер как базовый путь не подходит.
+- В качестве временного решения был поднят Tailscale на домашнем Windows-ПК и portable Tailscale на текущем Linux-сервере Hermes.
+
+Agreed:
+- Пока оставить решение в простом временном виде: домашний ПК пользователя используется как российская точка выхода через Tailscale exit node.
+- Не строить сейчас отдельную облачную или постоянную инфраструктуру только ради egress в РФ.
+- Использовать этот контур для точечных проверок и доступа к российским сайтам, а не как постоянный высоконагруженный сетевой слой.
+
+Rejected:
+- Не переходить сейчас к отдельному VPS в Яндекс Облаке или другому постоянному российскому узлу: для текущего этапа это избыточно.
+- Не использовать прямой входящий VPN на домашний роутер как основную идею: домашний WAN за CGNAT, схема ненадёжна без белого IP.
+- Не делать ставку на агрессивные антибот-обходы, ротацию IP и сомнительные proxy как базовый рабочий путь.
+
+Model / stack / tools:
+- Домашний узел: Windows + Tailscale, узел `desktop-ss1qtuq`, Tailscale IP `100.73.7.84`.
+- Сервер Hermes подключён в тот же tailnet как `hermes-riga-bridge`, Tailscale IP `100.72.98.63`.
+- На сервере использован portable userspace Tailscale с локальными proxy endpoints `127.0.0.1:1055` (SOCKS5) и `127.0.0.1:1056` (HTTP/HTTPS proxy).
+
+Implemented:
+- На домашнем ПК включён и одобрен Tailscale exit node.
+- На сервере Hermes поднят portable Tailscale client без системной установки через userspace networking.
+- Сервер подключён к tailnet пользователя и переключён на egress через `desktop-ss1qtuq`.
+
+Verified:
+- Live подтверждено, что сервер видит домашний узел и может использовать его как `exit node`.
+- Внешний IP через этот контур подтвердился как российский: `5.35.115.69`, `Moscow, RU`, `AS41275 Lovitel LLC`.
+- Через этот контур Roseltorg стал доступен из среды Hermes; историческая бауманская карточка `32211461231` открывается живой страницей.
+- Ozon отвечает через российский egress; Яндекс Маркет по-прежнему может отдавать captcha, то есть география исправлена, но антибот не исчезает полностью.
+
+Reflection (agent’s view):
+- Это хороший proof of concept и дешёвый временный мост, но не постоянная архитектура.
+- Главный operational constraint: схема работает только пока домашний ПК включён.
+- Для антибот-чувствительных сайтов российский IP помогает, но не заменяет нормальную браузерную сессию и не гарантирует отсутствие captcha.
+
+Open questions:
+- Позже можно решить, оставлять ли этот контур как точечный ручной инструмент или оформлять более удобный постоянный российский egress.
+- Если появится регулярная потребность в российских браузерных проверках, стоит отдельно рассмотреть более стабильный пользовательский browser-контур с постоянной сессией.
+
+[2026-07-06] — Hermes Agent config migrated to v33; Telegram streaming enabled; safer update backups enabled
+
+Context:
+- После обновления Hermes Agent до `0.18.0` doctor показал устаревшую схему конфига: `v30 -> v33`.
+- Пользователь попросил не только мигрировать конфиг, но и включить полезные возможности из новых версий, если они сейчас выключены и не требуют новых внешних зависимостей.
+- Рабочий контур: Telegram как основной пользовательский surface, local-first usage, без добавления новых SaaS/cred-dependent интеграций.
+
+Agreed:
+- Базовый конфиг Hermes переведён на schema version `33`.
+- Для Telegram включён streaming-режим как полезное low-risk улучшение UX: потоковая отдача ответа без ожидания полного финала.
+- Для будущих обновлений включён `pre_update_backup`, чтобы перед `hermes update` Hermes автоматически делал резервную копию контура.
+- Не включать спорные или шумные опции вроде runtime footer, long-running chat notifications или расширенных web/browser backends без отдельной потребности и/или новых credentials.
+
+Rejected:
+- Не включать сейчас внешние web-extract backends (`firecrawl`, `exa`, `tavily`, `parallel`): в контуре нет нужных ключей, а текущая задача не про добавление новых зависимостей.
+- Не включать chat-noise опции в Telegram (`interim_assistant_messages`, `long_running_notifications`) поверх текущих предпочтений пользователя без явного запроса.
+- Не включать auto-prune сессий без отдельного решения по retention, хотя `state.db` уже крупный и это стоит вернуться отдельно.
+
+Model / stack / tools:
+- Backup исходного конфига перед миграцией: `/home/hermes/.hermes/config.yaml.pre-v33-backup.20260706-080945`.
+- Итоговый конфиг: `/home/hermes/.hermes/config.yaml`.
+- Изменённые ключи:
+  - `_config_version: 33`
+  - `streaming.enabled: true`
+  - `display.platforms.telegram.streaming: true`
+  - `gateway.platforms.telegram.streaming: true`
+  - `updates.pre_update_backup: true`
+
+Implemented:
+- Выполнена миграция `hermes config migrate` с переходом `v30 -> v33`.
+- Hermes автоматически:
+  - переключил `agent.verify_on_stop` в `false`;
+  - удалил deprecated `delegation.max_async_children`.
+- Поверх миграции вручную включены Telegram streaming и pre-update backup.
+
+Verified:
+- `hermes config check` после изменений показывает `Config version: 33 ✓`.
+- Файл `~/.hermes/config.yaml` подтверждает нужные значения для streaming и `updates.pre_update_backup: true`.
+- Попытка применить изменения мгновенным restart из текущей Telegram/gateway-сессии была заблокирована safeguard'ом Hermes: gateway нельзя безопасно перезапускать изнутри самого gateway-процесса.
+
+Open questions:
+- Чтобы Telegram streaming реально вступил в силу в живом gateway-процессе, нужен restart gateway из внешнего shell/TTY, а не из этой же Telegram-сессии.
+- Отдельно стоит вернуться к doctor hang на большой `state.db`: это не было исправлено самой миграцией конфига.
+
+[2026-07-06 08:45 UTC] — Hermes browser contour после 0.18: фикс через локальный CDP override и user-space browser runtime
+
+Context:
+- После обновления до `Hermes Agent v0.18.0` browser tools в чате вели себя противоречиво: `browser_navigate('https://example.com')` рапортовал успех и заголовок `Example Domain`, но реальный live-state оказывался сломанным.
+- До фикса наблюдалось следующее: `browser_console` показывал `about:blank`, `browser_snapshot` возвращал `(empty page)`, `browser_vision` показывал белый экран, а `curl http://127.0.0.1:9224/json/list` видел только `about:blank`.
+- На хосте уже существовал отдельный локальный headless Chrome CDP service `local-browser-cdp-9224.service`, но основной Hermes browser contour не был жёстко привязан к нему через конфиг.
+
+Root cause:
+- Первая проблема была в маршрутизации browser tools: Hermes работал в local mode без явного `browser.cdp_url`, из-за чего `browser_navigate` мог вернуть успех на своей внутренней сессии, а live tab state для последующих проверок не совпадал и фактически оставался `about:blank`.
+- Вторая проблема была в runtime рендеринге локального CDP Chrome на Linux: даже при рабочем DOM и корректном `snapshot`/`eval` screenshots сначала получались почти пустыми. Это указывало не на сетевую ошибку, а на дефект локального browser runtime / font stack.
+
+Decision:
+- Для этого контура `browser.cdp_url` фиксируем в основном конфиге на локальный CDP endpoint `http://127.0.0.1:9224`.
+- Для Linux user-service `local-browser-cdp-9224.service` добавляем user-space browser runtime env:
+  - `FONTCONFIG_PATH=/home/hermes/.local/browser-runtime/root/etc/fonts`
+  - `FONTCONFIG_FILE=/home/hermes/.local/browser-runtime/root/etc/fonts/fonts.conf`
+  - `XDG_DATA_DIRS=/home/hermes/.local/browser-runtime/root/usr/share`
+  - `LD_LIBRARY_PATH=/home/hermes/.hermes/browser-libs/root/usr/lib/x86_64-linux-gnu`
+- В `ExecStart` добавляем `--no-sandbox --disable-dev-shm-usage` как hardening для headless Chrome в этом локальном контуре.
+- Browser contour считать восстановленным только если зелёны все 4 слоя: `browser_navigate`, `browser_console`, `browser_snapshot`, `browser_vision`; одного успешного navigate недостаточно.
+
+Implemented:
+- В `~/.hermes/config.yaml` установлен `browser.cdp_url: http://127.0.0.1:9224`.
+- Через прямой `agent-browser --cdp <ws>` подтверждено, что этот CDP backend умеет корректно открывать `https://example.com/`, читать `window.location.href` и строить snapshot с `Example Domain`.
+- Пропатчен `/home/hermes/.config/systemd/user/local-browser-cdp-9224.service`:
+  - добавлены `FONTCONFIG_PATH`, `FONTCONFIG_FILE`, `XDG_DATA_DIRS`, `LD_LIBRARY_PATH`;
+  - в `ExecStart` добавлены `--no-sandbox --disable-dev-shm-usage`.
+- Выполнены `systemctl --user daemon-reload` и `systemctl --user restart local-browser-cdp-9224.service`.
+
+Verified:
+- После фикса `browser_navigate('https://example.com')` возвращает `success=true`, `title='Example Domain'` и непустой snapshot.
+- `browser_console` теперь возвращает реальное состояние страницы:
+  - `href: https://example.com/`
+  - `title: Example Domain`
+  - `ready: complete`
+  - body содержит текст `Example Domain ... Learn more`.
+- `browser_snapshot(full=true)` возвращает осмысленный DOM snapshot с heading `Example Domain` и ссылкой `Learn more`.
+- `browser_vision` после правки runtime перестал отдавать белый экран и показывает нормальный скриншот страницы `Example Domain`.
+- Прямой CDP screenshot через `agent-browser --cdp ... screenshot` тоже стал визуально корректным, а не пустым.
+
+Open questions:
+- Отдельно стоит решить, хотим ли мы закрепить этот `local-browser-cdp-9224.service` как стандартный поддерживаемый runtime contour для Hermes browser tools на этой машине, или позже перевести это в более формализованный setup/skill.
+- История с `hermes doctor` и большим `state.db` остаётся отдельной веткой и этим browser fix не закрывается.
+
+[2026-07-06 08:55 UTC] — `hermes doctor` больше не зависает на большой `state.db`
+
+Context:
+- После обновления до `0.18.0` полный `hermes doctor` на этом контуре не завершался: процесс висел после блока directory structure и приходилось снимать его по таймауту.
+- Локализация показала, что зависание воспроизводится не только в TUI, но и на прямом вызове `hermes_state._db_opens_cleanly('/home/hermes/.hermes/state.db')`.
+- Простые операции с БД были быстрыми: `sqlite3.connect`, `SELECT COUNT(*) FROM sessions`, а также rolled-back FTS write probe.
+- Размер боевой БД большой: примерно `1.9G` + WAL, поэтому самым вероятным кандидатом стал полный `PRAGMA integrity_check` внутри health probe.
+
+Root cause:
+- `_db_opens_cleanly()` всегда выполнял `PRAGMA integrity_check` перед обычным read/write probe.
+- Для multi-GB `state.db` этот полный scan на живом контуре занимал настолько долго, что `hermes doctor` выглядел зависшим, хотя сама БД была читаемой и writable.
+- Это не было похоже на network/browser issue и не выглядело как FTS write corruption: rolled-back insert в `sessions/messages` проходил быстро.
+
+Decision:
+- Для operator-facing health probe `_db_opens_cleanly()` оставляем строгую проверку на обычных/умеренных БД, но для очень больших БД пропускаем `PRAGMA integrity_check` и опираемся на более практичные runtime-критерии:
+  - schema parse через `PRAGMA journal_mode`;
+  - canonical read `SELECT COUNT(*) FROM sessions`;
+  - rolled-back FTS-triggered write probe через `sessions/messages`.
+- Порог large-DB health shortcut зафиксирован в коде как `_HEALTH_CHECK_MAX_INTEGRITY_BYTES = 512 * 1024 * 1024` с учётом `state.db` + `-wal` + `-shm`.
+- Это именно fix для health-check responsiveness, а не замена полноценной offline-integrity диагностики на все случаи.
+
+Implemented:
+- В `hermes_state.py` добавлены helpers:
+  - `_health_check_total_bytes(db_path)`
+  - `_should_skip_integrity_check(db_path)`
+- `_db_opens_cleanly()` изменён так, что:
+  - на обычных БД по-прежнему выполняет `PRAGMA integrity_check`;
+  - на very large DB логирует skip и идёт дальше в read + rolled-back write probe.
+- В `tests/test_state_db_malformed_repair.py` добавлен regression test, который подтверждает, что large-DB shortcut реально не вызывает `integrity_check`, но продолжает ловить FTS write corruption через write probe.
+
+Verified:
+- `python3 -m pytest tests/test_state_db_malformed_repair.py -q -o addopts=''` → `15 passed in 3.45s`.
+- `python3 -m py_compile hermes_state.py tests/test_state_db_malformed_repair.py` → `exit_code=0`.
+- Прямой вызов `_db_opens_cleanly('/home/hermes/.hermes/state.db')` на живой БД теперь завершается за `0.008s` и возвращает `None`.
+- `timeout 90 hermes doctor | tail -n 40` теперь доходит до конца и завершаетcя с `All checks passed! 🎉`.
+
+Open questions:
+- Если позже понадобится именно полный offline integrity audit большой `state.db`, его стоит запускать отдельной явной командой/режимом, а не в быстром operator-facing `doctor` path.
+
+[2026-07-06 09:50 UTC] — стандартный post-update smoke script для Hermes local runtime
+
+Context:
+- После серии post-update проблем (config migration, browser contour, `hermes doctor` на большой `state.db`) стало невыгодно каждый раз повторять ручной acceptance pass с нуля.
+- Нужен короткий воспроизводимый smoke-check, который можно гонять сразу после следующего `hermes update` и быстро понимать: runtime в целом жив или снова поплыл.
+
+Decision:
+- В контуре заводим один стандартный local-first smoke script без внешних SaaS и без новых credentials.
+- Скрипт должен проверять именно критичные для этого контура вещи:
+  - версия Hermes;
+  - config health / schema version;
+  - gateway status;
+  - browser contour через локальный CDP (`open -> eval -> snapshot -> screenshot`);
+  - быстрый `hermes doctor` с timeout.
+- Browser path строим не через chat-tool wrapper, а через прямой `agent-browser --cdp`, чтобы smoke был повторяемым и запускался из shell после update.
+
+Implemented:
+- Создан исполняемый скрипт:
+  - `/home/hermes/.hermes/scripts/hermes-post-update-smoke.py`
+- Скрипт:
+  - читает `browser.cdp_url` из `~/.hermes/config.yaml`;
+  - резолвит `webSocketDebuggerUrl` через `/json/version`;
+  - открывает `https://example.com/`;
+  - проверяет `window.location.href`;
+  - делает `snapshot`;
+  - делает screenshot в `/tmp/hermes-post-update-smoke.png`;
+  - запускает `timeout 90 hermes doctor | tail -n 40`;
+  - печатает короткий human-readable summary и полный JSON report;
+  - завершаетcя с `exit 0`, если весь smoke зелёный, и `exit 1`, если нет.
+
+Verified:
+- Запуск `python3 /home/hermes/.hermes/scripts/hermes-post-update-smoke.py` на текущем контуре дал `overall: OK`.
+- Скрипт подтвердил:
+  - `Hermes Agent v0.18.0`;
+  - `Config version: 33`;
+  - живой gateway;
+  - рабочий browser contour через локальный CDP;
+  - успешное завершение `hermes doctor`.
+
+Operational rule:
+- После следующих `hermes update` сначала запускать именно этот smoke script.
+- Только если он красный — идти в глубокую локализацию.

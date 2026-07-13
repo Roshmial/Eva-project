@@ -152,6 +152,36 @@ After creating each part:
 - verify the file exists;
 - tell the user exactly what was created and what remains.
 
+## If the user provides a workbook with vendor lists and criteria
+
+Treat the workbook as the primary scope contract, not as a loose attachment.
+
+Working pattern:
+- extract the product list, categories, and criteria first;
+- use the workbook taxonomy as the backbone of the report structure;
+- separate two layers explicitly:
+  - market/class analysis;
+  - vendor-level comparison using only publicly supportable criteria;
+- if the criteria list is richer than public evidence allows, do **not** fill the gaps with inference — mark those fields as requiring RFI, demo, security review, or commercial clarification.
+
+This is especially important for Russia-only market studies, where public materials often describe positioning well but disclose weakly on:
+- tariff logic;
+- SLA;
+- observability / tracing depth;
+- guardrails and governance controls;
+- resiliency and sizing;
+- detailed security controls.
+
+Recommended output shape in that situation:
+1. executive summary;
+2. market map by product class;
+3. technology radar: what each class is for;
+4. category-by-category strengths / weaknesses / fit;
+5. top-N cross-class shortlist with a compact comparison matrix;
+6. implementation barriers and failure factors;
+7. trends / outlook;
+8. source list and explicit evidence limits.
+
 ## RFI/demo/pilot discipline
 
 Vendor demos are not proof. Treat the following as weak evidence unless tested on customer-relevant material:

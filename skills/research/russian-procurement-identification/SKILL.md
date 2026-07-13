@@ -81,6 +81,17 @@ Good pattern:
 - open official EIS card by registry number
 - treat the EIS card as source of truth
 
+### 3.1) For Moscow small-procurement traces, pivot to the marketplace mirror early
+If the buyer is a Moscow public entity and the remembered subject looks like a small software renewal, license extension, or Portal Suppliers purchase, do not wait for EIS to confirm it.
+
+Practical pattern:
+- use an indexer snippet to surface a likely marketplace card on `market.mosreg.ru/Trade/ViewTrade/...` or a mirror such as `Zakupki360`;
+- open the marketplace card directly;
+- extract the concrete fields that are often visible there even when EIS search is unhelpful: buyer name, INN, trade number, registry number, status, subject, end-of-offers date, and price;
+- treat that marketplace card as the primary confirmation if it explicitly says the procurement is conducted in AIS `Портал поставщиков` and shows the buyer identity.
+
+This is especially useful for Moscow procurement stories where the user's memory may point to `СЦ 44`, `Портал поставщиков`, or a software license subject, while classic 44-ФЗ / 223-ФЗ search returns nothing relevant.
+
 ### 4) Manually probe neighboring buyer-specific numbers when clue memory is mixed
 If the buyer code is stable and the user remembers only a number tail, inspect adjacent registry numbers for that buyer.
 This is especially useful when two neighboring cards can plausibly be mixed in memory.
@@ -162,6 +173,7 @@ Do not say "nothing there" when the real issue is visibility or anti-bot.
 For buyer-specific investigations, sequential probing of neighboring EIS numbers is a valid method when search is poor and the clue set includes a stable buyer code plus a number tail. This is often faster and more reliable than broad keyword search.
 
 See `references/bauman-path-inzhenera-case.md` for a concrete example where number-tail memory and subject memory came from adjacent Bauman procedures.
+See `references/moscow-portal-suppliers-bitrix24-trace.md` for a marketplace-first reconstruction pattern in the Moscow `Портал поставщиков` contour, including year-mismatch handling.
 
 ## Pitfalls
 

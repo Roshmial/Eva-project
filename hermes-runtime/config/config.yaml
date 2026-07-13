@@ -4,12 +4,9 @@ model:
   base_url: https://chatgpt.com/backend-api/codex
   fallback_providers: '["openai-codex"]'
   fallback_models: '["gemma-4-26b-a4b-it", "gpt-5.4"]'
-providers: {}
 fallback_providers: []
-credential_pool_strategies: {}
 toolsets:
-- hermes-cli
-max_concurrent_sessions: null
+  - hermes-cli
 agent:
   max_turns: 150
   gateway_timeout: 1800
@@ -70,6 +67,7 @@ agent:
       \ you today! Every question is AMAZING and we're gonna CRUSH IT together! This\
       \ is gonna be LEGENDARY! ARE YOU READY?! LET'S DO THIS! \U0001F4AA\U0001F624\
       \U0001F680
+  verify_on_stop: false
 terminal:
   backend: local
   modal_mode: auto
@@ -82,7 +80,6 @@ terminal:
   auto_source_bashrc: true
   docker_image: nikolaik/python-nodejs:python3.11-nodejs20
   docker_forward_env: []
-  docker_env: {}
   singularity_image: docker://nikolaik/python-nodejs:python3.11-nodejs20
   modal_image: nikolaik/python-nodejs:python3.11-nodejs20
   daytona_image: nikolaik/python-nodejs:python3.11-nodejs20
@@ -109,7 +106,7 @@ browser:
   allow_private_urls: false
   engine: auto
   auto_local_for_private_urls: true
-  cdp_url: ''
+  cdp_url: http://127.0.0.1:9224
   dialog_policy: must_respond
   dialog_timeout_s: 300
   camofox:
@@ -130,7 +127,6 @@ checkpoints:
   retention_days: 7
   delete_orphans: true
   min_interval_hours: 24
-context_file_max_chars: null
 file_read_max_chars: 100000
 mcp_discovery_timeout: 1.5
 tool_output:
@@ -166,7 +162,6 @@ kanban:
   worker_log_backup_count: 1
   orchestrator_profile: ''
   default_assignee: ''
-  max_in_progress_per_profile: null
   auto_decompose: true
   auto_decompose_per_tick: 3
   dispatch_stale_timeout_seconds: 14400
@@ -194,7 +189,6 @@ auxiliary:
     base_url: http://127.0.0.1:8080/v1
     api_key: ''
     timeout: 120
-    extra_body: {}
     download_timeout: 30
   web_extract:
     provider: custom
@@ -202,42 +196,36 @@ auxiliary:
     base_url: http://127.0.0.1:8080/v1
     api_key: ''
     timeout: 360
-    extra_body: {}
   compression:
     provider: custom
     model: gemma-4-26b-a4b-it
     base_url: http://127.0.0.1:8080/v1
     api_key: ''
     timeout: 180
-    extra_body: {}
   skills_hub:
     provider: custom
     model: gemma-4-26b-a4b-it
     base_url: http://127.0.0.1:8080/v1
     api_key: ''
     timeout: 30
-    extra_body: {}
   approval:
     provider: custom
     model: gemma-4-26b-a4b-it
     base_url: http://127.0.0.1:8080/v1
     api_key: ''
     timeout: 30
-    extra_body: {}
   mcp:
     provider: custom
     model: gemma-4-26b-a4b-it
     base_url: http://127.0.0.1:8080/v1
     api_key: ''
     timeout: 30
-    extra_body: {}
   title_generation:
     provider: custom
     model: gemma-4-26b-a4b-it
     base_url: http://127.0.0.1:8080/v1
     api_key: ''
     timeout: 30
-    extra_body: {}
     language: ''
   tts_audio_tags:
     provider: auto
@@ -245,42 +233,36 @@ auxiliary:
     base_url: ''
     api_key: ''
     timeout: 30
-    extra_body: {}
   triage_specifier:
     provider: custom
     model: gemma-4-26b-a4b-it
     base_url: http://127.0.0.1:8080/v1
     api_key: ''
     timeout: 120
-    extra_body: {}
   kanban_decomposer:
     provider: custom
     model: gemma-4-26b-a4b-it
     base_url: http://127.0.0.1:8080/v1
     api_key: ''
     timeout: 180
-    extra_body: {}
   profile_describer:
     provider: custom
     model: gemma-4-26b-a4b-it
     base_url: http://127.0.0.1:8080/v1
     api_key: ''
     timeout: 60
-    extra_body: {}
   curator:
     provider: custom
     model: gemma-4-26b-a4b-it
     base_url: http://127.0.0.1:8080/v1
     api_key: ''
     timeout: 600
-    extra_body: {}
   monitor:
     provider: auto
     model: ''
     base_url: ''
     api_key: ''
     timeout: 60
-    extra_body: {}
 display:
   compact: false
   personality: concise
@@ -318,13 +300,12 @@ display:
     last_lines: 2
   interim_assistant_messages: true
   tool_progress_command: false
-  tool_progress_overrides: {}
   tool_preview_length: 0
   tool_progress_grouping: accumulate
   ephemeral_system_ttl: 0
   platforms:
     telegram:
-      streaming: false
+      streaming: true
       tool_progress: false
       interim_assistant_messages: false
       long_running_notifications: false
@@ -334,9 +315,9 @@ display:
   runtime_footer:
     enabled: false
     fields:
-    - model
-    - context_pct
-    - cwd
+      - model
+      - context_pct
+      - cwd
   copy_shortcut: auto
   tool_progress: all
   cleanup_progress: false
@@ -435,7 +416,6 @@ delegation:
   child_timeout_seconds: 600
   reasoning_effort: ''
   max_concurrent_children: 3
-  max_async_children: 3
   max_spawn_depth: 1
   orchestrator_enabled: true
   subagent_auto_approve: false
@@ -461,13 +441,11 @@ curator:
   backup:
     enabled: true
     keep: 5
-honcho: {}
 timezone: ''
 slack:
   require_mention: true
   free_response_channels: ''
   allowed_channels: ''
-  channel_prompts: {}
 discord:
   require_mention: true
   free_response_channels: ''
@@ -477,7 +455,6 @@ discord:
   history_backfill: true
   history_backfill_limit: 50
   reactions: true
-  channel_prompts: {}
   dm_role_auth_guild: ''
   server_actions: ''
   allow_any_attachment: false
@@ -491,27 +468,24 @@ discord:
     speech_gain: 1.0
     ack_enabled: true
     ack_phrases:
-    - Let me look into that.
-    - One moment.
-    - Checking on that now.
-    - Give me a sec.
-    - On it.
-whatsapp: {}
+      - Let me look into that.
+      - One moment.
+      - Checking on that now.
+      - Give me a sec.
+      - On it.
 telegram:
   reactions: true
-  channel_prompts: {}
   allowed_chats: ''
   extra:
     rich_messages: true
   bot_token: PASTE_YOUR_BOT_TOKEN_HERE
   allowed_users:
-  - 381204086
+    - 381204086
   home_channel: '381204086'
 mattermost:
   require_mention: true
   free_response_channels: ''
   allowed_channels: ''
-  channel_prompts: {}
 matrix:
   require_mention: true
   free_response_rooms: ''
@@ -523,14 +497,10 @@ approvals:
   mcp_reload_confirm: true
   destructive_slash_confirm: false
 command_allowlist:
-- delete in root path
-- recursive delete
-- stop/restart hermes gateway (kills running agents)
-quick_commands: {}
-platform_hints: {}
-hooks: {}
+  - delete in root path
+  - recursive delete
+  - stop/restart hermes gateway (kills running agents)
 hooks_auto_accept: false
-personalities: {}
 security:
   allow_private_urls: false
   redact_secrets: true
@@ -552,7 +522,6 @@ cron:
     expected_audience: ''
     nas_jwks_url: ''
   wrap_response: false
-  max_parallel_jobs: null
 code_execution:
   mode: project
   timeout: 300
@@ -574,7 +543,6 @@ model_catalog:
   enabled: true
   url: https://hermes-agent.nousresearch.com/docs/api/model-catalog.json
   ttl_hours: 1
-  providers: {}
 network:
   force_ipv4: false
 gateway:
@@ -589,13 +557,13 @@ gateway:
     max_concurrent_runs: 10
   platforms:
     telegram:
-      streaming: false
+      streaming: true
 streaming:
-  enabled: false
+  enabled: true
   transport: auto
   edit_interval: 0.8
   buffer_threshold: 24
-  cursor: " \u2589"
+  cursor: ' ▉'
   fresh_final_after_seconds: 60.0
 sessions:
   auto_prune: false
@@ -608,7 +576,7 @@ onboarding:
     busy_input_prompt: true
   profile_build: ask
 updates:
-  pre_update_backup: false
+  pre_update_backup: true
   backup_keep: 5
   non_interactive_local_changes: stash
 lsp:
@@ -616,7 +584,6 @@ lsp:
   wait_mode: document
   wait_timeout: 5.0
   install_strategy: auto
-  servers: {}
 x_search:
   model: grok-4.20-reasoning
   timeout_seconds: 180
@@ -633,7 +600,7 @@ secrets:
 paste_collapse_threshold: 5
 paste_collapse_threshold_fallback: 5
 paste_collapse_char_threshold: 2000
-_config_version: 30
+_config_version: 33
 model_aliases:
   light:
     provider: custom
@@ -650,67 +617,67 @@ session_reset:
 group_sessions_per_user: true
 platform_toolsets:
   cli:
-  - browser
-  - clarify
-  - code_execution
-  - context_engine
-  - cronjob
-  - delegation
-  - file
-  - image_gen
-  - kanban
-  - memory
-  - session_search
-  - skills
-  - terminal
-  - todo
-  - tts
-  - vision
-  - web
+    - browser
+    - clarify
+    - code_execution
+    - context_engine
+    - cronjob
+    - delegation
+    - file
+    - image_gen
+    - kanban
+    - memory
+    - session_search
+    - skills
+    - terminal
+    - todo
+    - tts
+    - vision
+    - web
   telegram:
-  - browser
-  - clarify
-  - code_execution
-  - computer_use
-  - cronjob
-  - delegation
-  - file
-  - image_gen
-  - memory
-  - session_search
-  - skills
-  - terminal
-  - todo
-  - tts
-  - vision
-  - web
+    - browser
+    - clarify
+    - code_execution
+    - computer_use
+    - cronjob
+    - delegation
+    - file
+    - image_gen
+    - memory
+    - session_search
+    - skills
+    - terminal
+    - todo
+    - tts
+    - vision
+    - web
   discord:
-  - hermes-discord
+    - hermes-discord
   whatsapp:
-  - hermes-whatsapp
+    - hermes-whatsapp
   slack:
-  - hermes-slack
+    - hermes-slack
   signal:
-  - hermes-signal
+    - hermes-signal
   homeassistant:
-  - hermes-homeassistant
+    - hermes-homeassistant
   qqbot:
-  - hermes-qqbot
+    - hermes-qqbot
   yuanbao:
-  - hermes-yuanbao
+    - hermes-yuanbao
   teams:
-  - hermes-teams
+    - hermes-teams
   google_chat:
-  - hermes-google_chat
+    - hermes-google_chat
 custom_providers:
-- name: local_gemma_4_26
-  base_url: http://127.0.0.1:8080/v1
-  model: gemma-4-26b-a4b-it
+  - name: local_gemma_4_26
+    base_url: http://127.0.0.1:8080/v1
+    model: gemma-4-26b-a4b-it
 known_plugin_toolsets:
   cli:
-  - spotify
+    - spotify
   telegram:
-  - spotify
+    - spotify
 image_gen:
   provider: openai-codex
   use_gateway: false
