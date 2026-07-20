@@ -62,6 +62,16 @@ message meta -> DB record -> local file/storage path -> protected API endpoint -
    - размер ненулевой;
    - имя совпадает с ожидаемым export/download.
 
+   Для upload/ingestion отдельно сверь `app.user_files`, а не только `messages.meta_json.attachments`.
+   Особенно для `.docx` проверь:
+   - `stored_name`
+   - `mime_type`
+   - `text_extracted`
+   - `extraction_note`
+   - `preview_text` / `extracted_text`
+
+   Практическая эвристика из live-кейса: если у DOCX `stored_name` потерял расширение `.docx`, а у похожих успешных файлов расширение сохранено, это сильный сигнал, что extraction path может ветвиться по имени/расширению и ломаться даже при корректном `mime_type`.
+
 5. Проверь защищённый API download с валидной user-сессией.
    Недостаточно получить 401 без токена. Нужна именно проверка с действующей сессией того пользователя, который жалуется.
    Для каждого проблемного attachment проверь:
@@ -93,6 +103,11 @@ message meta -> DB record -> local file/storage path -> protected API endpoint -
 - Если есть `processing_status=error` или `timed out`, не путай это с потерей уже созданных файлов: это отдельный сбой генерации, а не обязательно сбой attachment delivery.
 - Отдельно проверяй, не путается ли attachment delivery с export/generation logic. Симптом «не отдал файл» может означать не потерю вложения, а то, что запрос вида «Отправь мне файл» вообще ушёл не в export-route, а в обычный LLM-path.
 - Если backend заявляет `.docx`, подтверждай реальный бинарный файл по HTTP, а не по названию. Минимум проверь: `Content-Type=application/vnd.openxmlformats-officedocument.wordprocessingml.document`, ненулевой размер и zip magic `PK\x03\x04` в первых байтах.
+- Если пользователь жалуется, что экспорт "отдаёт не тот docx" или в документ попал технический мусор, проверь цепочку `message_export` отдельно от download path:
+  - какой `exported_message_id` выбрал backend;
+  - не указывает ли он на предыдущее apology/technical сообщение вместо последнего содержательного ответа;
+  - не зациклился ли экспорт на уже экспортированном `file_response`, из-за чего в новый docx попадают служебные метки, timestamps и прошлые фразы про сам экспорт.
+- Если user upload уже есть в `app.user_files`, но assistant пишет, что файл "не появился в рабочем пространстве" или "не был передан", сначала считай это ingestion/runtime bug. Не перекладывай вину на пользователя, пока не проверены `stored_name`, extraction-статус и фактический путь к файлу на сервере.
 - Если модель пишет про «ограничения среды», «невозможность создать бинарный файл», «установку библиотек» или предлагает Markdown вместо файла, не принимай это как объяснение без backend-проверки. Сначала установи, есть ли в runtime нужная библиотека и может ли backend сам собрать файл без участия LLM.
 
 # Проверка export/generation path
@@ -152,3 +167,4 @@ message meta -> DB record -> local file/storage path -> protected API endpoint -
 - `references/file-export-contract-hardening.md` — признаки смешения delivery/generation, live-признаки настоящего `.docx` и правила backend-contract для file-request.
 - `references/file-intent-false-positive-cases.md` — кейсы ложного file-intent и признаки, которые надо проверять в live runtime.
 - `references/summary-file-routing-and-output-contract.md` — различение `message_export` vs `generated_file_response`, summary-tail leakage, local-path leakage и загрязнение generated-file content.
+- `references/victoria-docx-and-message-export-failure-pattern.md` — live-кейс: непоследовательный DOCX extraction, `app.user_files` vs assistant claims, и export-loop с неправильным `exported_message_id`.

@@ -27,6 +27,12 @@ Use this skill when the task is about a live Hermes-style web/runtime contour an
    - runtime state: what the live service currently does
    - deployed state: whether the live runtime actually includes the code fix
 
+   Delivery rule for named prod tasks:
+   - If the user asked about a specific production host/contour, local code changes or local green tests do not count as completion.
+   - Do not report "done", "под ключ", or equivalent until the change is actually present on the named target and verified there.
+   - A valid prod closeout needs the real target path: deploy or apply the change on that host, restart/reload the owning service if required, and run at least one live round-trip on the target contour.
+   - If credentials or provider access still block the last live check, report that exact blocker explicitly instead of framing the work as already complete.
+
 3. Prefer proof over inference.
    - Verify proxying with live HTTP endpoints.
    - Verify UI issues with a real browser/runtime path where possible.

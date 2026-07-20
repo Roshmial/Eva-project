@@ -69,7 +69,10 @@ Do not spend the first pass on architecture notes, broad redesigns, or abstract 
    In bounded closeout mode:
    - define what is in v1 and what is intentionally out of scope;
    - stop proposing the next micro-improvement by default;
+   - if a remaining improvement or cleanup is low-risk, local, and materially improves completeness, include it yourself before delivery instead of surfacing it as a follow-up;
+   - ask the user only for changes that are high-risk, scope-changing, destructive, or architecturally consequential;
    - make the remaining pass about integration completeness, telemetry completeness, regression, and measured verification;
+   - before handing off, do one explicit completeness check: what is still unfinished, is it critical, and if not critical, finish it now rather than mentioning it as optional future work;
    - update `decision-log.md` so future work does not reopen the same loop without new data.
 
 # Good optimization order

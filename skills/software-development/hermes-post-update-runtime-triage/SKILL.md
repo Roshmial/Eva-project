@@ -71,6 +71,18 @@ description: "Диагностика Hermes после обновления: б�
 
 Смысл smoke-check — быстро понять, что core loop жив: shell, файлы, Python, локальные знания, планировщик, сессии.
 
+### Обязательный post-update install hygiene check
+После `hermes update` или git-based refresh не считай runtime полностью обновлённым, пока не проверишь install-tree зависимости, особенно Node-side хвосты.
+
+Практический минимум:
+- `hermes doctor`
+- если doctor жалуется на missing browser/npm dependency (например `agent-browser not installed`) — проверить install dir, а не только текущий cwd;
+- для git install в первую очередь смотреть реальный `Install directory` из `hermes --version` / `hermes status`;
+- при missing Node dependency сначала делать `npm install`, затем при необходимости `npm update` внутри install dir;
+- после remediation повторно прогонять `hermes doctor`.
+
+Ключевой вывод: post-update regression может быть не в Python/runtime-коде, а в том, что update не довёл Node install tree до согласованного состояния.
+
 ## 4. Browser tools: проверяй слой за слоем
 
 ### Минимальная проверка
@@ -183,16 +195,31 @@ description: "Диагностика Hermes после обновления: б�
   - `State 'stop-sigterm' timed out. Killing.`
 - Только после этого формулируй root cause.
 
-## 6.2. Конкретный post-update pitfall: update watcher не должен падать на не-UTF8 выводе
+## 6.3. Версионный drift после update нужно диагностировать отдельно от release-note вопроса
 
-Gateway update watcher читает служебные файлы вроде `.update_output.txt`, `.update_prompt.json`, `.update_exit_code`, `.update_pending*.json`.
+После проверки `hermes --version` обязательно сравни:
+- release tag, который пользователь называет;
+- точный текущий commit;
+- есть ли `HEAD` прямо на tag или runtime уже ушёл дальше по `main`.
 
-Если эти файлы читаются через голый `Path.read_text()` без `encoding/errors`, watcher может упасть на mixed-encoding / мусорных байтах из update output и утянуть за собой gateway.
+Если видишь картину вида `vX.Y.Z-N-g<sha>` или `git log <tag>..HEAD` не пустой, прямо фиксируй это в диагнозе:
+- установленный runtime новее named release;
+- changelog для named release и фактическое содержимое текущего runtime — это не одно и то же.
 
-Минимальный safe-path:
-- для таких файлов читать через `read_text(encoding="utf-8", errors="replace")`;
-- отдельно различать decode-noise в update output и реальную поломку update flow;
-- после patch обязательно прогнать хотя бы `py_compile` и затем один контролируемый runtime restart gateway вне самого gateway-процесса.
+Практический смысл:
+- для пункта "что нового в версии" опирайся на release tag;
+- для пункта "почему сейчас что-то ведёт себя иначе" учитывай все коммиты поверх tag.
+
+Без этого легко перепутать release regression с drift на moving `main`.
+
+## 6.4. Не обновляй `npm` CLI отдельно, пока не проверила engine-совместимость с текущим Node
+
+Если пользователь просит "обновить npm" или приводит его как пример не дообновлённого хвоста:
+1. сначала проверить `node -v` и `npm -v`;
+2. затем `npm view npm version` и `npm view npm@<latest> engines --json`;
+3. обновлять `npm` только если текущий Node попадает в требуемый engine-range.
+
+Причина: отдельный upgrade `npm` часто выглядит как harmless tail update, но реально может сломаться или внести лишний конфликт раньше, чем будет доказана совместимость по engines.
 
 # Формат результата для пользователя
 

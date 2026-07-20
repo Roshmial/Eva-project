@@ -26,6 +26,15 @@ This skill defines the specific rules for transforming Misha's career history in
 3. **Dual-Language Output**:
     - **English (Global Standard)**: Use strong action verbs (Architected, Spearheaded, Orchestrated), focus on business impact and scale.
     - **Russian (Professional Business Style)**: Focus on precision, management terminology, and professional maturity.
+    - By default, prepare the pair together: EN as impact-driven market version, RU as exact business version.
+4. **Experience Structure**:
+    - Flagship roles: Full Impact / project portfolio format.
+    - Mid-career roles: Selected Highlights unless more detail is needed to support target positioning.
+    - Legacy roles: compact Legacy List.
+5. **Fact Fidelity**:
+    - Preserve facts, role scope, constraints, and result status 1:1 by meaning.
+    - Do not invent metrics, KPI, scale, budgets, or implementation results.
+    - If effect is unknown or not measured, keep it explicitly unknown rather than implying achieved business impact.
 4. **Handling Unverified Results**:
     - If implementation impact is unknown, focus on:
         - Quality of deliverables (Roadmaps, TCO, Architecture docs).

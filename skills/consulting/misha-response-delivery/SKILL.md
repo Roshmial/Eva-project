@@ -143,11 +143,17 @@ This skill governs how to package advisory answers for Misha so the result is im
 - Pitfall: adding optional next steps by reflex.
   Fix: only propose follow-up work when Misha explicitly asks for it or when the task would otherwise remain incomplete.
 
+- Pitfall: after the requested artifact is delivered and verified, appending a soft upsell like `если хочешь, следующим сообщением могу...`, `могу показать ещё`, or `давай ещё зафиксируем`.
+  Fix: treat a verified closeout as a stop signal. If the user did not ask for another slice, end on the completed result. Extra transparency examples, supporting samples, and cleanup ideas should stay silent unless they are required for acceptance or explicitly requested.
+
 - Pitfall: losing the active user ask when the message contains a quoted fragment from the previous reply.
   Fix: treat quoted text only as context. Extract the live request after it and answer that request directly instead of continuing the old topic or replaying stale content.
 
 - Pitfall: misreading Telegram reply wrappers or context-handoff blocks as the real task.
   Fix: when the message starts with something like `[Replying to: ...]`, or when a compaction/handoff summary is present, treat both as background only. Find the fresh user sentence after them and answer that exact ask. Do not continue an older task just because it appears in quoted or summarized text.
+
+- Pitfall: when Misha asks for an assessment `с учетом опыта`, `подними логи`, `проверь реальные причины`, or otherwise explicitly asks for a conclusion grounded in prior work or production evidence, answering from generic docs or abstract architecture instead of reconstructing the live evidence first.
+  Fix: treat those phrases as an evidence-first contract. Before giving conclusions, inspect the concrete prior context that is actually available: session history, runtime logs, config, adapter code, and the named contour (for example host `178`). In the final answer, lead with the real confirmed cause from evidence, and only then give the short improvement list. Do not reset the discussion to `возможно ли вообще` if the user already indicated that something is partially working in production.
 
 - Pitfall: responding to a follow-up request with process noise instead of the requested artifact.
   Fix: if Misha asks for a concrete deliverable such as a map, visual route, short rewrite, or ready text, produce that artifact first. Mention limitations only if they materially block delivery.
@@ -157,6 +163,9 @@ This skill governs how to package advisory answers for Misha so the result is im
 
 - Pitfall: confidently declaring a previous task already finished when the message is actually a handoff, a quoted fragment, or a correction to your prior status claim.
   Fix: separate three things before answering: (1) what was quoted from the previous turn, (2) what is verifiably present in files/tools right now, (3) what the live user ask is. If the user says `нет` or otherwise rejects your completion claim, do not defend the old framing. Pivot immediately, acknowledge the miss by action, and answer the new request directly.
+
+- Pitfall: when Misha asks for an assessment `с учетом опыта`, `подними логи`, `проверь реальные причины`, or otherwise explicitly asks for a conclusion grounded in prior work or production evidence, answering from generic docs or abstract architecture instead of reconstructing the live evidence first.
+  Fix: treat those phrases as an evidence-first contract. Before giving conclusions, inspect the concrete prior context that is actually available: session history, runtime logs, config, adapter code, and the named contour (for example host `178`). In the final answer, lead with the real confirmed cause from evidence, and only then give the short improvement list. Do not reset the discussion to `возможно ли вообще` if the user already indicated that something is partially working in production.
 
 - Pitfall: reporting a backend export/pipeline fix as "done" when the user-facing artifact would still look unchanged because the old file was not regenerated or the live result was not re-verified.
   Fix: in file/export branches, separate three facts explicitly: (1) code path changed, (2) a new artifact was regenerated through that path, (3) the regenerated artifact actually reflects the intended change. Do not present (1) as if it already proved (2) or (3).

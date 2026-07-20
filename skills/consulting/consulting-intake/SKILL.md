@@ -57,6 +57,7 @@ Use this skill when the user asks:
 - Do not return obvious first-draft outputs when the task can be silently tightened, cleaned, or checked before replying.
 - Do not spend tokens on long preambles or repetitive framing when the user asked for a compact, ready-to-use result.
 - Do not keep applying an old architectural baseline from memory or older skills once the user has explicitly said the environment changed.
+- When the user states a hard boundary such as an exact date, budget ceiling, city, or start condition, treat it as binding. Do not present adjacent dates or near-match substitutes as if they answer the request. If no exact match is found, say so directly first; only then offer nearest alternatives, clearly labeled as fallbacks.
 
 ## Architecture-baseline check
 Before giving architecture recommendations, explicitly determine which baseline is current right now:
@@ -107,6 +108,15 @@ Match the density of the answer to the user's prompt, not to a fixed house style
 - Treat requests like "кратко", "в двух словах", "просто скажи", or similar as an instruction to compress.
 - Treat requests like "сравни", "помоги выбрать", "разбери", or similar as permission to go deeper.
 
+## Travel / booking / availability requests
+When the user asks to find options similar to a reference listing and check date availability:
+- separate two outputs explicitly: (1) the full discovered option set; (2) date-confirmed availability;
+- distinguish between live-booking evidence and listing-only evidence;
+- treat visible date/time slots on a booking page as stronger evidence than generic marketing copy or search snippets;
+- if a provider page exists but the calendar is absent, unclear, or not machine-checkable, label availability as unconfirmed rather than unavailable;
+- when multiple providers exist, prefer a compact result grouped as: confirmed available / found but unconfirmed / found but not available on requested dates;
+- avoid overstating completeness when some sites expose only teaser pages or require manual contact.
+
 ## Verification
 Check that:
 - the request type is identified;
@@ -114,4 +124,5 @@ Check that:
 - options are visible when choice exists;
 - risks and trade-offs are named;
 - the answer length matches the user's requested depth;
+- when availability was requested, confirmed vs unconfirmed vs unavailable are clearly separated;
 - there is a concrete next step.

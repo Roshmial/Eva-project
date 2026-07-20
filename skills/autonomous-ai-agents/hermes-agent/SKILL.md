@@ -45,6 +45,13 @@ Recommended verification order:
    - `hermes cron status`
    - `hermes config path`
 
+   When troubleshooting Hermes itself, prefer a clean-room probe before drawing conclusions from the user's normal runtime:
+   - `hermes --safe-mode --help` confirms the binary/CLI surface without user config, plugins, MCP, memories, or AGENTS/rules injection.
+   - `hermes --ignore-user-config --ignore-rules -z "..."` is the fastest scriptable way to check whether a failure belongs to the core runtime or to local customizations.
+   - `hermes --accept-hooks ...` matters for headless/cron/CI checks where unseen shell hooks would otherwise block or distort the result.
+
+   Treat this as a first-line differential diagnosis step, especially when symptoms could come from profile config, plugins, MCP servers, shell hooks, or prompt/rules injection.
+
 2. Then read the official docs page for the same surface.
    - Prefer a raw HTTP fetch from `terminal` (`python requests`, `curl`) when you need exact current docs text.
    - Use `browser_navigate` / `browser_snapshot` when the docs page is dynamic or you need to inspect rendered navigation.
@@ -92,16 +99,26 @@ hermes doctor
 hermes [flags] [command]
 
   --version, -V             Show version
+  -z, --oneshot PROMPT      Single-shot script/cron invocation; print only final response text
+  --usage-file PATH         Write JSON usage report for a --oneshot run
   --resume, -r SESSION      Resume session by ID or title
   --continue, -c [NAME]     Resume by name, or most recent session
   --worktree, -w            Isolated git worktree mode (parallel agents)
   --skills, -s SKILL        Preload skills (comma-separate or repeat)
-  --profile, -p NAME        Use a named profile
   --yolo                    Skip dangerous command approval
   --pass-session-id         Include session ID in system prompt
+  --accept-hooks            Auto-approve unseen shell hooks in headless runs
+  --ignore-user-config      Ignore ~/.hermes/config.yaml
+  --ignore-rules            Skip AGENTS.md / memory / preloaded rules injection
+  --safe-mode               Disable user config, plugins, MCP, and rules for troubleshooting
+  --tui / --cli            Force UI mode
 ```
 
 No subcommand defaults to `chat`.
+
+Practical rule:
+- for automation, cron, CI, and exact stdout capture, prefer `hermes -z "..."` over interactive output paths;
+- for troubleshooting, reach for `--safe-mode` or `--ignore-user-config --ignore-rules` early to separate core-runtime failures from local customizations.
 
 ### Chat
 

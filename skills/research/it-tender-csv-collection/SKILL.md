@@ -16,7 +16,9 @@ metadata:
 
 This skill captures a practical workflow for assembling a user-facing CSV with relevant IT tenders from public Russian procurement sources.
 
-The primary working source is `zakupki.gov.ru`. Additional marketplaces may be checked later, but they should be included only if they are actually reachable and key fields are publicly retrievable from the current environment.
+The primary working source is `zakupki.gov.ru`, but for Misha this should be treated as a starting point rather than the whole market.
+
+Default expectation for recurring tender work: perform broad cross-platform search across relevant public sources and marketplaces, not only 44-FZ / 223-FZ contours. Additional marketplaces should be included whenever they are actually reachable and key fields are publicly retrievable from the current environment.
 
 The output is a flat business-facing CSV where each row is one tender and every missing field is marked explicitly as `не указано`.
 

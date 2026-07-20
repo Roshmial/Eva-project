@@ -289,6 +289,46 @@ Recommended implementation posture:
 Pitfall:
 - do not confuse "we need consistency" with "we need one universal dashboard template". In open-ended analytics products, consistency should usually live in the outer container, section grammar, and selection policy — not in a single fixed dashboard layout.
 
+## Architecture pattern: adding a non-native tool-calling LLM without breaking the existing agent runtime
+
+Use this pattern when the user wants to plug a provider like GigaChat into an already working Hermes-style product that currently behaves correctly with other LLMs.
+
+Default recommendation:
+- do not splice provider-specific logic into the main executor path;
+- keep the product contract stable at the top;
+- isolate the provider-specific execution/runtime layer behind an explicit routing boundary.
+
+Preferred decomposition:
+1. Stable outer product contract
+   - frontend and backend API stay provider-agnostic;
+   - do not leak provider-native fields like `functions_state_id` into the public product contract as required frontend state.
+
+2. Explicit execution routing
+   - keep a `standard executor` for already compatible LLMs;
+   - add a separate `provider-specific executor` for the non-native provider;
+   - choose the path in one routing layer instead of scattering provider conditionals throughout the codebase.
+
+3. Protocol adapter as a narrow layer
+   - adapter translates OpenAI-style `tools/tool_calls` to the provider-native function-calling protocol and back;
+   - adapter handles provider-specific retry/timeout/error normalization;
+   - adapter should not own product workflow or tool-policy logic.
+
+4. Separate agent loop controller when the provider is not Hermes-native
+   - if the provider cannot run the normal Hermes tool loop reliably, build a dedicated loop controller for that route;
+   - own `model -> tool -> model` iteration, tool-call replay, and provider-specific continuation state there.
+
+5. Shared tool registry, separate runtime heart
+   - it is fine to reuse tool handlers, storage, auth, chat state, logging, and frontend surfaces;
+   - but if the provider needs its own tool orchestration, treat that as a second execution heart under the same product shell.
+
+Decision rule:
+- if the user only needs the provider as a plain LLM, a protocol adapter is enough;
+- if the user needs a full Hermes-like agent with browser/tools/stateful loops, plan for a near-parallel agent runtime core, even if the outer product layers are shared.
+
+Why this matters:
+- trying to force a provider like GigaChat into the existing standard executor usually creates hidden regressions for the already working LLM path;
+- the highest-value architecture move is route isolation, not heroic normalization inside one shared loop.
+
 ## Pitfalls
 - Do not focus only on technical elegance.
 - Do not ignore political and organizational realities.
@@ -300,6 +340,7 @@ Pitfall:
 - Do not leave API-server toolsets broad by default in a shared web deployment.
 - Do not rely on per-user memory when the stated requirement is one common agent behavior.
 - In this user's local-first web/product discussions, when the request is phrased as "add it on the frontend", interpret that as a backend-backed feature by default: UI on the frontend, logic/state/validation/execution via backend. Do not waste answer space repeatedly warning that a pure frontend-only implementation would be unreliable unless the user explicitly asks about a frontend-only variant.
+- When integrating a provider with non-native tool calling, do not contaminate the standard executor with provider-specific continuation fields, retries, or state handling if a separate route can isolate the risk.
 
 ## Verification
 Check that:

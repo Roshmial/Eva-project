@@ -54,7 +54,10 @@ Trigger this skill when the task includes any of the following:
    - Do not let small goals drift into generic self-help wording or abstract framing.
    - On Thursday and Friday, it is useful to add one short weekend-planning note with one realistic idea, as long as it stays lightweight and does not compete with the day's main plan.
    - In scheduled cron delivery, the final rendered brief must read as complete one-way output. If the prompt contains a slot like `one short final question`, reinterpret it as a soft closing line, not as a literal question to answer now.
-   - Default rule for non-interactive cron briefs: do not end with a question mark and do not ask `Ок такой план?`, `хочешь сам выбрать фокус?`, or close variants.
+   - Hard override for non-interactive cron briefs: even if the prompt explicitly asks for a final question, the skill wins. Rewrite that slot into a declarative close and remove the question mark.
+   - Treat this as a precedence rule, not as style advice: when the prompt's output structure says `one short final question`, the non-interactive delivery rule overrides that structure.
+   - Default rule for non-interactive cron briefs: do not end with a question mark and do not ask `Ок такой план?`, `хочешь сам выбрать фокус?`, `норм так?`, `или сегодня у тебя свой фокус?`, `подходит такой расклад?`, or close variants.
+   - Final pre-send check for cron briefs: inspect the actual rendered closing line. If it ends with `?` or invites an answer now, rewrite it before returning the message.
 
 6. Adapt the brief to the day type.
    - Weekdays: main goal is usually work/productivity-oriented.
