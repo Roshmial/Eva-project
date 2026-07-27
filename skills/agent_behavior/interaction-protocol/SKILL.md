@@ -157,3 +157,40 @@ Another recurring failure mode is giving an almost-there draft and then offering
 - Before sending, check: can the user directly use/save/send this answer in the requested shape without another round?
 - If the exact structure is still blocked by missing facts, say which fields are missing and still provide the closest usable version in that same shape.
 - If you intentionally give only a draft because the user asked for iteration, label it explicitly as draft/intermediate instead of implying the requested format is already done.
+
+### 18. In Critique Loops, Fix First — Do Not Offer the Obvious Next Step Back to the User
+When the user points at a concrete flaw in the just-produced result (`не нравится`, `слишком обрезано`, `не то`, `верни старую логику`, `пропала погода`, `кривая формулировка`), treat that as an immediate repair loop, not as a conversational checkpoint.
+- Do not answer with meta-only reassurance plus `если хочешь, я могу ещё раз прогнать / проверить / оформить` when the next step is already obvious.
+- If the fix is within current control, make the change and run the direct verification path in the same turn.
+- Do not claim `уже поправила`, `уже переписала`, `сделала` unless the updated artifact/prompt/file/runtime was actually changed and, when practical, re-checked.
+- In output-quality loops, prefer: `что именно было не так -> что изменено -> какой новый result/verification получился`.
+- Suppress optional follow-up offers unless the user truly has a branching choice. A critique is usually a request to repair now, not an invitation to ask permission for the repair.
+- Special case for cron/prompt tuning: after changing the prompt/config, rerun the job or inspect the produced output before describing the issue as fixed.
+
+### 19. Do Not Generalize a Local Patch into Whole-Contour Coverage Without Checking the Real Contour
+A recurring overclaim pattern is: one layer was patched (`skill`, `prompt`, `config`, one file), and the answer jumps straight to `теперь это работает автоматически`, `встроено в agentic loop`, or `мы в основном работаем так`, before the surrounding contour was actually inspected.
+- Distinguish sharply between: `patched one place`, `patched all known relevant places`, and `verified the live contour now behaves this way`.
+- If the user asks whether something is automatic, systemic, or `точно` the main path, inspect the broader contour first: recent sessions, other execution skills, prompt-builder/system prompt, routing files, or the live user path that would exercise the rule.
+- Do not infer global coverage from a single patch in `consulting`/delivery skills when the same behavior may also depend on runtime skills, system prompt, or code-level routing.
+- Preferred reporting shape:
+  1. what exact surface was changed;
+  2. what nearby surfaces were checked;
+  3. what remains unverified about wider coverage.
+- If only one layer was changed, say `правило встроено в этот слой`, not `теперь это автоматически работает везде`.
+- For claims about agentic loop or runtime integration, verify by reading the actual loop/prompt source or by running a probe that exercises that path.
+
+### 20. Multi-Page or Multi-Surface Artifacts Require Matching Acceptance Coverage
+A rebuilt artifact is not fully accepted just because one visible slice looks good.
+- If the artifact has several pages/slides/screens/sections, do not validate only page 1 / title / one screenshot and then summarize the whole artifact as `починила PDF`, `графики исправлены`, `версия стала визуально надёжнее`, or similar broad claims.
+- Match the verification scope to the user's complaint:
+  - `ломается титульный слайд` -> checking the title slide may be enough;
+  - `некорректно отображаются графики`, `не хватает глубины`, `экспорт кривой`, `презентация слабая` -> inspect the affected pages/sections or state explicitly that only part was checked.
+- For paginated artifacts, prefer one of these paths before broad closeout:
+  1. inspect every changed page/section;
+  2. inspect a representative sample that covers each changed pattern and say that the acceptance is sample-based;
+  3. regenerate and compare concrete structural signals (page count, expected section titles, extracted text blocks) plus visual checks where needed.
+- `todo completed` for `проверить артефакт` is allowed only after the acceptance surface matches the claim. A first-page screenshot alone proves only the first page.
+- Safe reporting pattern:
+  1. what exact pages/sections were checked;
+  2. what was confirmed there;
+  3. what remains unchecked about the rest of the artifact.

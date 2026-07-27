@@ -60,6 +60,22 @@ Ask: what can be changed in code today with minimal risk and measurable benefit?
 ### 2. Reuse existing logic first
 Prefer extending existing modules, tests, and runtime hooks over introducing a new layer.
 
+### 2.1. When evaluating a new external engine or document format, prefer a separate microservice spike first
+If the user asks to try a new rendering engine, presentation format, or standalone tool, do not immediately weave it deep into the main runtime.
+
+Default delivery for this class of task:
+- create a minimal separate local-first microservice or adapter in its own directory;
+- keep the contract narrow and explicit, for example `/health`, `/render`, and artifact download;
+- download or vendor the external shell/template locally when feasible;
+- prove the contour by generating one real artifact end-to-end;
+- only after that discuss deeper integration into Hermes or the main app.
+
+Why this is preferred:
+- lower blast radius;
+- reversible architecture;
+- easier acceptance because the user can inspect a working service and a real output file;
+- avoids turning a tool evaluation into premature platform coupling.
+
 Examples:
 - extend an existing persistence/truncation path before inventing a new mediation subsystem;
 - lift an existing dedup/reuse mechanism into a broader path before creating a framework;

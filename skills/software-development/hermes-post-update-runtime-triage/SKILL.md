@@ -221,6 +221,105 @@ description: "Диагностика Hermes после обновления: б�
 
 Причина: отдельный upgrade `npm` часто выглядит как harmless tail update, но реально может сломаться или внести лишний конфликт раньше, чем будет доказана совместимость по engines.
 
+### Практический post-update pattern
+Если цель — закрыть хвосты после обновления Hermes, используй такой порядок:
+1. проверить `node -v`, `npm -v`;
+2. проверить latest major `npm` и его `engines`;
+3. если latest major не совместим с текущим Node — не форсить его, а выбрать последнюю совместимую версию внутри текущего major или ближайшего совместимого major;
+4. после апдейта `npm` прогнать в install dir Hermes сначала `npm install`, потом `npm update`;
+5. затем перепроверить `hermes doctor` и убедиться, что warning вида `agent-browser not installed` исчез.
+
+### Конкретный живой пример совместимости
+На live post-update проверке встречался такой кейс:
+- `node v24.11.1`
+- `npm 11.6.2`
+- latest `npm 12.x` требовал `node ^22.22.2 || ^24.15.0 || >=26.0.0`
+
+Вывод в таком случае:
+- `npm 12.x` обновлять рано;
+- безопасный путь — обновиться до последней совместимой `npm 11.x`, затем выполнить `npm install` и `npm update` в install tree Hermes.
+
+Это полезно фиксировать именно как compatibility-first pattern, а не как частный случай конкретной версии.
+
+## 6.5. Если пользователь просит `доделать хвосты`, не оставляй operator-facing residue как будто это уже closeout
+
+Фразы пользователя вроде:
+- `доделай хвосты`;
+- `обнови npm, проверь окончательно работу`;
+- `доделай все хвосты`;
+
+означают, что нельзя завершать задачу на стадии:
+- `doctor зелёный, но warning остался`;
+- `npm update сделан, но audit ещё не ноль`;
+- `browser работает, но install approvals ещё pending`.
+
+В таком режиме считай хвостами всё, что ещё видно оператору и поддаётся безопасной remediation без тяжёлой архитектурной перестройки:
+- `npm audit` уязвимости;
+- pending `npm install-scripts` approvals;
+- install-tree drift в `package-lock` / workspace deps;
+- SQLite advisory, если его можно снизить локальным override внутри Hermes `.venv`.
+
+Правило завершения:
+1. убрать все безопасно устранимые хвосты;
+2. повторно прогнать `hermes doctor`;
+3. повторно сделать browser/file smoke;
+4. только потом говорить, что post-update ветка закрыта.
+
+Если хвост принципиально не устраним в текущем контуре без тяжёлой пересборки, это нужно назвать явно как единственный residual risk, а не прятать в формулировку `в целом всё ок`.
+
+## 6.6. SQLite advisory после update: сначала wheel-override, затем при необходимости локальная сборка на точной версии
+
+Если `hermes doctor` упирается не в поломку, а в SQLite version advisory, и пользователь просит закрыть хвосты полностью:
+1. сначала проверь, можно ли поднять SQLite через готовый wheel (`pysqlite3-binary` или `pysqlite3`) внутри Hermes `.venv`;
+2. если wheel новее системного `sqlite3`, допускается локальный override именно для Hermes runtime;
+3. практичный быстрый вариант — `.pth`-hook в `site-packages`, который подменяет `sqlite3` на `pysqlite3` до запуска Hermes;
+4. после этого обязательно перепроверь:
+   - `.venv/python` реально видит новый `sqlite3`;
+   - `hermes doctor` использует уже новый runtime;
+   - основной CLI всё ещё работает.
+
+Если wheel не дотягивает до policy-требования doctor (например wheel даёт только `3.51.1`, а doctor хочет `3.51.3+`), не останавливайся на формулировке `функционально уже нормально`. Для self-hosted Hermes допустим второй этап:
+5. скачать официальный SQLite amalgamation под нужную версию;
+6. пересобрать `pysqlite3` локально внутри Hermes `.venv` уже с приложенными `sqlite3.c` и `sqlite3.h`;
+7. если в системе нет установленных Python headers и нет root-доступа, можно временно скачать `python3.12-dev` / `libpython3.12-dev` как `.deb` через `apt download`, распаковать локально `dpkg-deb -x` и передать include-path через `CFLAGS`;
+8. после локальной сборки снова проверить `sqlite3.sqlite_version`, `sqlite3.__file__`, `hermes doctor` и `hermes status`.
+
+Практический живой паттерн:
+- сначала wheel-path может поднять runtime с системного `3.45.1` до `3.51.1`;
+- затем, если нужен именно `3.51.3+`, собрать `pysqlite3` из official amalgamation `3510300`;
+- для сборки без sudo может понадобиться локально распакованный `libpython3.12-dev` и `CFLAGS` с include-path на распакованные headers.
+
+Это нужно трактовать как operator-side remediation для self-hosted Hermes, а не как универсальную рекомендацию для любого Python-проекта.
+
+## 6.7. Backup error после update не всегда означает провал бэкапа
+
+Если пользователь пишет, что `backup ушёл с ошибкой` сразу после update:
+1. сначала ищи сам backup artifact, а не только stderr-текст;
+2. отдельно проверь update log, cron output и journal, чтобы отделить реальную ошибку backup от сбоя shell-обвязки;
+3. если в логах есть `printf: --: invalid option`, проверь, не печатала ли обвязка строку, начинающуюся с `---`;
+4. если backup-файл реально создан, трактуй инцидент как false-positive в обвязке/логировании, а не как потерю backup.
+
+Живой симптом этого класса:
+- backup-файл существует;
+- update или cron report показывает `printf: --: invalid option`;
+- фактическая проблема не в создании backup, а в shell-выводе статуса/разделителя.
+
+## 6.8. Когда пользователь просит закрыть post-update хвосты до конца, после `npm install` проверь ещё audit и install-script approvals
+
+Если после update пользователь явно просит `доделать все хвосты`, post-update closeout не заканчивается на `agent-browser installed`.
+
+Дополнительный operator-facing checklist:
+1. `npm audit --json` в install dir Hermes;
+2. `npm ls <problem-package>` для точечной локализации transitive уязвимости;
+3. если уязвимость сидит в dev/workspace dependency, сначала искать минимальный совместимый downgrade/upgrade по конкретному workspace, а не делать слепой `npm audit fix --force`;
+4. после `npm install` / `npm update` проверить `npm install-scripts ls --json`;
+5. если approvals pending и это локальный self-hosted контур, можно безопасно закрыть хвост через `npm install-scripts approve --all`, затем ещё раз прогнать `npm install`.
+
+Живой пример полезного remediation-паттерна:
+- `npm audit` показал high severity через `concurrently -> shell-quote`;
+- безопасный fix был не `force`, а перевод конкретной workspace dependency `concurrently` на совместимую ветку `9.2.4`;
+- после этого `npm audit` стал нулевым, а `install-scripts approve --all` убрал operator-facing pending approvals.
+
 # Формат результата для пользователя
 
 Рекомендуемая структура:
@@ -239,6 +338,7 @@ description: "Диагностика Hermes после обновления: б�
 - Не делать вывод "битая база", если есть только долгий `integrity_check` на большом `state.db`.
 - Не смешивать credential warnings с post-update regression.
 - Не останавливаться на одном таймауте: нужно локализовать, где именно процесс завис.
+- Не объявлять ветку post-update закрытой, если пользователь просил `доделать хвосты`, а `npm audit`, install approvals или SQLite advisory ещё остались и их можно снять безопасно.
 
 # Артефакты навыка
 

@@ -40,21 +40,30 @@ Trigger this skill when the task includes any of the following:
    - `Доброе утро, Миша!`
 
 5. Daily format is practical, not essay-like.
-   - Exactly 1 main goal.
-   - Exactly 2 small supporting goals.
-   - Main goal should usually be the highest-value result of the day.
-   - Main goal must be concrete enough that by evening the result is visible, not just the intention.
-   - Prefer practical patterns such as: finish one hanging message, make one booking, pay/renew/order something specific, confirm one meeting or appointment, close one small admin or household task with a clear endpoint, or push through one concrete work result.
-   - Small goals should support energy, order, learning, or momentum without competing with the main goal.
-   - Small goals must be concrete, explicit, naturally phrased, and feel realistically doable.
-   - Each small goal must be one clear thing, not a menu, bundle, or vague category.
-   - Small goals must not be reduced-size copies of the main goal.
-   - Do not skip prerequisites inside a small goal: if the action assumes a list, source, or setup that may not exist yet, include that setup in the action itself.
-   - Prefer formulations like "выписать 3–5 мелких хвостов и закрыть один" over artificial shortcuts like "разобрать короткий список", unless the list clearly already exists.
-   - Do not let small goals drift into generic self-help wording or abstract framing.
-   - On Thursday and Friday, it is useful to add one short weekend-planning note with one realistic idea, as long as it stays lightweight and does not compete with the day's main plan.
+   - Start exactly with `Доброе утро, Миша!`
+   - Then one short factual line with day/date and weather only.
+   - Weather line must explicitly include both: temperature and rain/no rain.
+   - After that, do NOT default to a rigid `Фокус дня: ...` rubric plus two symmetric bullets. That structure itself can make the text sound generated.
+   - Prefer a short Telegram-style shape: one natural line with the main thought of the day, then 1–2 useful lines that add new layers.
+   - Use an explicit `Фокус дня:` label only if it genuinely improves clarity. If the label makes the text feel like a template or mini-plan, drop it.
+   - Recommendations must be dynamic, not a fixed recurring checklist. Depending on the day they may include work, trip prep, music, film/series/video, a walk, a nearby event, a household reset, admin, or rest.
+   - Choose only what actually fits today's context. Do not force pre-trip bullets every time just because a trip is approaching.
+   - The main thought should usually be the highest-value result of the day and concrete enough that by evening the result is visible.
+   - The main thought is a goal axis, not a paraphrased action list and not a soft ban. Reject lines like `собрать внятный рабочий день`, `закрыть главное`, `довести до конца один важный рабочий кусок`, `пройти день ровно`, `не растаскивать себя`, or any other phrase that could be pasted into almost any weekday unchanged.
+   - Also reject smoother variants that still carry the same emptiness, for example `оставить работу в собранном виде`, `спокойно войти в вечер`, `добить один заметный кусок`, or similar safe universal formulas.
+   - Recommendations should support the day without sounding like a second full agenda.
+   - Each recommendation must be one clear thing, naturally phrased, and realistically doable.
+   - Recommendations must not be reduced-size copies of the main thought.
+   - If the first recommendation already covers the trip/admin action, the next recommendation must add a genuinely different layer rather than rephrase the same storyline (`сверь билет` -> `оставь запас на сборы`) in softer words.
+   - If a trip is mentioned, name it explicitly (`поездка в Волгоград`, `выезд`, `билет`) instead of hanging the action in the air.
+   - Do not let the trip become the hidden center of the whole brief. If the main thought already leans toward departure logistics and one recommendation is also about the trip, the candidate should be rejected.
+   - Do not skip prerequisites inside a recommendation: if the action assumes a list, source, or setup that may not exist yet, include that setup in the action itself.
+   - Do not let recommendations drift into generic self-help wording or abstract framing.
+   - Multimedia is optional, not mandatory. If the media suggestion is weak, random, or inserted only to satisfy variety, omit it.
    - In scheduled cron delivery, the final rendered brief must read as complete one-way output. If the prompt contains a slot like `one short final question`, reinterpret it as a soft closing line, not as a literal question to answer now.
-   - Hard override for non-interactive cron briefs: even if the prompt explicitly asks for a final question, the skill wins. Rewrite that slot into a declarative close and remove the question mark.
+   - Be extremely careful with prompt examples. Do not keep sample lines in the prompt unless they are genuinely good enough to be copied by the model. A bad example inside `good focus` or `good recommendation` lists acts like a poisoned training sample and will reappear in production output.
+   - When iterating on quality for this user, do not report progress as success. Keep refining silently and only surface a status update when the brief is stably good across repeated reruns, not just one less-bad sample.
+
    - Treat this as a precedence rule, not as style advice: when the prompt's output structure says `one short final question`, the non-interactive delivery rule overrides that structure.
    - Default rule for non-interactive cron briefs: do not end with a question mark and do not ask `Ок такой план?`, `хочешь сам выбрать фокус?`, `норм так?`, `или сегодня у тебя свой фокус?`, `подходит такой расклад?`, or close variants.
    - Final pre-send check for cron briefs: inspect the actual rendered closing line. If it ends with `?` or invites an answer now, rewrite it before returning the message.
@@ -73,6 +82,8 @@ Trigger this skill when the task includes any of the following:
    - Weekend small goals may widen into social, cultural, creative, language, or destination-based ideas, but still stay lightweight.
    - Workday small goals should usually support energy, order, learning, or recovery without turning into a second major agenda.
    - If suggesting a walk or outing, anchor it to a concrete nearby destination or route from the user's location instead of a generic "go outside" idea.
+   - Internal route inputs such as exact home coordinates are implementation context only. Never expose them in the user-facing brief and never write as if Misha knows the hidden routing point or technical map setup.
+   - If a route suggestion needs a destination, name the place like a normal human recommendation to a familiar person; do not surface the routing substrate.
    - Optional Moscow leisure suggestion: at most 1 concrete option with 1 link, only when it genuinely fits the day.
 
 8. Weekly review should be short and grounded.
@@ -121,7 +132,10 @@ For daily briefs, explicitly instruct the cron prompt to:
 - avoid presenting several competing priorities as equally important;
 - suggest indoor alternatives when Moscow weather is wet/cold;
 - use session_search to inspect a long enough tail of recent daily briefs before drafting a new one when repetition risk matters; for this workflow, 10 recent morning briefs is a better default than 3 when the goal is to catch recycled leisure/support ideas;
-- do not stop at session_search snippets. Snippets are only discovery. Before drafting, extract the final assistant text for the last 10 real morning briefs and make a compact working list of: main-goal category, small-goal categories, concrete objects/places/media/games, and weekend idea.
+- do not stop at session_search snippets. Snippets are only discovery. Before drafting, extract the final assistant text for the last 10 real morning briefs and make a compact working list of: main-goal category, support categories, concrete objects/places/media/games, and weekend idea.
+- when searching recurring cron outputs, do not rely on naive FTS queries that mostly hit the prompt text itself (`Доброе утро, Миша`, `morning message`, `okay with this plan`, etc.). Prefer a title-first path: browse recent sessions, identify the exact cron session ids for the job, then read those sessions or scroll around the assistant closeout message.
+- if a session_search discovery query mostly returns the user's prompt/instructions instead of the delivered brief text, treat that as a retrieval failure, not as evidence that repetition checking is done.
+- only fall back to direct SQLite/terminal inspection of the Hermes session DB after session_search title/session-id retrieval has proven insufficient. Do not jump to ad-hoc DB queries just because the first keyword search was poorly chosen.
 - if the retrieval path only surfaced snippets or mixed prompt text, treat the anti-repeat check as incomplete and keep digging until the actual final brief texts are visible.
 - treat both wording repetition and idea repetition as real failures, not cosmetic issues;
 - explicitly track repeated concrete objects, not just categories: the same place, the same game, the same article/video/media item, the same weekend-destination family, or the same fallback micro-activity still counts as repetition even if the wording changes;
@@ -130,17 +144,23 @@ For daily briefs, explicitly instruct the cron prompt to:
 - for known sticky fallback ideas, it is acceptable to name them explicitly in the prompt as temporary bans until the rotation stabilizes;
 - do not repeat the same main-goal category on adjacent days;
 - if yesterday or the day before used "навести порядок в делах", "разобрать задачи", "разобрать планы" or a very close equivalent, force a different main-goal category today;
-- make the main goal concrete enough that the end-state by evening is obvious;
-- avoid vague main goals like "разобраться с чем-то" or "закрыть один вопрос" without making the done-state legible;
-- make both small goals concrete and distinct;
-- make the second small goal usually the more alive one: creative, social, cultural, movement, language, or a specific outing;
-- do not reuse the same small-goal category on adjacent days unless weather or schedule clearly forces it;
-- if yesterday used cleanup/order as a small goal, avoid cleanup/order again today;
-- avoid repeating default pairs like "прибраться + почитать" too often;
-- do not simulate diversity by swapping synonyms while keeping the same underlying pattern for many days in a row;
-- check prerequisite realism inside each small goal: do not tell Misha to "разобрать короткий список" unless the list clearly already exists; prefer self-contained actions like "выписать 3–5 хвостов и закрыть один";
-- do not let a small goal become a reduced-size copy of the main goal; the supporting step should help the day, not duplicate the same type of action in miniature;
-- on Thursday and Friday, add one short weekend-planning block with exactly one realistic nearby idea and one link;
+- make the main focus concrete enough that the end-state by evening is obvious;
+- avoid vague main-focus phrases like "разобраться с чем-то" or "закрыть один вопрос" without making the done-state legible;
+- keep recommendation wording short and plain;
+- explicitly ban filler or generated phrasing such as `обычный день`, `можно держать ритм`, `поддерживающая вещь`, `конкурентный рабочий результат`, `держать в голове`, `хвосты`, `ветки`, and close variants;
+- explicitly ban empty soothing phrasing such as `выдохнуть к вечеру`, `чтобы не висело в фоне`, `собрать день`, `пройти день ровно`, `закрыть главное`, `довести до конца один важный рабочий кусок`, and close variants;
+- explicitly ban unnecessary qualifier tails such as `без распыления`, `без перегруза`, `без лишнего`, `не расползаясь`, `без длинного выезда через весь город`, `без лишней логистики`, or close defensive padding;
+- if removing a qualifier tail leaves the same recommendation value, prefer the shorter sentence;
+- recommendations may include work, trip prep, music, film/series/video, a walk, a nearby route, an event, household reset, admin tasks, or rest; pick only what actually fits today's day type and energy;
+- do not force the same recurring pre-trip checklist when the day would benefit more from leisure, recovery, or cultural suggestions;
+- keep support ideas varied and human: examples include `послушай что-то новое`, `выбери короткую прогулку`, `посмотри вечером один фильм`, `проверь билеты и брони`, `докупи что нужно`;
+- if suggesting reading, name the exact text/book/chapter/article and include one direct link;
+- if suggesting a film, name the exact film and include one direct link;
+- if suggesting movement, give one concrete short practice or video and include one direct link;
+- if suggesting music, name one concrete track/album/playlist direction and include one direct link;
+- if suggesting a game, name one concrete game and include one direct link;
+- if suggesting a walk, name the exact place, prefer a concrete destination from the user's starting area, and include a map or route link;
+- on Thursday and Friday, add one short weekend-planning note with one realistic idea and one link;
 - weekend-planning ideas must stay within sane Moscow-weekend scope: city event, short day trip, nearby town, estate, park, museum route, or comparable option — not flights or oversized travel;
 - if a small goal depends on a list, notes, bookmarks, chat backlog, or another source that may not already be prepared, explicitly include the gather/create step instead of assuming it exists;
 - if suggesting reading, name the exact text/book/chapter/article and include one direct link;
@@ -165,13 +185,24 @@ For daily briefs, explicitly instruct the cron prompt to:
 - for Yandex route links from home, prefer coordinate-based `rtext` deep links rather than address-string route links when practical;
 - if the generated text sounds too polished, symmetrical, or lifestyle-editorial, treat that as a quality failure and tighten toward shorter Telegram-native phrasing.
 - explicitly ban generated micro-constraints and fake optimization language in user-facing Russian. By default, avoid constructions like `один мессенджер`, `одну почту`, `одно сообщение`, `одна мелочь`, `один вопрос`, `один слот`, `один блок`, `ровно 20 минут`, or similar count-based wording unless the number is genuinely important for meaning.
+- avoid service-template phrasings that read like generated planning prose: `главный рабочий блок`, `собрать базу`, `отдельно собрать`, `подойдёт`, `переключить голову`, and close variants.
+- if a sentence explains the recommendation instead of simply offering it, shorten it.
+- keep recommendations slightly uneven in a human way; a little live Telegram roughness is better than polished symmetry.
+- restore old-logic richness when useful: besides tasks and trip prep, daily briefs may include concrete links to a route, music, a YouTube video, a film/series item, or one fitting event.
+- before returning the final brief, do one internal rewrite pass focused only on delivery texture: cut decorative glue, remove `..., без ...` and `..., а не ...`, remove over-explanation, and prefer the shorter more natural version when both mean the same thing.
+- also ban unnecessary qualifier tails that do not materially change the recommendation. Cut endings like `без длинного выезда через весь город`, `без лишней логистики`, `если не хочется усложнять`, or close variants when they only add defensive padding rather than useful guidance.
+- if removing a qualifier tail leaves a simpler sentence with the same decision value, prefer the shorter sentence.
 - if removing `один/одна/одно` still leaves an unnatural sentence, rewrite the whole recommendation instead of only swapping one word.
 - avoid weak placeholder nouns when a normal everyday object can be named more directly: `вопрос`, `момент`, `история`, `хвост`, `штука`, `что-то важное`.
 - weather phrasing must stay semantically clean: describe the weather first, then add at most one matching practical note. Do not glue unrelated ideas with fake cause-and-effect connectors like `так что`, `поэтому`, or `из-за этого`. Example of bad logic: `к вечеру возможен дождь, так что воду лучше взять`.
 - weather retrieval must be source-verified, not snippet-verified. Search-result snippets, news rewrites of another forecast, and SERP previews are discovery only.
 - for Moscow weather, first find a candidate forecast page, then fetch the actual page content with a tool that can read it directly (`terminal` with HTTP fetch, `browser_*`, or another raw page read). Do not present precise conditions like `облачно`, `дождь`, `+18…+23` as verified if they came only from snippet text.
 - if direct page fetch fails, either keep the weather line explicitly lower-confidence (`по snippet-ам похоже...`) or simplify it to only what was actually confirmed. Do not quietly convert snippet hints into confident factual wording.
+- for repeated reruns on the same calendar date, weather stability is more important than fresh rewording. If an earlier same-date brief already had a clean weather line and no stronger direct source contradicted it, keep that line verbatim instead of drifting between versions across manual tests.
 - when iterating on style, verify against one fresh generated brief at a time and report one verdict on that latest run. Do not show Misha a chain of multiple intermediate cron outputs as if they were parallel final candidates.
+- on style-tuning passes, do not stop after a single improved run. Manual reruns on the same date are part of verification; acceptance needs a short stable streak, not one lucky candidate.
+- treat dry task-manager phrasing as a hard failure even when the structure is technically correct. Lines like `ответы, календарь и мелкие дела`, `финальные правки и короткие задачи`, or other category-lists usually mean the brief still sounds generated.
+- for travel-day briefs, mentioning the trip once is enough. If one line already covers `билет / время выезда / дорога`, the remaining lines must live in another layer of the day.
 
 For leisure suggestions in Moscow:
 - provide no more than one option;
@@ -186,16 +217,22 @@ For leisure suggestions in Moscow:
 - Creating a second cron job instead of refining the current one.
 - Letting the brief drift into abstract self-help language.
 - Using artificial phrases such as "сменить контекст" for leisure or small-step transitions.
+- Adding defensive qualifier tails that sound generated rather than helpful, such as `без длинного выезда через весь город`, `без лишней логистики`, or close variants when the shorter sentence already says enough.
 - Repeating a concrete fallback object across different days while pretending the brief is varied. Typical failure mode: the wording changes, but the same nearby place or the same browser game comes back again.
 - Using too short a recall window for repetition control, so the prompt only avoids yesterday's phrasing but still recycles the same concrete idea inside 1–2 weeks.
 - Checking only categories (walk/game/article) instead of the specific object inside that category.
 - Pasting long raw URLs into a Telegram-facing daily brief when a short inline markdown link would be cleaner and more readable.
 - Using a Yandex route deeplink built from address strings when this workflow is more reliable with coordinate-based route links.
 - Treating a map point link as an acceptable substitute when the user explicitly needed a built route.
-- Turning small goals into a second and third major task.
+- Turning recommendations into a fixed checklist instead of a dynamic daily mix.
+- Letting generated filler or defensive qualifier tails survive into the final text, for example `обычный день`, `можно держать ритм`, `конкурентный рабочий результат`, `без распыления`, `без перегруза`, or close variants.
+- Overfitting the brief to trip-prep/admin bullets and forgetting that some days should instead suggest music, film, a walk, an event, or a simpler evening plan.
+- Turning recommendations into a second and third major task.
 - Bundling multiple actions into one "small" goal.
-- Writing a small goal that assumes a prerequisite object already exists (for example, telling Misha to sort a list before the list has been created or gathered from notes/messages).
-- Letting the main goal and a small goal collapse into the same action family, so the message repeats one idea at two scales instead of separating focus and support.
+- Writing a recommendation that assumes a prerequisite object already exists (for example, telling Misha to sort a list before the list has been created or gathered from notes/messages).
+- Letting the main focus and a recommendation collapse into the same action family, so the message repeats one idea at two scales instead of separating focus and support.
+- Allowing a positive-sounding focus line that is still semantically empty or portable across almost any weekday.
+- Keeping bad examples inside the cron prompt under labels like `good focus`, `good phrasing`, or `good level`; the model will copy them back into production output.
 - On Thursday/Friday, giving no weekend look-ahead at all or suggesting unrealistic travel that does not fit a normal weekend from Moscow.
 - Forcing a leisure recommendation every time, even when weather or relevance is weak.
 - let the daily brief drift into polished lifestyle-copy wording instead of a short live Telegram message.
@@ -221,6 +258,9 @@ Before declaring the task done, verify:
 - the generated brief does not reuse the same concrete leisure/support object from the recent history window unless there is an explicit reason;
 - the generated brief does not quietly reuse the same weekend-destination family or fallback support idea under slightly different wording;
 - if the prompt was tightened to ban sticky fallback ideas, a manual rerun actually stops using them;
+- same-date reruns keep one stable weather line unless a stronger directly fetched source clearly forces a change;
+- at least one post-weather line sounds like a normal human message rather than a category-list or mini task manager;
+- if the day includes travel context, the trip is mentioned at most once unless there is a real same-day logistical reason for a second mention;
 - links in Telegram-facing daily briefs are rendered as short inline markdown labels rather than raw pasted URLs;
 - if the brief contains a route, the route link format actually matches the intended outcome (route vs point), and Yandex route links use coordinates where relevant;
 - in scheduled cron delivery, the final line is a soft declarative close rather than a literal question, and the message does not end with a question mark unless the user explicitly asked for interactive wording;
@@ -234,3 +274,9 @@ Before declaring the task done, verify:
 See `references/style-and-rollout.md` for concrete wording constraints and rollout notes from the May 2026 self-development cron refinement session.
 
 See `references/concrete-anti-repeat-for-daily-briefs.md` for a concrete debugging pattern when users complain that the daily brief keeps reusing the same specific leisure/support ideas across different days.
+
+See `references/natural-telegram-digest-edit-pass.md` for a final wording pass that strips generated phrasing and restores a more live Telegram texture.
+
+See `references/focus-vs-recommendation-and-poisoned-examples.md` for the specific failure mode where bad prompt examples poisoned production daily output and where focus/recommendation layers collapsed into the same storyline.
+
+See `references/july-2026-same-date-rerun-stability.md` for same-date rerun discipline: weather stability, anti-task-manager filtering, and acceptance only after a short stable streak of good daily outputs.

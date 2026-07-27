@@ -276,6 +276,13 @@ hermes auth reset PROVIDER  Clear exhaustion status
 
 ```
 hermes insights [--days N]  Usage analytics
+hermes prompt-size [--platform P] [--json]  Offline prompt-budget breakdown
+hermes logs [name] [filters] View/tail/filter agent, gateway, GUI, desktop logs
+hermes security audit       On-demand supply-chain audit via OSV.dev
+hermes dashboard           Start the web UI dashboard
+hermes dashboard --status  Show running dashboard processes
+hermes dashboard --stop    Stop dashboard processes
+hermes serve               Start headless backend server (desktop/remote backends)
 hermes update               Update to latest version
 hermes pairing list/approve/revoke  DM authorization
 hermes plugins list/install/remove  Plugin management
@@ -900,8 +907,35 @@ and logs — avoids shell-escaping backslashes in bash.
 ### Gateway issues
 Check logs first:
 ```bash
-grep -i "failed to send\|error" ~/.hermes/logs/gateway.log | tail -20
+hermes logs gateway --level WARNING --since 1h
 ```
+
+Prefer the built-in log viewer over raw `grep` when the CLI is available:
+- `hermes logs gateway -n 100` for the latest gateway lines;
+- `hermes logs errors --since 1h` for recent failures;
+- `hermes logs --session <id>` when one session is misbehaving;
+- `hermes logs --component cron --since 30m` for scheduler/runtime incidents.
+
+### Prompt-budget and local observability triage
+For local-first debugging, use Hermes's own observability commands before inventing ad-hoc probes:
+
+```bash
+hermes prompt-size --platform cli
+hermes prompt-size --platform telegram --json
+hermes logs --since 1h
+hermes logs gateway --level WARNING
+hermes security audit
+```
+
+When to use them:
+- `hermes prompt-size` — check whether failures or degraded quality may come from an oversized fixed prompt surface (skills index, memory, user profile, tool schemas) before blaming the model.
+- `hermes logs` — inspect current runtime evidence from the right component instead of jumping straight to broad shell `grep` patterns.
+- `hermes security audit` — verify whether a suspicious runtime issue is really a config/logic problem or whether the environment carries a dependency risk worth surfacing.
+
+Practical rule:
+- If the symptom is "the agent became dumber / more verbose / worse at tools", run `hermes prompt-size` early.
+- If the symptom is "runtime / gateway / cron / desktop is failing", run `hermes logs ...` early.
+- If the symptom appeared after installs, updates, or plugin/MCP changes, consider `hermes security audit` as a fast hygiene check.
 
 Common gateway problems:
 - **Gateway dies on SSH logout**: Enable linger: `sudo loginctl enable-linger $USER`
@@ -938,6 +972,9 @@ hermes config set auxiliary.vision.model <model_name>
 | Memory | `hermes memory status` or [Memory docs](https://hermes-agent.nousresearch.com/docs/user-guide/features/memory) |
 | Env variables | `hermes config env-path` or [Env vars reference](https://hermes-agent.nousresearch.com/docs/reference/environment-variables) |
 | CLI commands | `hermes --help` or [CLI reference](https://hermes-agent.nousresearch.com/docs/reference/cli-commands) |
+| Prompt budget / fixed prompt surface | `hermes prompt-size --platform <platform>` |
+| Runtime logs | `hermes logs [agent|errors|gateway|gui|desktop]` |
+| Supply-chain audit | `hermes security audit` |
 | Gateway logs | `~/.hermes/logs/gateway.log` |
 | Session files | `hermes sessions browse` (reads state.db) |
 | Source code | `~/.hermes/hermes-agent/` |

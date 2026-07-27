@@ -126,3 +126,5 @@ Check that:
 - the answer length matches the user's requested depth;
 - when availability was requested, confirmed vs unconfirmed vs unavailable are clearly separated;
 - there is a concrete next step.
+
+For execution/fix/update/verify/cleanup requests, load `execution-finalization-discipline` before the final answer and use it as the closeout checklist.

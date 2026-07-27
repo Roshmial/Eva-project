@@ -121,6 +121,7 @@ This skill governs how to package advisory answers for Misha so the result is im
    - Automatically include non-mandatory but useful improvements when they are local, low-risk, and directly strengthen the current deliverable.
    - Do not escalate those local improvements into clarification questions just because they were not explicitly listed.
    - Ask only when the next step is high-risk, invasive, touches architecture/core, or materially expands the scope.
+   - Load `execution-finalization-discipline` as a mandatory companion skill for fix/update/verify/cleanup/dodelat tasks and apply its completion checklist before any final status claim.
    - Before the final reply, do a separate verification pass: check that the requested result is complete, the safe improvements did not distort the original ask, and no required step is still missing.
 
 # Pitfalls
@@ -146,6 +147,9 @@ This skill governs how to package advisory answers for Misha so the result is im
 - Pitfall: after the requested artifact is delivered and verified, appending a soft upsell like `если хочешь, следующим сообщением могу...`, `могу показать ещё`, or `давай ещё зафиксируем`.
   Fix: treat a verified closeout as a stop signal. If the user did not ask for another slice, end on the completed result. Extra transparency examples, supporting samples, and cleanup ideas should stay silent unless they are required for acceptance or explicitly requested.
 
+- Pitfall: answering with an almost-right shape and then offering to convert it into the exact shape the user already asked for (`дай по дням` -> потом `могу собрать по каждому дню`, `сделай shortlist` -> потом `могу ещё ужать shortlist`, `дай готовый текст` -> потом `могу оформить`).
+  Fix: treat the requested structure as part of the deliverable. Before sending, do a last check: `это уже можно сразу использовать в том виде, который запросил Миша?` If yes, stop. If no, finish the reshaping now instead of offering it как следующий шаг.
+
 - Pitfall: losing the active user ask when the message contains a quoted fragment from the previous reply.
   Fix: treat quoted text only as context. Extract the live request after it and answer that request directly instead of continuing the old topic or replaying stale content.
 
@@ -160,6 +164,18 @@ This skill governs how to package advisory answers for Misha so the result is im
 
 - Pitfall: when rewriting a short user-facing prompt, leaving the main action vague while the supporting action duplicates it.
   Fix: make the main action concrete and outcome-oriented, and keep the small/supporting action clearly subordinate. Do a quick overlap check before sending: if the small action could be mistaken for the main task, tighten the main task or change the supporting one.
+
+- Pitfall: in daily/weekly digest critique loops, judging the content instead of the delivery layer when Misha is explicitly asking whether the text feels generated, lifeless, or unlike a real Telegram message.
+  Fix: separate two review modes. In delivery-review mode, assess rhythm, wording, symmetry, explanatory tails, duplication, raw-link handling, and overall live-chat feel. Do not second-guess the task content unless the user asks for a content review too.
+
+- Pitfall: in short digest-style messages, letting the focus line collapse into a vague universal formula (`закрыть главное`, `закончить текущее`, `спокойно закончить работу`) or letting it duplicate the first recommendation.
+  Fix: the focus must stand on its own as a clear thought, and the first recommendation must add a different layer. Before sending, do a quick anti-tautology check: if the recommendation could simply replace the focus with no loss, rewrite one of them.
+
+- Pitfall: keeping a useful media link but presenting it as a raw URL or repeating the same media object across adjacent digest runs.
+  Fix: if a link improves the message, embed it into a human sentence with a short label or natural wording. Also check recent digest history and avoid repeating the same video, playlist, route, or event across adjacent days or adjacent manual test runs.
+
+- Pitfall: when Misha explicitly bans contrastive or negative framing (`..., без ...`, `..., а не ...`) in a microcopy stream, allowing those templates to creep back in through “editorial polishing”.
+  Fix: treat that as a hard ban for the whole stream. After drafting, run a targeted wording pass for those patterns and rewrite them into direct positive phrasing.
 
 - Pitfall: confidently declaring a previous task already finished when the message is actually a handoff, a quoted fragment, or a correction to your prior status claim.
   Fix: separate three things before answering: (1) what was quoted from the previous turn, (2) what is verifiably present in files/tools right now, (3) what the live user ask is. If the user says `нет` or otherwise rejects your completion claim, do not defend the old framing. Pivot immediately, acknowledge the miss by action, and answer the new request directly.
@@ -238,6 +254,9 @@ This skill governs how to package advisory answers for Misha so the result is im
 
 - Pitfall: after Misha points out a behavioral problem (`опять это та же проблема`, `не надо ещё фиксировать`, `вноси правки под ключ`), replying with another layer of discussion, framing, or documentation instead of changing the live behavior.
   Fix: treat the correction as an execution task. Patch the narrowest active control surface, verify the new behavior with a real check, and report the concrete change. Do not default to another planning/specification loop.
+
+- Pitfall: when Misha asks for the new behavior to happen automatically, stopping at the skill or memory layer even though the real enforcement point is higher in the runtime.
+  Fix: choose the highest effective control surface that is actually responsible for future behavior. If the issue is about automatic skill loading or execution discipline across turns, patch the agentic loop / system prompt construction rather than only adding another advisory skill note. Then verify with a live isolated probe session that the expected skill or rule is really triggered automatically, and only after that report the behavior as changed.
 
 # Response pattern
 
