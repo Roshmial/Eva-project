@@ -207,6 +207,27 @@ Supported platforms: Telegram, Discord, Slack, WhatsApp, Signal, Email, SMS, Mat
 
 Platform docs: https://hermes-agent.nousresearch.com/docs/user-guide/messaging/
 
+### Scripted delivery without the agent loop
+
+For local scripts, cron jobs, CI notifications, and one-way operational messages, prefer the built-in `hermes send` command before inventing a custom bot script or routing the message through a full agent run.
+
+```
+hermes send --to telegram "deploy finished"
+hermes send --to telegram:-1001234567890:17585 --file /tmp/report.md
+echo "RAM 92%" | hermes send --to discord:#ops
+hermes send --list
+```
+
+Operational notes:
+- `hermes send` reuses Hermes platform credentials from `config.yaml` and `.env`.
+- It does not require a running gateway for bot-token platforms such as Telegram, Discord, Slack, or Signal.
+- It does not invoke the LLM or the tool loop; use it when the job already has the final text and only delivery is needed.
+- Media/file delivery goes through `MEDIA:<path>` inside the message body.
+
+Practical rule:
+- If the task is "deliver this ready text/file to a configured platform", reach for `hermes send` first.
+- Use a full Hermes agent run only when the content still needs reasoning, tool use, or dynamic generation.
+
 ### Sessions
 
 ```

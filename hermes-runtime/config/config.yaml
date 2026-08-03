@@ -154,6 +154,8 @@ compression:
   abort_on_summary_failure: false
   codex_gpt55_autoraise: true
   in_place: false
+  hygiene_notify_timeout: false
+  hygiene_failure_cooldown_seconds: 1800
 kanban:
   dispatch_in_gateway: true
   dispatch_interval_seconds: 60
@@ -305,7 +307,7 @@ display:
   ephemeral_system_ttl: 0
   platforms:
     telegram:
-      streaming: true
+      streaming: false
       tool_progress: false
       interim_assistant_messages: false
       long_running_notifications: false
@@ -557,7 +559,7 @@ gateway:
     max_concurrent_runs: 10
   platforms:
     telegram:
-      streaming: true
+      streaming: false
 streaming:
   enabled: true
   transport: auto

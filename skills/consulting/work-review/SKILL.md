@@ -59,6 +59,8 @@ Use this skill for:
   - what is weak or immature;
   - what must be improved first.
 - Treat this as a done-style consulting deliverable: complete the baseline review, then mention optional deeper follow-up only if it is truly a separate phase rather than an omitted part of the current answer.
+- Special stop rule for architecture/program structuring requests: when Misha asks for the final shape itself (`итоговый перечень`, `слои`, `этапы`, `работы`, `собери каркас`, `дай по шагам`), that requested structure is the deliverable. Do not append `если хочешь, следующим сообщением...` with a table, MVP split, blueprint, or another formatting pass unless he explicitly asked for an extra artifact beyond that structure.
+- If the answer already contains the requested final list/table/frame, stop on that artifact. A follow-up offer in the same area usually means the answer is still internally treated as draft; finish the shape now instead.
 
 ## Evidence-Bound Vendor / Market Research
 Use this pattern when the work question is a vendor landscape, platform selection, regulatory scan, or technology-market research.

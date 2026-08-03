@@ -121,6 +121,11 @@ Trigger this skill when the task includes any of the following:
    - If the test job is the right one, prefer extending that same job or removing the repeat limit instead of creating or reviving a parallel live variant.
    - Avoid enabling a second live path in parallel.
 
+6. When repeated prompt-level edits stop sticking, split the runtime into stages instead of growing one monolithic spec.
+   - Separate context gathering, candidate generation, criticism/quality gate, and fallback into distinct files or explicit stages.
+   - The cron prompt should sequence those stages directly rather than asking one pass to do everything at once.
+   - Treat this as the default escalation path when Misha says the issue is already in the pipeline, not in one more wording rule.
+
 # Prompt-writing guidance
 
 For daily briefs, explicitly instruct the cron prompt to:
@@ -139,6 +144,12 @@ For daily briefs, explicitly instruct the cron prompt to:
 - if the retrieval path only surfaced snippets or mixed prompt text, treat the anti-repeat check as incomplete and keep digging until the actual final brief texts are visible.
 - treat both wording repetition and idea repetition as real failures, not cosmetic issues;
 - explicitly track repeated concrete objects, not just categories: the same place, the same game, the same article/video/media item, the same weekend-destination family, or the same fallback micro-activity still counts as repetition even if the wording changes;
+- repetition control is broader than the recent brief texts alone. Also check the current conversation and very recent session context for places, routes, media, venues, products, or concrete recommendations that were already discussed with Misha.
+- if a place or concrete recommendation was just discussed in chat yesterday or earlier that same day, treat it as already socially "used" for recommendation purposes, even if it never appeared in the last generated daily brief.
+- use a practical anti-repeat window of roughly the last 2–3 days for place/route/venue suggestions. Inside that window, do not present the same city route, walk, restaurant, venue, or concrete place as a fresh recommendation unless there is a real new reason.
+- for geographic recommendations, wording changes do not count as novelty. If the useful anchor is still the same place or the same route family, it is still a repeat.
+- this is not only a travel rule. Apply the same continuity check to ordinary recommendations too: routes, cafes, videos, music, films, events, admin actions, and small-life suggestions.
+- when the user likely already acted on yesterday's advice, prefer either a different recommendation or no recommendation, rather than repeating the old one with slightly different wording.
 - treat repeating the same concrete place or the same concrete game within roughly 14 days as a hard failure unless the user explicitly asked to revisit it;
 - if a concrete suggestion appeared recently, force a different category instead of paraphrasing the same idea again;
 - for known sticky fallback ideas, it is acceptable to name them explicitly in the prompt as temporary bans until the rotation stabilizes;
@@ -214,6 +225,7 @@ For leisure suggestions in Moscow:
 - Mistaking `manual run + scheduled run` for a scheduler bug.
 - Testing against live Telegram delivery and then treating the extra message as a duplicate.
 - Assuming that "test period" means local-only delivery for Misha. In this workflow, tests normally still go to Telegram unless he explicitly asks for silent/local mode.
+- Leaving Telegram streamed delivery enabled when the failure pattern is specifically edit-based (`Message to edit not found`, suppress-normal-final-send, flood-control around streamed sends). In that case, disable streaming on the Telegram platform layer first instead of broad global shutdown.
 - Creating a second cron job instead of refining the current one.
 - Letting the brief drift into abstract self-help language.
 - Using artificial phrases such as "сменить контекст" for leisure or small-step transitions.
@@ -280,3 +292,5 @@ See `references/natural-telegram-digest-edit-pass.md` for a final wording pass t
 See `references/focus-vs-recommendation-and-poisoned-examples.md` for the specific failure mode where bad prompt examples poisoned production daily output and where focus/recommendation layers collapsed into the same storyline.
 
 See `references/july-2026-same-date-rerun-stability.md` for same-date rerun discipline: weather stability, anti-task-manager filtering, and acceptance only after a short stable streak of good daily outputs.
+
+See `references/staged-runtime-and-telegram-streaming.md` for the escalation pattern where repeated daily-brief prompt edits stop working, the runtime is split into generator/critic/fallback stages, and Telegram streaming is disabled at the platform layer to stop edit-based delivery failures.

@@ -140,6 +140,11 @@ Before sending, ask internally:
 
 If the answer is no, rewrite again.
 
+Also run a stop-check:
+- if the digest/message is already usable as delivered, end on the message itself;
+- do not append service offers like `если хочешь, я следующим сообщением...`, `могу потом ещё собрать`, `в следующий раз могу сузить`, or similar;
+- for cron or other one-way delivery, treat any such tail as a failure and cut it before sending.
+
 # Pitfalls
 
 ## Pitfall: fixing words but not the process
@@ -166,6 +171,16 @@ Symptom:
 
 Fix:
 - either embed the link naturally or drop it
+
+## Pitfall: adding a helpful-sounding tail after the message is already done
+
+Symptom:
+- the digest itself is usable, but the assistant adds `если хочешь...`, `могу следующим сообщением...`, `в следующий раз могу...`, or another service tail
+
+Fix:
+- treat the digest body as the whole deliverable
+- cut any follow-up offer unless the task explicitly asked for options or the output is genuinely incomplete
+- in cron delivery, assume one-way completion by default and never end with a service offer
 
 # References
 

@@ -38,6 +38,7 @@ Give the conclusion in 2–5 lines before any expansion. Do not produce a long a
 - Do not hide the actual recommendation behind context-setting.
 - Do not end with unnecessary "if you want, I can also..." when the main answer is already complete.
 - After a bounded factual or recommendation answer, do not append a proactive next-turn offer like "если хочешь, я следующим сообщением...". If the delivered answer is already usable, stop there.
+- For architecture, product framing, and shortlist/listing answers, do not bolt on an offer to convert the same content into a table, file, roadmap, or "more final" structure unless the user explicitly asked for that artifact. Treat that add-on as the same drift pattern, not as helpful polish.
 
 ## Stop Rule for Bounded Answers
 For direct questions such as release date, latest news, simple comparisons, shortlist recommendations, or one-shot factual checks:

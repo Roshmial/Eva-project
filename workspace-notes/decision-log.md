@@ -6371,6 +6371,41 @@ Open questions:
 - Отдельно стоит решить, хотим ли мы закрепить этот `local-browser-cdp-9224.service` как стандартный поддерживаемый runtime contour для Hermes browser tools на этой машине, или позже перевести это в более формализованный setup/skill.
 - История с `hermes doctor` и большим `state.db` остаётся отдельной веткой и этим browser fix не закрывается.
 
+[2026-07-31] — Hermes update backup reordered after availability check; regular backups reviewed for overlap
+
+Context:
+- Пользователь заметил, что `hermes update` сначала создаёт pre-update backup, а уже потом проверяет, есть ли вообще обновление.
+- На контуре уже есть регулярные backup job'ы, поэтому лишний backup при no-op update выглядит как лишняя работа и лишний шум.
+- При этом safety requirement сохраняется: если update реально будет менять checkout/venv, backup должен остаться до мутации.
+
+Decision:
+- Для `hermes update` сначала делаем `fetch` и проверку `rev-list`, а pre-update backup запускаем только если действительно есть новые commits или нужен runtime repair при unhealthy venv.
+- No-op path `Already up to date` без repair больше не должен создавать новый pre-update backup.
+- Регулярные backup job'ы не считать полными дублями pre-update backup: они перекрываются частично, но решают разные задачи.
+
+Regular backup assessment:
+- `eva-hub-daily-backup` (`c8b630f1fbb9`) — backup `eva-data/eva_hub.duckdb`; не дублирует pre-update backup Hermes runtime.
+- `eva-github-backup-weekly` (`2a42427656fa`) — curated Git backup skills + `config.yaml` + `cron/jobs.json` + `scripts/*`; частично пересекается с quick/full pre-update backup по конфигу и cron, но не содержит live state (`state.db`, sessions, logs) и нужен как переносимый Git snapshot.
+- `cons-project-backup-weekly` (`cf27d7146dc2`) — backup web/TG/API/prod contour; к Hermes update backup почти не относится.
+
+Implemented:
+- В `/home/hermes/apps/hermes-agent/hermes_cli/update_cmd.py` backup перенесён с начала update-пайплайна на этап после проверки наличия обновления.
+- Backup по-прежнему вызывается до реальной мутации checkout/venv:
+  - перед apply новых commits;
+  - перед repair path, если checkout current, но venv unhealthy.
+- Добавлены regression tests в `/home/hermes/apps/hermes-agent/tests/hermes_cli/test_cmd_update.py`:
+  - no-op update не создаёт backup;
+  - real update создаёт backup;
+  - runtime repair path тоже создаёт backup.
+
+Verified:
+- `pytest -q tests/hermes_cli/test_cmd_update.py::TestCmdUpdatePreUpdateBackupTiming` → `3 passed`.
+- `pytest -q tests/hermes_cli/test_cmd_update.py tests/hermes_cli/test_update_venv_health.py` → `29 passed`.
+- `python3 -m compileall hermes_cli/update_cmd.py tests/hermes_cli/test_cmd_update.py` завершился без ошибок.
+
+Notes:
+- В рабочем дереве `hermes-agent` уже были/остались отдельные несвязанные изменения в `package.json` и `package-lock.json` после post-update npm/install действий; решение по ним не входит в эту backup-логику.
+
 [2026-07-06 08:55 UTC] — `hermes doctor` больше не зависает на большой `state.db`
 
 Context:
@@ -6452,3 +6487,181 @@ Verified:
 Operational rule:
 - После следующих `hermes update` сначала запускать именно этот smoke script.
 - Только если он красный — идти в глубокую локализацию.
+
+[2026-07-31] — Daily brief: не повторять недавние place/route рекомендации как новые
+
+Context:
+- Утренний daily для Астрахани повторно предложил маршрут `кремль → Петровская набережная`, который уже обсуждали с Мишей позавчера.
+- Пользователь отдельно указал, что это выглядит как потеря памяти, хотя проблема была не в отсутствии контекста, а в слабом антидубле для недавних travel/place рекомендаций.
+
+Decision:
+- Для daily/brief нельзя подавать как новую рекомендацию место, маршрут, заведение, прогулку или городской вариант, если это уже обсуждали недавно и не появилось нового повода.
+- Это не правило про фиксированное окно в 2–3 дня: повтор не должен становиться допустимым автоматически просто потому, что прошло несколько дней.
+- Для географических рекомендаций недостаточно просто перефразировать старый совет: новая рекомендация должна отличаться самой полезной опорой, а не только словами.
+
+Implemented:
+- В `/home/hermes/workspace/eva-daily-spec-v2.md` добавлены явные запреты на повтор недавних place/route рекомендаций без нового повода.
+- В spec усилен процесс проверки:
+  - добавлен отдельный `session_search` по недавним travel/route/place обсуждениям;
+  - в финальной self-check добавлен контроль на повтор места/маршрута/заведения, если по ним не появилось нового повода.
+- Обновлён cron job `329913efa98a` (`eva-daily-self-development-brief`): в prompt добавлено обязательное предварительное `session_search` для route/place рекомендаций и прямой запрет выдавать их как новые без нового повода, даже если прошло несколько дней.
+
+Verified:
+- `eva-daily-spec-v2.md` перечитан после patch; новые антидубль-правила присутствуют в тексте.
+- `cronjob update` для `329913efa98a` прошёл успешно.
+- Проверка prompt job показала, что жёсткое окно `2–3 дня` убрано и заменено на системное правило `недавно / без нового повода`.
+
+[2026-08-02] — Daily brief: проблема не только в правилах, но и в quality gate
+
+Context:
+- После серии точечных правок daily всё ещё мог выходить слишком искусственным, «собранным» и редакторским по тону.
+- Пользователь отдельно указал, что проблема уже не в отдельных словах, а в том, что проверка качества перед выдачей не отсекает такие тексты.
+
+Decision:
+- Дальше усиливать только словарь запретов недостаточно.
+- В daily-контуре нужна отдельная финальная проверка на естественность, отделённая от проверки на фактическую полезность и корректность.
+- Кандидат не должен проходить только потому, что он формально полезный и без ошибок; он должен ещё звучать как реальное короткое сообщение в Telegram.
+
+Implemented:
+- В `/home/hermes/workspace/eva-daily-spec-v2.md` добавлен отдельный блок `Отдельная проверка на естественность`.
+- В критерии брака добавлены признаки «слишком собранного / гладкого / редакторского» текста и псевдоживых формул.
+- В generation loop уменьшено число обязательных кандидатов до 6, но добавлен обязательный финальный отбор между 2 лучшими кандидатами именно по естественности.
+- В cron job `329913efa98a` добавлены прямые требования:
+  - минимум 6 кандидатов;
+  - отдельная финальная проверка на естественность;
+  - обязательный rewrite, если текст звучит слишком отполированно или редакторски.
+
+Verified:
+- `eva-daily-spec-v2.md` перечитан после правок: quality gate на естественность и новые критерии брака на месте.
+- `cronjob update` для `329913efa98a` прошёл успешно.
+- Prompt job подтверждённо содержит требования про 6 кандидатов, отдельную проверку на естественность и отбраковку «слишком собранного» текста.
+
+[2026-08-02] — Telegram streaming disabled; daily rebuilt into staged contour
+
+Context:
+- Telegram streaming сбоил: в gateway-логах были `Message to edit not found`, повторные flood-control wait/retry и подавление обычной final send после streamed delivery.
+- Daily-спека v2 уже разрослась до монолитного mixed-regulation документа, где генерация, критика и финальная отбраковка были свалены в один слой.
+
+Decision:
+- Для Telegram отключить streaming именно на platform-level, не трогая global streaming целиком.
+- Daily-контур больше не развивать как один giant spec; разделить его на staged runtime:
+  - context/constraints;
+  - generator;
+  - critic;
+  - fallback;
+  - overview/runtime prompt.
+
+Implemented:
+- В `/home/hermes/.hermes/config.yaml` установлено:
+  - `display.platforms.telegram.streaming = false`
+  - `gateway.platforms.telegram.streaming = false`
+- Gateway перезапущен; после восстановления `hermes gateway status` снова зелёный.
+- Собран новый staged-контур в `/home/hermes/workspace/eva-daily-v3/`:
+  - `00-overview.md`
+  - `10-context-and-constraints.md`
+  - `20-generator.md`
+  - `30-critic.md`
+  - `40-fallback.md`
+  - `runtime-prompt-v3.md`
+- Cron job `329913efa98a` переведён на v3 prompt с явной последовательностью `context -> generator(4 candidates) -> critic -> fallback`.
+
+Verified:
+- `hermes gateway status` показывает активный gateway после перезапуска.
+- Проверка config подтверждает:
+  - `display.telegram.streaming = False`
+  - `gateway.telegram.streaming = False`
+  - global `streaming.enabled = True` оставлен без изменения.
+- Проверка prompt job подтверждает ссылки на все v3 stage-файлы, требование `ровно 4 кандидата` и наличие `safe fallback`.
+- Выполнен live-run job `329913efa98a`; создан новый артефакт `/home/hermes/.hermes/cron/output/329913efa98a/2026-08-02_07-24-16.md` и доставка в `telegram:381204086` завершилась успешно.
+- После platform-level disable в свежем хвосте gateway больше не видно новых `Suppressing normal final send`, `Telegram flood control on send` и датированных post-restart `Message to edit not found` событий; остались только обычные `Flushing text batch` записи.
+- `eva-daily-spec-v2.md` помечен как `DEPRECATED`, чтобы дальнейшие правки не уходили в legacy-монолит вместо `eva-daily-v3/`.
+
+[2026-08-02] — Daily v3 tightened against safe banality
+
+Context:
+- Первый live-run staged-контура убрал редакторскую искусственность, но всё ещё пропустил слишком безопасный и почти универсальный weather-driven текст.
+- Пользователь явно подтвердил, что такой уровень качества не устраивает: нужен не просто "не кринж", а действительно полезный daily.
+
+Decision:
+- В v3 quality gate добавить отдельный запрет на банальную погодную универсальность.
+- Если у дня уже есть конкретная опора в контексте (включая helper-event), финальный daily не должен её молча терять.
+
+Implemented:
+- В `eva-daily-v3/20-generator.md` добавлены требования:
+  - минимум 2 кандидата с предметной пользой дня;
+  - минимум 1 кандидат на реальном сюжете дня, а не только на погоде;
+  - обязательная попытка встроить helper-event, если он валиден и не конфликтует с днём.
+- В `eva-daily-v3/30-critic.md` добавлены бинарные проверки `небанальность` и `специфичность дня`.
+- Игнорирование валидной конкретной дневной опоры без внятной причины теперь считается запретом, а не просто слабостью.
+- В `eva-daily-v3/40-fallback.md` и `runtime-prompt-v3.md` ужесточено правило: fallback не должен становиться удобной заменой слабой генерации.
+- Cron job `329913efa98a` обновлён под эти правила.
+
+Verified:
+- Live-run после ужесточения создал новый артефакт `/home/hermes/.hermes/cron/output/329913efa98a/2026-08-02_07-39-30.md`.
+- Новый выпуск уже не сводится к общей жаре и использует конкретную опору дня: `Музей Москвы` / выставка `70 лет созидания`, пришедшую из helper-context.
+
+[2026-08-02] — Daily v3 final hardening: external anchor, link, no soft-control language
+
+Decision:
+- Если helper-event не конфликтует с днём, он обязателен в финальном daily.
+- Если в финале есть конкретное место/событие, ссылка обязательна.
+- Запрещены soft-control и vague-control формулы (`держать день простым`, `оставить вечер спокойным`, `вряд ли нужен`, `хорошо ложится`, `с делами лучше управиться` и т.п.), а также бытовая псевдоконкретика.
+
+Implemented:
+- Ужесточены `eva-daily-v3/10-context-and-constraints.md`, `20-generator.md`, `30-critic.md`, `runtime-prompt-v3.md`.
+- В rules добавлено требование использовать concrete helper facts (`NOTE`, registration/free entry, dates) вместо расплывчатых оценок.
+- Cron job `329913efa98a` обновлён под финальные жёсткие правила.
+
+Verified:
+- Live-runs последовательно прогнаны до чистого результата.
+- Финальный проверочный артефакт: `/home/hermes/.hermes/cron/output/329913efa98a/2026-08-02_08-44-41.md`.
+- В финальном выпуске есть конкретная внешняя опора и ссылка, нет `бытовых хвостов`, `одной точки`, soft-control language, vague-control tails и условных подводок к рекомендации; рекомендация подана напрямую, а не через мягкую подводку.
+[2026-08-02] — Weekly TG QA now includes mandatory reclassification pass
+
+Decision:
+- Еженедельный QA по Telegram monitor должен делать не только статистику, но и обязательный residue-pass по сообщениям с типом `требует уточнения`.
+
+Implemented:
+- В `TG-API/weekly_monitor_qa.py` weekly run теперь не ограничивается счетчиком `requires_review_total`, а всегда строит артефакты переклассификации по полным `derive_rows(...)`.
+- Добавлен Markdown-реестр `telegram_it_consulting_requires_review_reclassification_<timestamp>.md` вместе с CSV/JSON.
+- Weekly JSON теперь хранит `requires_review_suggested_count`, `requires_review_unresolved_count` и `requires_review_suggested_type_counts`.
+- Пользовательский weekly output теперь явно сообщает, что предварительная переклассификация выполнена, сколько сообщений получили suggested type и сколько остались без уверенной альтернативы.
+
+Verified:
+- `python3 -m py_compile weekly_monitor_qa.py` — ok.
+- Ручной прогон `python3 weekly_monitor_qa.py` сформировал QA JSON + CSV/JSON/MD reclassification artifacts.
+- На окне 02.08.2026 подтверждено: residue `21`, из них `10` со suggested type и `11` без уверенной альтернативы.
+
+[2026-08-02] — Weekly TG QA now auto-processes previous backlog too
+
+Decision:
+- Weekly TG QA должен не только строить переклассификацию за последние 7 дней, но и автоматически проходить весь накопленный historical backlog по `требует уточнения`.
+
+Implemented:
+- В `TG-API/telegram_monitor_pipeline.py` добавен внешний auto-override слой `requires_review_auto_overrides.json`, который применяется поверх встроенных manual overrides.
+- В `TG-API/weekly_monitor_qa.py` weekly run теперь собирает два слоя residue: текущее 7-дневное окно и всю доступную историю `runtime/95/raw_logs/raw_*_summary_input.json`.
+- Weekly run автоматически записывает все historical suggestions с `альтернативный тип` в `TG-API/requires_review_auto_overrides.json`.
+- Weekly output и QA JSON теперь содержат отдельные historical backlog metrics и пути к full-history CSV/JSON/MD артефактам.
+
+Verified:
+- `python3 -m py_compile telegram_monitor_pipeline.py weekly_monitor_qa.py` — ok.
+- Первый ручной прогон weekly QA создал historical artifacts и записал `+100` auto-overrides.
+- Повторный прогон weekly QA подтвердил снижение residue:
+  - 7 дней: `21 -> 11`
+  - вся история: `210 -> 110`
+- Автоматический weekly cron-run оставлен включенным; значит дальше этот backlog-pass будет выполняться каждую неделю без ручного запуска.
+
+[2026-08-02] — Weekly TG QA now force-distributes all unresolved posts
+
+Decision:
+- Для этого контура `требует уточнения` больше не должно оставаться в weekly/historical residue: всё нераспределённое должно автоматически получать существующий тип и закрепляться в override-слое.
+
+Implemented:
+- В `TG-API/weekly_monitor_qa.py` добавлен `guess_residual_type(...)` для forced distribution unresolved residue по существующему словарю.
+- Weekly run теперь пишет в `requires_review_auto_overrides.json` не только confident suggestions, но и полный forced assignment для оставшегося residue.
+- `telegram_monitor_pipeline.py` читает этот внешний override-файл при каждом построении rows/payload.
+
+Verified:
+- После первого прогона записано `+110` forced overrides.
+- Повторный прогон weekly QA показал `requires_review_total = 0` за 7 дней и `history backlog = 0` по всем `45` summary_input.
+- Прямая проверка через `derive_rows(...)` по всем historical summary подтвердила `residue_total = 0`.
