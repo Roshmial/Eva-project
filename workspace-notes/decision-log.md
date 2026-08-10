@@ -6665,3 +6665,199 @@ Verified:
 - После первого прогона записано `+110` forced overrides.
 - Повторный прогон weekly QA показал `requires_review_total = 0` за 7 дней и `history backlog = 0` по всем `45` summary_input.
 - Прямая проверка через `derive_rows(...)` по всем historical summary подтвердила `residue_total = 0`.
+
+[2026-08-04] — Weekly event и daily morning cron переведены на preflight script + tighter agent layer
+
+Decision:
+- Для user-facing weekly event и daily morning cron сначала поднимать deterministic preflight-контекст script-слоем, а agent-слой оставлять для отбора, синтеза и финальной формулировки.
+
+Implemented:
+- `eva-weekly-moscow-events-pick` (`3c26e0954d43`) теперь использует `~/.hermes/scripts/cron_weekly_events_prep.py`.
+- Weekly preflight подаёт границы недели по Москве, 4 разрешённых source-clusters и названия из недавних weekly outputs.
+- Weekly prompt ужесточён: сначала official source URLs через `web_extract`, `web_search` только как rescue path, максимум 1 rescue search на source и максимум 4 `web_search` суммарно.
+- `eva-daily-self-development-brief` (`329913efa98a`) теперь использует `~/.hermes/scripts/cron_daily_brief_prep.py`.
+- Daily preflight подаёт время по Москве, day-context, helper-output, последние финальные daily и недавние linked opоры.
+- Daily prompt больше не требует каждый раз заново поднимать date/state context через tools, а использует script-layer как первичный контекст и оставляет tools только для selective verification.
+- Daily prompt дополнительно ужесточён против generic coaching / soft-control language в обычный рабочий день без helper-event.
+
+Verified:
+- Weekly live output после переделки: `/home/hermes/.hermes/cron/output/3c26e0954d43/2026-08-04_05-38-42.md`
+- Daily live output после переделки: `/home/hermes/.hermes/cron/output/329913efa98a/2026-08-04_05-41-14.md`
+
+[2026-08-04] — Daily убран с event-centric / pseudo-productivity каркаса
+
+Decision:
+- Daily нельзя строить вокруг переключателя `есть событие / нет события` и нельзя подменять отсутствие фактуры менеджерской псевдоконкретикой.
+- Для `normal workday` допустим короткий честный текст без внешней опоры; недопустимы travel-hangover narrative, productivity-speak и искусственная глубина.
+
+Implemented:
+- `~/.hermes/scripts/cron_daily_brief_prep.py` теперь подаёт `day_type`, anti-repeat summary вместо сырых хвостов старых daily и список banned style patterns.
+- В `eva-daily-v3/10-context-and-constraints.md` добавлен `day_type` и правило по `normal workday`: без сюжетного каркаса и без псевдопланёрки.
+- В `eva-daily-v3/20-generator.md` усилен запрет на office/productivity surrogate и разрешена короткая честная простота при слабой фактуре.
+- В `eva-daily-v3/30-critic.md` добавлено правило: для `normal workday` не требовать искусственную предметность.
+- В `eva-daily-v3/40-fallback.md` закреплён допустимый простой финал для `normal workday` и запрет на псевдо-глубину.
+
+[2026-08-04] — Daily переведён на bank-first staged writing для качества формулировок
+
+Decision:
+- Для daily с планкой 9/10 по живости недостаточно общего generator/critic и списка bans.
+- Нужен отдельный staged contour: сначала выбрать 1 главную + 2 малые задачи, потом выразить их через curated bank живых паттернов, затем прогнать через editor и жёсткий reject-list surrogate-фраз.
+- Плохой кандидат нужно выбрасывать целиком, а не косметически полировать.
+
+Implemented:
+- Добавлены новые стадии:
+  - `eva-daily-v3/15-task-picker.md`
+  - `eva-daily-v3/22-line-bank.md`
+  - `eva-daily-v3/25-line-writer.md`
+  - `eva-daily-v3/35-final-editor.md`
+  - `eva-daily-v3/36-reject-list.md`
+- `eva-daily-v3/runtime-prompt-v3.md` переписан в bank-first staged flow:
+  - task-picker -> line-bank -> line-writer -> critic -> final-editor -> reject-list.
+- В line bank добавлены живые паттерны для главной, admin/poryadok и evening/recovery линий.
+- В reject-list запрещены surrogate-конструкции вроде `главная вещь`, `полезная точка`, `сюда хорошо влезает`, `сюда просится`, а также сухой bare imperative без голоса Евы.
+
+Verified:
+- Live-run после bank-first переделки:
+  - `/home/hermes/.hermes/cron/output/329913efa98a/2026-08-04_09-36-57.md`
+  - `/home/hermes/.hermes/cron/output/329913efa98a/2026-08-04_09-38-20.md`
+- Последний проверочный вариант на этой итерации:
+  - `Я бы сегодня добила один короткий рабочий текст и отправила его до вечера.`
+  - `Можно днём закрыть один платёж или запись.`
+  - `На вечер можно оставить 20 минут на прогулку без наушников.`
+
+[2026-08-04] — Daily stability для same-date reruns перенесена в структуру cron/preflight
+
+Decision:
+- Стабильность daily нельзя оставлять на совести prompt-only рендера: same-date reruns должны переиспользовать clean baseline, а не каждый раз заново крутить погоду и wording.
+- Для daily contour логика дня, task families и suggested raw tasks должна жить в preflight script; agent-layer должен в основном рендерить и браковать.
+
+Implemented:
+- `~/.hermes/scripts/cron_daily_brief_prep.py` расширен structured output блоками:
+  - `STRUCTURED_DAY_ANCHORS`
+  - `TASK_FAMILIES`
+  - `SUGGESTED_RAW_TASKS`
+  - `SAME_DATE_STABILITY_BASELINE`
+  - `STABILITY_RULES`
+- Preflight теперь поднимает `tomorrow_event`, умеет использовать близкую personal-опору и нормализует её без third-person формулировок.
+- `eva-daily-v3/runtime-prompt-v3.md` сжат до render-first логики: не пересобирать day reasoning заново, а рендерить structured preflight; для same-date reruns переиспользовать baseline weather line и не крутить wording без причины.
+
+Verified:
+- До structural stability-pass same-date прогоны всё ещё дрейфовали по weather line и словам вроде `быстро` / `просто` / `короткий рабочий`.
+- После правок два подряд same-date live-run дали идентичный результат:
+  - `/home/hermes/.hermes/cron/output/329913efa98a/2026-08-04_09-59-10.md`
+  - `/home/hermes/.hermes/cron/output/329913efa98a/2026-08-04_09-59-28.md`
+- Совпавший финальный текст:
+  - `Погода: +26, без дождя.`
+  - `Я бы сегодня добила короткий рабочий текст с правками и отправила его.`
+  - `Можно днём быстро выбрать, как отметить завтра день рождения.`
+  - `На вечер можно оставить 20 минут на прогулку без наушников.`
+
+[2026-08-06] — Daily anti-repeat moved from wording bans into preflight task-family rotation
+
+Decision:
+- Проблема повторов была не только в phrasing, а в том, что preflight несколько дней подряд предлагал одну и ту же связку `work text + admin + walk`, а render-layer только слегка перефразировал её.
+- Для обычных рабочих дней анти-повтор должен жить в preflight: script обязан смотреть на предыдущие distinct-day outputs и менять task families, а same-date baseline нельзя переиспользовать, если семьи задач уже изменились.
+
+Implemented:
+- `~/.hermes/scripts/cron_daily_brief_prep.py` теперь:
+  - поднимает `RECENT_DISTINCT_DAY_FAMILIES` из последних дней;
+  - меняет `TASK_FAMILIES` и `SUGGESTED_RAW_TASKS`, если одна и та же связка уже использовалась в соседние дни;
+  - отдельно различает `reuse_allowed=true/false` для same-date baseline.
+- `eva-daily-v3/runtime-prompt-v3.md` теперь явно запрещает тащить same-date baseline в строки задач, если `reuse_allowed=false`.
+
+Verified:
+- Реальные daily outputs, подтвердившие повтор проблемы:
+  - `/home/hermes/.hermes/cron/output/329913efa98a/2026-08-04_09-59-28.md`
+  - `/home/hermes/.hermes/cron/output/329913efa98a/2026-08-06_06-31-05.md`
+- После анти-repeat правки новый live-run ушёл от старой тройки `admin + walk`:
+  - `/home/hermes/.hermes/cron/output/329913efa98a/2026-08-06_07-19-50.md`
+- Новый результат:
+  - `Я бы сегодня добила короткий текст с правками и отправила его до вечера.`
+  - `Можно днём оставить 20 минут на заметки на бумаге.`
+  - `На вечер можно оставить один фильм дома и больше ничего не добивать.`
+
+[2026-08-06] — Daily broadened from narrow safe-loop to wider support classes
+
+Decision:
+- После первой anti-repeat правки daily всё ещё был слишком узким: цикл просто сместился из `admin + walk` в `reading/film`, но не вернул прежнюю широту типов рекомендаций.
+- Для этого контура нужно держать не только anti-repeat, но и широкий curated set support-classes: чтение/заметки, фильм, музыка, короткая практика/разминка, прогулка, personal-prep и admin.
+
+Implemented:
+- `~/.hermes/scripts/cron_daily_brief_prep.py` расширен новыми family classes:
+  - `music_reset`
+  - `practice_reset`
+- Ротация small-goals теперь смотрит на последние 3 distinct-day outputs и пытается выбирать неиспользованный support-class, а не только переписывать тот же safe-pattern.
+- `eva-daily-v3/22-line-bank.md` расширен живыми паттернами для музыки и короткой практики.
+- `eva-daily-v3/runtime-prompt-v3.md` дополнительно фиксирует правило: не скатываться в вечный цикл `admin / чтение / прогулка`, если preflight уже дал более широкий класс задачи.
+
+Verified:
+- Live-run `/home/hermes/.hermes/cron/output/329913efa98a/2026-08-06_07-43-15.md` дал уже более широкую поддержку:
+  - `Можно днём ненадолго открыть заметки или книгу и не растягивать это дальше.`
+  - `Вечером можно просто выбрать один фильм и на этом остановиться.`
+- Повторный same-date run `/home/hermes/.hermes/cron/output/329913efa98a/2026-08-06_07-48-38.md` подтвердил стабильность того же более широкого family mix без возврата к старому `admin + walk` циклу.
+
+[2026-08-06] — Daily morning cron rebuilt from scratch under a simpler contract
+
+Context:
+- Пользователь остановил ветку бесконечных микро-правок текста и задал новый жёсткий контракт для daily: приветствие, погода, одна крупная self-development задача, одна более мелкая задача, краткие ссылки на внешние источники, минимум повторений.
+- Прямое решение пользователя: убрать текущую архитектуру cron job и собрать контур заново.
+
+Agreed:
+- Новый daily строится по простому формату из ровно 4 строк:
+  - приветствие;
+  - день/дата + погода;
+  - 1 крупная задача по саморазвитию;
+  - 1 более мелкая поддерживающая задача.
+- Внешние источники в задачах должны идти с краткими markdown-ссылками в той же строке.
+- Контур не должен снова скатываться в абстрактный рабочий `текст` и словесные safe-loop формулы.
+
+Implemented:
+- Полностью переписан `~/.hermes/scripts/cron_daily_brief_prep.py` в более простой preflight:
+  - небольшой curated bank main/self-development items;
+  - небольшой curated bank small/support items;
+  - anti-repeat по recent outputs;
+  - выбор `SELECTED_MAIN` и `SELECTED_SMALL` без старого staged/bank-first монолита.
+- Создан новый runtime spec `/home/hermes/workspace/eva-daily-v4.md` с жёстким правилом `ровно 4 строки` и одной финальной self-check без лишней архитектурной надстройки.
+- Job `329913efa98a` обновлён на новый prompt + новый script, toolsets сужены до `web` и `file`.
+
+Verified:
+- Live-run нового контура: `/home/hermes/.hermes/cron/output/329913efa98a/2026-08-06_08-32-00.md`
+- Реальный output уже соответствует новому контракту:
+  - `Доброе утро, Миша!`
+  - `Четверг, 6 августа. Погода: ...`
+  - 1 крупная задача со ссылкой;
+  - 1 мелкая задача со ссылкой;
+  - без лишней пятой строки.
+
+Verified:
+- Неудачный промежуточный output с travel/productivity residue: `/home/hermes/.hermes/cron/output/329913efa98a/2026-08-04_06-53-00.md`
+- Новый live output после пересборки каркаса: `/home/hermes/.hermes/cron/output/329913efa98a/2026-08-04_07-08-33.md`
+
+[2026-08-09 04:55 UTC] — Hermes self-development: prompt-budget triage выделен в отдельный short runbook
+
+Context:
+- В weekly self-development review был нужен один реальный high-leverage gap по Hermes itself, а не косметическое обновление ради отчёта.
+- Live CLI и docs подтвердили, что `hermes prompt-size` — штатный офлайн-инструмент для измерения fixed prompt surface, а `--safe-mode` / `--ignore-user-config --ignore-rules` — базовые изоляционные флаги для differential diagnosis.
+- Одновременно live-замер текущего профиля `default` показал fixed prompt порядка 146 KB как на `cli`, так и на `telegram`.
+
+Agreed:
+- Считать prompt-budget triage отдельной ранней процедурой, а не мелкой заметкой внутри общего skill `hermes-agent`.
+- Если симптом похож на «агент стал тупее / многословнее / хуже пользуется инструментами», сначала мерить prompt surface, а уже потом спорить о модели, провайдере или reasoning level.
+
+Implemented:
+- Создан новый точечный skill `autonomous-ai-agents/hermes-prompt-budget-triage`.
+- В skill вынесены:
+  - быстрый запуск `hermes prompt-size --platform ... --json`;
+  - изоляционная проверка через `hermes --safe-mode --help` и `hermes --ignore-user-config --ignore-rules -z ...`;
+  - правило лечить сначала крупнейший и наименее ценный слой fixed prompt surface локальным cleanup.
+
+Verified:
+- Live CLI help подтверждает наличие `hermes prompt-size`, `--safe-mode`, `--ignore-user-config`, `--ignore-rules`.
+- Docs fetched напрямую с `https://hermes-agent.nousresearch.com/docs/reference/cli-commands` подтверждают те же поверхности.
+- Live `hermes prompt-size --platform cli --json` → total fixed prompt `146825` bytes.
+- Live `hermes prompt-size --platform telegram --json` → total fixed prompt `146539` bytes.
+- Крупнейшие слои в live-замере: tool schemas ~42%, system prompt ~38%, skills index ~16%.
+
+Why this matters:
+- Это даёт короткий operational runbook для симптома, который легко спутать с «модель стала хуже».
+- Процедура local-first: сначала измерение и cleanup внутри текущего Hermes-контура, без новых внешних сервисов и без premature model-churn.

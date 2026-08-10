@@ -22,6 +22,8 @@ Use this reference when tuning recurring self-development briefs for Misha.
 - Minimum: 10 events.
 - Include links and short recommendations.
 - Bias toward events that feel alive, specific, and worth real attention rather than generic safe picks.
+- Cron output is the final deliverable, not the start of a dialogue. Do not end with service offers like `Если хочешь, в следующий раз могу...`, `могу сузить подборку...`, or other invitations to continue later.
+- End on the usable selection itself: picks, quick shortlist, or one concise closing line without a question mark.
 
 ## Troubleshooting pattern
 

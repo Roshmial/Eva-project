@@ -30,7 +30,11 @@ Before delivering a response, the agent must perform a mental-check: "Does this 
 When a tool reports an environment/backend limitation, treat that as a routing signal.
 - Example: `web_extract` returning `DuckDuckGo (ddgs) is a search-only backend and cannot extract URL content` means extraction will keep failing on the same path.
 - Do not retry the same `web_extract` pattern against more URLs in that turn.
-- Pivot immediately to a tool that fits the environment: `browser_*` for interactive page reads, `terminal`/`curl` for plain fetches, or narrower `web_search` queries when only search is available.
+- Pivot immediately to a tool that fits the environment: `browser_*` for interactive page reads, `terminal`/`curl` for plain fetches, or a local script fetch via `execute_code`.
+- Do NOT try to turn additional `web_search` snippet queries into proof for the same fact after this error. More snippets are still snippets.
+- If the task required page-level verification and no fetch path works, either:
+  1. reuse an already verified same-day fact when the workflow explicitly allows stability/consistency over regeneration; or
+  2. report the verification blocker plainly.
 - If the limitation blocks the requested level of verification, say so explicitly instead of quietly downgrading evidence.
 
 ## Pitfalls to Avoid
@@ -80,6 +84,16 @@ Do not treat them as sufficient proof for exact dates, opening hours, direct-lin
 - If the request requires `working direct link`, `точная дата/время`, `точно на этой неделе`, `current`, or similar, confirm from a page-fetch/browser/raw-HTTP read of the actual target URL before stating it as verified.
 - If the environment blocks that verification path, narrow the claim (`нашла кандидата по snippet, но точную дату/страницу не довела`) or return fewer verified items instead of filling quota with inferred facts.
 - Never let quota pressure or formatting pressure convert discovery guesses into verified entries.
+
+### 9a. When a Required Verification Path Fails, Do Not Quietly Backfill a Required Field from Snippets
+A frequent failure pattern is: the prompt requires a field to come from a fetched page or other direct source (`погода`, `точная дата`, `open hours`, `event page`), the fetch fails, and the agent still fills the field from snippet-level guesses because the output format demands something there.
+- If the contract says `search -> fetch page -> use fetched facts`, and the fetch step is blocked, treat the field as unverified.
+- Acceptable fallbacks are only:
+  1. another direct-access tool (`browser_*`, `terminal` HTTP fetch, local script fetch);
+  2. an explicitly allowed same-day previously verified value already present in the task context or a prior artifact for that same day/run;
+  3. a narrower/blocker response that says the field could not be verified.
+- Unacceptable fallback: mixing several snippets/search results into a synthetic value and presenting it as today's verified fact.
+- This rule is strongest for contract-sensitive fields that shape user trust immediately: weather lines in daily briefs, exact event timing, exact availability dates, and direct working links.
 
 ### 10. Verification Scope Must Match the Claim
 Do not describe a narrow or targeted check as if it proved the whole product/runtime/user journey.

@@ -109,6 +109,26 @@ Do not force pre-trip advice every time a trip exists in the background.
 Do not force content suggestions if they sound bolted on.
 Prefer omission over a weak filler recommendation.
 
+## Normal workday rule
+
+Do not build a daily around the binary `there is an event / there is no event` switch.
+For an ordinary workday with no real external anchor:
+- do not drag yesterday's trip, return, or transition story forward just because it is recent;
+- do not fabricate usefulness through office-planning language;
+- do not force a city or event recommendation just to avoid emptiness;
+- a short honest line is better than pseudo-concrete "productivity" filler.
+
+Allowed shape for a normal workday:
+- weather;
+- one plain line that there is no separate external plot for today, if true;
+- optionally one short human line of orientation, only if it does not sound managerial, editorial, or falsely deep.
+
+Fail candidates that lean on any of these patterns:
+- event-centric framing when the event is not actually what shapes the day;
+- stale travel hangover narrative after the travel-day and immediate next day have passed;
+- office surrogate phrases like `one fixed result`, `one stuck piece`, `the rest of the inbox`, `get back into work mode`;
+- artificial depth in place of substance, e.g. lines equivalent to `today is enough in itself`.
+
 Do not default to a rigid micro-template like:
 - `Фокус дня: ...`
 - recommendation 1

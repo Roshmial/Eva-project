@@ -43,10 +43,13 @@ Trigger this skill when the task includes any of the following:
    - Start exactly with `Доброе утро, Миша!`
    - Then one short factual line with day/date and weather only.
    - Weather line must explicitly include both: temperature and rain/no rain.
-   - After that, do NOT default to a rigid `Фокус дня: ...` rubric plus two symmetric bullets. That structure itself can make the text sound generated.
-   - Prefer a short Telegram-style shape: one natural line with the main thought of the day, then 1–2 useful lines that add new layers.
+   - The core contract for this user's self-development daily is structural, not atmospheric: exactly 1 main goal and exactly 2 small goals.
+   - Do NOT silently drift from that contract into a mood note, day-description, event/no-event meta commentary, or reflective mini-message even if style tuning is underway.
+   - After the weather line, the brief must still function as a daily plan with recommendations, not as an observation about the day.
+   - Do NOT default to a rigid `Фокус дня:` rubric plus two symmetric bullets. That structure itself can make the text sound generated.
+   - Prefer a short Telegram-style shape: one natural main-goal line, then exactly 2 useful support lines with genuinely different layers.
    - Use an explicit `Фокус дня:` label only if it genuinely improves clarity. If the label makes the text feel like a template or mini-plan, drop it.
-   - Recommendations must be dynamic, not a fixed recurring checklist. Depending on the day they may include work, trip prep, music, film/series/video, a walk, a nearby event, a household reset, admin, or rest.
+
    - Choose only what actually fits today's context. Do not force pre-trip bullets every time just because a trip is approaching.
    - The main thought should usually be the highest-value result of the day and concrete enough that by evening the result is visible.
    - The main thought is a goal axis, not a paraphrased action list and not a soft ban. Reject lines like `собрать внятный рабочий день`, `закрыть главное`, `довести до конца один важный рабочий кусок`, `пройти день ровно`, `не растаскивать себя`, or any other phrase that could be pasted into almost any weekday unchanged.
@@ -125,6 +128,30 @@ Trigger this skill when the task includes any of the following:
    - Separate context gathering, candidate generation, criticism/quality gate, and fallback into distinct files or explicit stages.
    - The cron prompt should sequence those stages directly rather than asking one pass to do everything at once.
    - Treat this as the default escalation path when Misha says the issue is already in the pipeline, not in one more wording rule.
+   - If prompt healing keeps producing new dead phrases, move more logic into cron structure itself: let a preflight script emit day anchors, task families, suggested raw tasks, and reject hints.
+   - For high-sensitivity daily briefs, prefer a bank-first contour: task-picker -> line bank -> line-writer -> critic -> final editor -> reject list.
+   - In that contour, the agent-layer should mostly render and reject, not re-decide the day's logic from scratch.
+   - After a structural rewrite, do not declare success from one good run. Do a same-date rerun series and check whether wording drifts for no real reason.
+   - If the same day reruns keep wobbling, move stability into preflight too: emit a same-date baseline and explicit reuse rules so the renderer prefers stable wording over fake novelty.
+   - For cross-day repetition, do not rely only on wording bans. Make preflight inspect recent distinct-day outputs, classify the task-family mix, and rotate small-goal families when the same combination keeps repeating across соседние дни.
+   - If the user explicitly says to kill the current architecture and rebuild from scratch, stop doing micro-edits on the existing contour. Replace the old staged/prompt bank with a simpler fresh contract and verify that contract directly on a live run.
+   - In that reset mode, prefer a small curated bank of concrete main/self-development items and support items with built-in links over abstract placeholder families like `work text`, `close one thing`, or other generic work-safe defaults.
+   - If the user resets the contract itself, follow the new contract literally even when it replaces the previous default. In particular, this user may explicitly switch daily from `1 main + 2 small` to `1 main self-development + 1 smaller support task`; after that switch, continuing to enforce the older 3-task shape is a mistake.
+   - When external links are part of the contract, prefer embedding them into the existing object phrase (`[предисловие SICP]`, `[Townscaper]`, `[ВДНХ]`) instead of appending detached labels like `книга`, `маршрут`, or `статья` at the end of the line.
+   - Once the user says `доведи только качество`, stop revisiting architecture and work only on the editorial quality of the curated content bank and final edit pass.
+   - Editorial quality failures for this user include methodical phrasing like `выписать 3 мысли`, `записать 3 наблюдения`, `отметить один принцип`, and soft artificial lead-ins like `если захочется коротко переключиться` when a simpler sentence lands better.
+   - Also reject soft service-y tails like `до сих пор правда полезно`, `проветрить голову`, `без обязательств`, `если понадобится, вот метод`, or similar gentle filler that sounds correct but not alive.
+
+7. For Misha's morning daily, preserve the hard output contract even during style repairs.
+   - The brief is still a plan: exactly 1 main goal and exactly 2 small goals.
+   - Do not let a style-debugging pass drift into atmospheric notes, meta-commentary about the day, or abstract mood-setting.
+   - A structurally correct but lifeless brief is still a failure.
+   - After picking the best candidate, run one more edit pass focused only on liveliness and density.
+   - If the chosen line is merely a shortened bad line, reject it and go back to another candidate.
+   - If Misha says `под ключ` and gives a quality bar, do not stop at `already much better`; keep iterating until that bar is actually met or a real blocker appears.
+   - Personal-event anchors about Misha himself must stay user-facing. Never render them in third person like `день рождения Михаила`; normalize them to direct phrasing such as `завтра день рождения`.
+   - Do not ban natural live Telegram frames like `я бы` or `можно` at the preflight ban-list layer. Ban dead formulas, not the grammatical voice that keeps the brief human.
+   - See `references/august-2026-daily-plan-quality.md` for the August 2026 corrections on event-centric framing, pseudo-productivity wording, and water control.
 
 # Prompt-writing guidance
 
@@ -163,6 +190,9 @@ For daily briefs, explicitly instruct the cron prompt to:
 - explicitly ban unnecessary qualifier tails such as `без распыления`, `без перегруза`, `без лишнего`, `не расползаясь`, `без длинного выезда через весь город`, `без лишней логистики`, or close defensive padding;
 - if removing a qualifier tail leaves the same recommendation value, prefer the shorter sentence;
 - recommendations may include work, trip prep, music, film/series/video, a walk, a nearby route, an event, household reset, admin tasks, or rest; pick only what actually fits today's day type and energy;
+- task lines must be compact and dense. If a line can be shortened by roughly a third without losing the action, rewrite it before delivery;
+- ban watery lead-ins and explanatory tails in task lines, such as `на сегодня предлагаю`, `оставить себе`, `по действительно важной теме`, `которое потом уже...`, `чтобы день закончился...`, `пока сухо и не жарко`, and close variants;
+- for a normal workday with no strong external hook, still produce real tasks; do not replace them with day classification or atmosphere-only wording;
 - do not force the same recurring pre-trip checklist when the day would benefit more from leisure, recovery, or cultural suggestions;
 - keep support ideas varied and human: examples include `послушай что-то новое`, `выбери короткую прогулку`, `посмотри вечером один фильм`, `проверь билеты и брони`, `докупи что нужно`;
 - if suggesting reading, name the exact text/book/chapter/article and include one direct link;
@@ -195,7 +225,8 @@ For daily briefs, explicitly instruct the cron prompt to:
 - if the suggestion is a destination from Misha's home, prefer a route link over a plain map point;
 - for Yandex route links from home, prefer coordinate-based `rtext` deep links rather than address-string route links when practical;
 - if the generated text sounds too polished, symmetrical, or lifestyle-editorial, treat that as a quality failure and tighten toward shorter Telegram-native phrasing.
-- explicitly ban generated micro-constraints and fake optimization language in user-facing Russian. By default, avoid constructions like `один мессенджер`, `одну почту`, `одно сообщение`, `одна мелочь`, `один вопрос`, `один слот`, `один блок`, `ровно 20 минут`, or similar count-based wording unless the number is genuinely important for meaning.
+- explicitly ban generated micro-constraints and fake optimization language in user-facing Russian. By default, avoid constructions like `один мессенджер`, `одну почту`, `одно сообщение`, `одна мелочь`, `один вопрос`, `один слот`, `один блок`, `ровно 20 минут`, `20–30 минут`, `полчаса`, `10–15 минут`, or similar count-based wording unless the number is genuinely important for meaning.
+- avoid stale work-trope wording that reads like generated planning prose: `текст с правками`, `добить`, `дожать`, `не добивать`, `закрыть тему`, `короткий рабочий текст`, and close variants when they are only generic placeholders rather than real context.
 - avoid service-template phrasings that read like generated planning prose: `главный рабочий блок`, `собрать базу`, `отдельно собрать`, `подойдёт`, `переключить голову`, and close variants.
 - if a sentence explains the recommendation instead of simply offering it, shorten it.
 - keep recommendations slightly uneven in a human way; a little live Telegram roughness is better than polished symmetry.
@@ -228,6 +259,9 @@ For leisure suggestions in Moscow:
 - Leaving Telegram streamed delivery enabled when the failure pattern is specifically edit-based (`Message to edit not found`, suppress-normal-final-send, flood-control around streamed sends). In that case, disable streaming on the Telegram platform layer first instead of broad global shutdown.
 - Creating a second cron job instead of refining the current one.
 - Letting the brief drift into abstract self-help language.
+- Letting style-fix work accidentally erase the original job contract (`1 main goal + 2 small goals`) and turn the brief into a mood note or commentary about the day.
+- Letting `normal workday` handling collapse into meta lines like `обычный рабочий день`, `без отдельного внешнего сюжета`, or other service-style day classification instead of real recommendations.
+- Allowing watery formulations where the action could be said much shorter.
 - Using artificial phrases such as "сменить контекст" for leisure or small-step transitions.
 - Adding defensive qualifier tails that sound generated rather than helpful, such as `без длинного выезда через весь город`, `без лишней логистики`, or close variants when the shorter sentence already says enough.
 - Repeating a concrete fallback object across different days while pretending the brief is varied. Typical failure mode: the wording changes, but the same nearby place or the same browser game comes back again.
@@ -294,3 +328,5 @@ See `references/focus-vs-recommendation-and-poisoned-examples.md` for the specif
 See `references/july-2026-same-date-rerun-stability.md` for same-date rerun discipline: weather stability, anti-task-manager filtering, and acceptance only after a short stable streak of good daily outputs.
 
 See `references/staged-runtime-and-telegram-streaming.md` for the escalation pattern where repeated daily-brief prompt edits stop working, the runtime is split into generator/critic/fallback stages, and Telegram streaming is disabled at the platform layer to stop edit-based delivery failures.
+
+See `references/august-2026-daily-structure-and-stability.md` for the next escalation step: moving day anchors, task families, suggested raw tasks, and same-date stability baselines into preflight so the agent mostly renders instead of re-deciding the day.
