@@ -4,12 +4,14 @@ from datetime import date, datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 import re
+import requests
 import yaml
 
 TZ = ZoneInfo('Europe/Moscow')
 DAILY_OUT = Path('/home/hermes/.hermes/cron/output/329913efa98a')
 CTX_PATH = Path('/home/hermes/workspace/eva-digest-context.yaml')
 PROMPT_PATH = Path('/home/hermes/workspace/eva-daily-v4.md')
+WEATHER_URL = 'https://pogoda.mail.ru/prognoz/moskva/'
 
 MAIN_ITEMS = [
     {
@@ -124,7 +126,7 @@ def extract_response(text: str) -> str:
     return text[idx + len(marker):].strip()
 
 
-def recent_final_texts(limit: int = 8) -> list[str]:
+def recent_final_texts(limit: int = 14) -> list[str]:
     files = sorted(DAILY_OUT.glob('*.md'))[-limit:]
     return [extract_response(p.read_text(encoding='utf-8', errors='ignore')) for p in files]
 
@@ -143,6 +145,10 @@ def used_recent_ids(items: list[dict], recent_texts: list[str]) -> set[str]:
     return used
 
 
+def used_recent_categories(items: list[dict], recent_ids: set[str]) -> set[str]:
+    return {item['category'] for item in items if item['id'] in recent_ids}
+
+
 def pick_item(items: list[dict], used_ids: set[str], day_seed: int) -> dict:
     fresh = [x for x in items if x['id'] not in used_ids]
     pool = fresh or items
@@ -159,16 +165,77 @@ def find_event(day: str) -> dict | None:
     return None
 
 
+def fetch_weather_summary() -> dict:
+    headers = {'User-Agent': 'Mozilla/5.0'}
+    html = requests.get(WEATHER_URL, timeout=20, headers=headers).text
+
+    current_match = re.search(r'В Москве \([^)]*\) \+?(\d+)&deg;C, ([^"<]+)', html)
+    current_temp = int(current_match.group(1)) if current_match else None
+    current_text = current_match.group(2).strip() if current_match else ''
+
+    hour_pattern = re.compile(r'ForecastHourItem.*?<div[^>]*>(\d{2}:\d{2})</div>.*?svg/(\d+)\.svg.*?<div[^>]*>\+?(\d+).*?<a href="/prognoz/moskva/24hours/#h-(\d{4}-\d{2}-\d{2})-(\d{2})"', re.S)
+    temps = []
+    rain_likely = False
+    target_day = None
+    for match in hour_pattern.finditer(html):
+        icon = match.group(2)
+        temp = int(match.group(3))
+        iso_day = match.group(4)
+        hour = int(match.group(5))
+        if target_day is None:
+            target_day = iso_day
+        if iso_day != target_day:
+            continue
+        temps.append((hour, temp, icon))
+        if icon in {'09', '10', '11', '12', '13'}:
+            rain_likely = True
+
+    if temps:
+        morning = min((temp for hour, temp, _ in temps if 6 <= hour <= 11), default=temps[0][1])
+        daytime = max((temp for hour, temp, _ in temps if 12 <= hour <= 20), default=max(t for _, t, _ in temps))
+    else:
+        morning = current_temp
+        daytime = current_temp
+
+    if morning is not None and daytime is not None:
+        weather_line = f'Погода: около +{morning} °C утром и до +{daytime} °C днём, ' + ('дождь сегодня вероятен.' if rain_likely else 'без дождя.')
+    elif current_temp is not None:
+        tail = 'дождь сегодня вероятен.' if rain_likely else (current_text + '.' if current_text else 'без дождя.')
+        weather_line = f'Погода: около +{current_temp} °C, ' + tail
+    else:
+        weather_line = 'Погода: сегодня лучше свериться с прогнозом перед выходом.'
+
+    return {
+        'source': WEATHER_URL,
+        'current_temp': current_temp,
+        'current_text': current_text,
+        'morning_temp': morning,
+        'daytime_temp': daytime,
+        'rain_likely': rain_likely,
+        'weather_line': weather_line,
+    }
+
+
 def main() -> None:
     now = datetime.now(TZ)
     today = now.date().isoformat()
     weekday = now.strftime('%A')
     recent = recent_final_texts()
+    weather = fetch_weather_summary()
     used_main = used_recent_ids(MAIN_ITEMS, recent)
     used_small = used_recent_ids(SMALL_ITEMS, recent)
+    used_main_categories = used_recent_categories(MAIN_ITEMS, used_main)
+    used_small_categories = used_recent_categories(SMALL_ITEMS, used_small)
     day_seed = date.fromisoformat(today).toordinal()
-    main_item = pick_item(MAIN_ITEMS, used_main, day_seed)
-    small_item = pick_item(SMALL_ITEMS, used_small, day_seed + 3)
+    main_pool = [x for x in MAIN_ITEMS if x['id'] not in used_main and x['category'] not in used_main_categories]
+    if not main_pool:
+        main_pool = [x for x in MAIN_ITEMS if x['id'] not in used_main] or MAIN_ITEMS
+    main_item = main_pool[day_seed % len(main_pool)]
+
+    small_pool = [x for x in SMALL_ITEMS if x['id'] not in used_small and x['category'] not in used_small_categories]
+    if not small_pool:
+        small_pool = [x for x in SMALL_ITEMS if x['id'] not in used_small] or SMALL_ITEMS
+    small_item = small_pool[(day_seed + 3) % len(small_pool)]
     event = find_event(today)
 
     print('DAILY_CONTEXT')
@@ -176,6 +243,14 @@ def main() -> None:
     print(f'weekday: {weekday}')
     print(f'timezone: Europe/Moscow')
     print(f'today_event: {event if event else "null"}')
+    print('\nWEATHER_SOURCE')
+    print(f"- url: {weather['source']}")
+    print(f"- current_temp: {weather['current_temp']}")
+    print(f"- current_text: {weather['current_text']}")
+    print(f"- morning_temp: {weather['morning_temp']}")
+    print(f"- daytime_temp: {weather['daytime_temp']}")
+    print(f"- rain_likely: {str(weather['rain_likely']).lower()}")
+    print(f"- weather_line: {weather['weather_line']}")
     print('\nRECENT_FINAL_TEXTS')
     for idx, text in enumerate(recent[-5:], start=1):
         compact = ' | '.join([line.strip() for line in text.splitlines() if line.strip()][3:])
@@ -197,6 +272,8 @@ def main() -> None:
     print(f"- link: [{small_item['label']}]({small_item['url']})")
     print('\nANTI_REPEAT_RULES')
     print('- Не повторяй конкретный id из recent texts, если есть свежая альтернатива.')
+    print('- Не повторяй категорию main-item на соседних днях, если есть другая доступная категория.')
+    print('- Не повторяй категорию small-item в окне последних дней, если есть другая доступная категория.')
     print('- Не меняй выбранные item id ради wording-игры.')
     print('- Не добавляй вторую мелкую задачу.')
     print('- Не превращай main task снова в абстрактный рабочий текст.')

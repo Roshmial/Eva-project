@@ -293,6 +293,35 @@ hermes auth remove P INDEX  Remove by provider + index
 hermes auth reset PROVIDER  Clear exhaustion status
 ```
 
+### Fallback providers and provider-failure triage
+
+When Hermes itself looks flaky, do not jump straight from one provider to another by hand. First check whether the runtime already has a fallback chain and whether the current issue is auth exhaustion vs provider outage.
+
+Live CLI surfaces:
+
+```bash
+hermes fallback list
+hermes fallback add
+hermes fallback remove
+hermes fallback clear
+hermes auth status <provider>
+hermes auth reset <provider>
+```
+
+What they are for:
+- `hermes fallback ...` manages the ordered backup chain Hermes tries when the primary model fails with rate-limit, overload, or connection errors.
+- `hermes auth status <provider>` shows whether a provider is authenticated and helps distinguish "bad auth / missing token" from "provider is up but failing requests".
+- `hermes auth reset <provider>` clears exhaustion state after quotas or transient provider failures, so Hermes can try that provider again without waiting for stale exhaustion markers.
+
+Practical rule:
+- if the symptom is intermittent provider failure, overload, or rate limits, inspect `hermes fallback list` before proposing model churn or custom routing;
+- if the symptom is specifically auth-related, run `hermes auth status <provider>` before redoing broad config changes;
+- if credentials are valid but Hermes still treats the provider as exhausted after a transient incident, try `hermes auth reset <provider>`;
+- keep this local-first: prefer the built-in fallback chain over ad-hoc shell wrappers or manual failover scripts unless the built-in path is proven insufficient.
+
+Docs:
+- Fallback providers: https://hermes-agent.nousresearch.com/docs/user-guide/features/fallback-providers
+
 ### Other
 
 ```

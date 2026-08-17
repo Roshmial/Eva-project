@@ -6861,3 +6861,32 @@ Verified:
 Why this matters:
 - Это даёт короткий operational runbook для симптома, который легко спутать с «модель стала хуже».
 - Процедура local-first: сначала измерение и cleanup внутри текущего Hermes-контура, без новых внешних сервисов и без premature model-churn.
+
+[2026-08-16 04:58 UTC] — Hermes self-development: fallback/auth triage добавлен в hermes-agent
+
+Context:
+- В live CLI появился полноценный провайдерный operational surface, которого не хватало в рабочем skill: `hermes fallback ...` для failover-цепочки и `hermes auth status/reset ...` для различения auth-проблем от временного exhaustion/outage.
+- В недавних Hermes/GigaChat и provider-routing кейсах регулярно возникала тема «модель/провайдер ведёт себя плохо», но без короткого runbook агент слишком легко могла прыгнуть к ручной смене модели или кастомному routing вместо встроенных средств Hermes.
+- Live docs по `Fallback Providers` подтверждают, что встроенная fallback chain — штатный механизм Hermes, а не побочная возможность.
+
+Agreed:
+- Для provider/debugging-задач сначала проверять built-in fallback chain и auth state, а уже потом предлагать ручной model churn, самодельные failover-скрипты или новые routing-слои.
+- Различать три класса проблем: auth missing/bad token, provider exhausted/transient incident, и реальная необходимость менять routing/архитектуру.
+
+Implemented:
+- Пропатчен existing skill `autonomous-ai-agents/hermes-agent`.
+- Добавлен раздел `Fallback providers and provider-failure triage` с командами:
+  - `hermes fallback list/add/remove/clear`
+  - `hermes auth status <provider>`
+  - `hermes auth reset <provider>`
+- Зафиксировано правило local-first: встроенную fallback chain использовать раньше ad-hoc shell wrappers и ручного failover.
+
+Verified:
+- Live `hermes fallback --help` показывает реальные subcommands `list/ls`, `add`, `remove/rm`, `clear` и явно описывает fallback providers как цепочку, которая срабатывает при rate-limit, overload и connection errors.
+- Live `hermes auth --help` показывает `status` и `reset` как штатные команды auth surface.
+- Docs fetched напрямую с `https://hermes-agent.nousresearch.com/docs/user-guide/features/fallback-providers` подтверждают существование штатного fallback-provider контура.
+- Чтение `~/.hermes/skills/autonomous-ai-agents/hermes-agent/SKILL.md` подтвердило, что новый раздел реально записан в skill.
+
+Why this matters:
+- Это уменьшает риск ложного диагноза «провайдер плохой, надо срочно менять модель», когда проблема решается проверкой fallback chain или сбросом exhaustion state.
+- Улучшение укладывается в local-first дисциплину Hermes: сначала использовать встроенный operational surface, потом уже думать о внешних адаптерах и сложном routing.

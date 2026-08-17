@@ -30,8 +30,12 @@ Before delivering a response, the agent must perform a mental-check: "Does this 
 When a tool reports an environment/backend limitation, treat that as a routing signal.
 - Example: `web_extract` returning `DuckDuckGo (ddgs) is a search-only backend and cannot extract URL content` means extraction will keep failing on the same path.
 - Do not retry the same `web_extract` pattern against more URLs in that turn.
+- When backend capability is uncertain for the current environment, do a one-URL canary first instead of parallel fan-out across several URLs. Only fan out after one extraction succeeds.
+- If the same backend limitation was already seen earlier in the session/day for the same tool path, treat that capability as known-broken and skip the canary entirely: pivot immediately.
 - Pivot immediately to a tool that fits the environment: `browser_*` for interactive page reads, `terminal`/`curl` for plain fetches, or a local script fetch via `execute_code`.
 - Do NOT try to turn additional `web_search` snippet queries into proof for the same fact after this error. More snippets are still snippets.
+- If the user or preflight already supplied concrete source URLs/domains, treat them as a strong routing asset: probe those exact domains/obvious path variants directly before spending search budget on rediscovery.
+- In source-bounded collection tasks, use search only as a true rescue path for missing detail, not as a replacement for direct fetch/probe of the provided source contour.
 - If the task required page-level verification and no fetch path works, either:
   1. reuse an already verified same-day fact when the workflow explicitly allows stability/consistency over regeneration; or
   2. report the verification blocker plainly.

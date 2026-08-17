@@ -13,6 +13,14 @@ SOURCES = [
     ('ГЭС-2', 'https://ges-2.org/events/'),
     ('Пионер', 'https://pioner-cinema.ru/ru/afisha'),
     ('Garage / Summer Cinema by Garage', 'https://garageccc.com/ru/event'),
+    ('Афиша Daily', 'https://daily.afisha.ru/afisha/'),
+    ('KudaGo Москва', 'https://kudago.com/msk/'),
+    ('Time Out Москва', 'https://www.timeout.ru/msk'),
+    ('Яндекс Афиша Москва', 'https://afisha.yandex.ru/moscow'),
+    ('Пушкинский музей', 'https://pushkinmuseum.art/events/'),
+    ('Музей Москвы', 'https://mosmuseum.ru/events/'),
+    ('Хлебозавод', 'https://hlebozavod9.ru/events/'),
+    ('ДК Рассвет', 'https://dkrassvet.space/events'),
 ]
 
 
