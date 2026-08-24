@@ -44,6 +44,14 @@ Recommended verification order:
    - `hermes status`
    - `hermes cron status`
    - `hermes config path`
+   - `hermes verify`
+   - `hermes prompt-size --platform <platform>`
+   - `hermes monitoring --help`
+
+   High-leverage live-surface reminder:
+   - the installed CLI can grow faster than this skill summary.
+   - if you are about to recommend an operational command for verification, debugging, or runtime health, trust `hermes --help` / `hermes <subcommand> --help` over memory or an older skill snapshot.
+   - recent live surfaces worth checking before inventing custom probes include `verify`, `monitoring`, `approvals`, `secrets`, `egress`, `bundles`, `sync`, and `journey`.
 
    When troubleshooting Hermes itself, prefer a clean-room probe before drawing conclusions from the user's normal runtime:
    - `hermes --safe-mode --help` confirms the binary/CLI surface without user config, plugins, MCP, memories, or AGENTS/rules injection.

@@ -88,6 +88,30 @@ Trigger this skill when the task includes any of the following:
    - Internal route inputs such as exact home coordinates are implementation context only. Never expose them in the user-facing brief and never write as if Misha knows the hidden routing point or technical map setup.
    - If a route suggestion needs a destination, name the place like a normal human recommendation to a familiar person; do not surface the routing substrate.
    - Optional Moscow leisure suggestion: at most 1 concrete option with 1 link, only when it genuinely fits the day.
+   - The user prefers the old compact Telegram shape, but wants usefulness preserved. Do not trade specificity away just to make the brief shorter.
+   - Main and support lines should be concrete actions, not meta-advice about priorities, focus, motivation, primary causes, attention, context layers, or abstract self-management.
+   - Good lines sound like: do a stretch, watch one short video, read one concrete text, clear one bag, answer one message, check one route. Bad lines sound like: reconsider a priority, inspect a focus layer, check what is truly important, revisit a pattern, or any other abstract management prose.
+   - If a candidate line needs explanation to feel useful, it is probably not useful enough for this user.
+   - Prefer a literal action with a visible finish state over an intelligent-sounding reflection.
+
+8. Maintain a usefulness bank and dedupe it before every run.
+   - Do not improvise the daily from vibes alone. Keep a curated bank of candidate useful actions.
+   - Each bank item should be short, specific, and directly usable in a morning brief.
+   - Before selecting today's lines, check recent outputs for both literal and semantic repetition.
+   - If an idea already appeared recently, find a different idea, not a paraphrase of the same advice.
+   - Repeated anchor objects like The Twelve-Factor App, Townscaper, Pomodoro, or other sticky fallback ideas should be explicitly banned when they start recurring.
+   - Keep diversity at the idea level, not only at the wording level.
+
+9. Validate the bank itself, not only the rendered brief.
+   - Curated item lists drift toward pseudo-useful abstractions unless they are checked deliberately.
+   - Run a lightweight validation pass over the bank to catch dead phrases, kantselyarizm, motivational filler, and lines that sound clever but do not tell the user what to do.
+   - Treat bank cleanup as routine maintenance, not a one-time repair.
+   - See `references/daily-usefulness-bank-and-validation.md` for a compact pattern: usefulness registry, semantic bans, validation heuristics, and prompt constraints that keep the short format concrete.
+
+10. Weather wording must stay source-shaped and conservative.
+   - For this user, weather lines should read like directly-fetched facts, not synthesized confidence.
+   - Prefer wording grounded in what the fetched page explicitly exposes right now (`сейчас +17 °C, переменная облачность`) plus at most one cautious forward note (`днём до +20 °C`, `дождь возможен`).
+   - Avoid over-assertive summary phrasing when part of the line is inferred from hourly blocks rather than stated verbatim on the source page.
 
 8. Weekly review should be short and grounded.
    Use this compact structure:
@@ -135,8 +159,18 @@ Trigger this skill when the task includes any of the following:
    - If the same day reruns keep wobbling, move stability into preflight too: emit a same-date baseline and explicit reuse rules so the renderer prefers stable wording over fake novelty.
    - For cross-day repetition, do not rely only on wording bans. Make preflight inspect recent distinct-day outputs, classify the task-family mix, and rotate small-goal families when the same combination keeps repeating across соседние дни.
    - If the user explicitly says to kill the current architecture and rebuild from scratch, stop doing micro-edits on the existing contour. Replace the old staged/prompt bank with a simpler fresh contract and verify that contract directly on a live run.
+   - In that reset mode, rebuild the bank around literal action lines first. The quality bar is not `sounds thoughtful`; it is `reads like a direct thing to do today`.
+   - Treat `good idea = сделай ...` as a hard filter. Reject lines about priorities, focus, importance, attention, layers, causes, or other meta-management prose even when they sound intelligent.
    - In that reset mode, prefer a small curated bank of concrete main/self-development items and support items with built-in links over abstract placeholder families like `work text`, `close one thing`, or other generic work-safe defaults.
+   - Rebuild the selector around explicit action families. Main and support lines must come from different families; anti-repeat is not only across previous days, but also inside the same rendered brief.
+   - For linked suggestions, store the markdown link directly inside the curated bank line and mark it as link-bearing in preflight. The renderer should preserve the selected line almost verbatim instead of re-attaching URLs later.
+   - When the renderer drifts on date/day wording, move that field into preflight too: emit a ready `DAY_LINE_RENDERED` string and make the final prompt copy it verbatim rather than translating or reconstructing it.
    - If the user resets the contract itself, follow the new contract literally even when it replaces the previous default. In particular, this user may explicitly switch daily from `1 main + 2 small` to `1 main self-development + 1 smaller support task`; after that switch, continuing to enforce the older 3-task shape is a mistake.
+   - Treat prompt-provided authoritative fields as an implementation contract, not as style hints. If preflight already provides `DAILY_CONTEXT.today`, `DAILY_CONTEXT.weekday`, `WEATHER_SOURCE.weather_line`, `SELECTED_MAIN`, or `SELECTED_SMALL`, do not paraphrase or recompute those fields unless the prompt explicitly allows replacement.
+   - If preflight/prompts already provide fully rendered fields like `DAY_LINE_RENDERED`, `SELECTED_MAIN_RENDERED`, or `SELECTED_SMALL_RENDERED`, copy those lines literally by default. Do not "improve" them into a nicer-sounding variant, do not swap the concrete object, and do not add a different explanation line just because it sounds more natural.
+   - When the prompt says `строки 3 и 4 не перепридумывай`, treat any semantic rewrite as a hard failure even if the new line still looks good in isolation. Only tiny grammar fixes are allowed, and only when the prompt explicitly permits them.
+   - Prompt examples are poison unless they are dynamically aligned with the same authoritative fields. If the format line contains a static sample like `Четверг, 6 августа`, rewrite the prompt before trusting any rendered output; otherwise the renderer may copy the stale example literally.
+   - Acceptance requires an exact-contract check on the rendered artifact itself: line count, date/day match against preflight, weather line source fidelity, task-count shape, and literal match against provided `*_RENDERED` lines when the contract says to preserve them. A superficially good sample is still a failure if any one of those contract fields drifted.
    - When external links are part of the contract, prefer embedding them into the existing object phrase (`[предисловие SICP]`, `[Townscaper]`, `[ВДНХ]`) instead of appending detached labels like `книга`, `маршрут`, or `статья` at the end of the line.
    - Once the user says `доведи только качество`, stop revisiting architecture and work only on the editorial quality of the curated content bank and final edit pass.
    - Editorial quality failures for this user include methodical phrasing like `выписать 3 мысли`, `записать 3 наблюдения`, `отметить один принцип`, and soft artificial lead-ins like `если захочется коротко переключиться` when a simpler sentence lands better.
@@ -330,5 +364,7 @@ See `references/focus-vs-recommendation-and-poisoned-examples.md` for the specif
 See `references/july-2026-same-date-rerun-stability.md` for same-date rerun discipline: weather stability, anti-task-manager filtering, and acceptance only after a short stable streak of good daily outputs.
 
 See `references/staged-runtime-and-telegram-streaming.md` for the escalation pattern where repeated daily-brief prompt edits stop working, the runtime is split into generator/critic/fallback stages, and Telegram streaming is disabled at the platform layer to stop edit-based delivery failures.
+
+See `references/august-2026-link-aware-daily-reset.md` for the reset-mode rebuild contract where the daily bank is recreated from zero, ideas are grouped by action family, link-bearing items are stored inline, and preflight emits `DAY_LINE_RENDERED` / `SELECTED_*_RENDERED` fields so the renderer copies instead of improvising.
 
 See `references/august-2026-daily-structure-and-stability.md` for the next escalation step: moving day anchors, task families, suggested raw tasks, and same-date stability baselines into preflight so the agent mostly renders instead of re-deciding the day.

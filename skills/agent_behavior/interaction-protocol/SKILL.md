@@ -35,6 +35,8 @@ When a tool reports an environment/backend limitation, treat that as a routing s
 - Pivot immediately to a tool that fits the environment: `browser_*` for interactive page reads, `terminal`/`curl` for plain fetches, or a local script fetch via `execute_code`.
 - Do NOT try to turn additional `web_search` snippet queries into proof for the same fact after this error. More snippets are still snippets.
 - If the user or preflight already supplied concrete source URLs/domains, treat them as a strong routing asset: probe those exact domains/obvious path variants directly before spending search budget on rediscovery.
+- When the provided contour is a source list or source-cluster set, do a one-URL canary on the intended fetch path before any parallel fan-out. Do not launch 5–8 `web_extract` calls against different official pages in one turn unless one representative URL has already succeeded in this environment.
+- If that canary fails for a backend/environment reason, pivot immediately to another access path (`browser_*`, `terminal` HTTP fetch, or local script fetch) instead of burning the turn budget on same-tool fan-out until `same_tool_failure_halt` fires.
 - In source-bounded collection tasks, use search only as a true rescue path for missing detail, not as a replacement for direct fetch/probe of the provided source contour.
 - If the task required page-level verification and no fetch path works, either:
   1. reuse an already verified same-day fact when the workflow explicitly allows stability/consistency over regeneration; or
@@ -212,3 +214,17 @@ A rebuilt artifact is not fully accepted just because one visible slice looks go
   1. what exact pages/sections were checked;
   2. what was confirmed there;
   3. what remains unchecked about the rest of the artifact.
+
+### 21. Command Progress Is Not State Proof When the Verified Surface Is Off-Screen
+A frequent live-console mistake is to infer the final system state from the fact that a shell command chain kept going (`&&` continued, next command prompt appeared, `lsblk` started, browser console kept scrolling) even though the proof surface itself was not actually visible.
+- Do not claim `смонтировано`, `записано`, `применилось`, `создалось`, or similar end-state conclusions from command progression alone when the confirming line/output is off-screen, cropped, truncated, or only partially visible in a screenshot/browser capture.
+- Examples of insufficient proof:
+  - `mkfs ... && mount ... && lsblk` continued, but the screenshot does not actually show the mounted path;
+  - a form submit appeared to continue, but the success banner or saved value is not visible;
+  - a browser console command returned no visible error, but the changed DOM/state was not re-read.
+- Required follow-up: read the direct proof surface for that exact claim.
+  - filesystem -> `mount`, `findmnt`, `lsblk -f`, or visible mounted path;
+  - config/file write -> read-back of the written section/value;
+  - UI save -> refreshed snapshot/DOM/value check;
+  - remote console screenshot -> ask the vision tool to read the exact confirming line or use another tool path that exposes it directly.
+- If only indirect evidence exists, downgrade the wording: `цепочка дошла без видимой ошибки, но сам итоговый state на этом экране не подтверждён`.

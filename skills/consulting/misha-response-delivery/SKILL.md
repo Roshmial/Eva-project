@@ -136,6 +136,8 @@ This skill governs how to package advisory answers for Misha so the result is im
    - Ask only when the next step is high-risk, invasive, touches architecture/core, or materially expands the scope.
    - Load `execution-finalization-discipline` as a mandatory companion skill for fix/update/verify/cleanup/dodelat tasks and apply its completion checklist before any final status claim.
    - Before the final reply, do a separate verification pass: check that the requested result is complete, the safe improvements did not distort the original ask, and no required step is still missing.
+   - If Misha explicitly decides to use a temporary credential, secret, or access key for a bounded live probe, do not get stuck re-litigating the security warning after stating it once. Make the smallest low-risk verification call first, confirm whether the contour is alive, and only then ask for rotation or safer handling as the next operational step.
+   - If Misha explicitly decides to use a temporary credential, secret, or access key for a bounded live probe, do not get stuck re-litigating the security warning after stating it once. Make the smallest low-risk verification call first, confirm whether the contour is alive, and only then ask for rotation or safer handling as the next operational step.
 
 # Pitfalls
 
@@ -190,6 +192,12 @@ This skill governs how to package advisory answers for Misha so the result is im
 
 - Pitfall: after a partial or cautious answer, Misha asks a direct capability question like `а ты можешь это сама сделать?`, and the reply starts with nuance instead of a clean yes/no boundary.
   Fix: answer the capability question in the first sentence as plainly as possible: `да, могу попробовать сама в открытых источниках` or `нет, в этом контуре не могу`. Then immediately state what was actually checked and what exact blocker remains. Do not start with a long recap of prior attempts.
+
+- Pitfall: when Misha asks to read a screenshot or image (`что видно`, `what do you see in this image`, `коротко опиши`), the reply drifts from observation into unsolicited remediation, support-ticket framing, or a next-step checklist.
+  Fix: treat screenshot-reading as an observation-first contract. First answer only three layers in this order: (1) what is visibly on the screen, (2) what conclusion directly follows from those visible facts, (3) what still remains unknown from the image alone. Do not append `что делать`, escalation text, support wording, or a command checklist unless Misha explicitly asks for the next action. In image-reading turns, stop after the diagnosis layer.
+
+- Pitfall: after one screenshot was already analyzed, Misha sends a new image and the reply continues from the previous diagnosis without reloading the new attachment through vision, as if the new screen were already verified.
+  Fix: treat every newly attached image as a new evidence surface. On each new screenshot/image turn, call `vision_analyze` again for that exact file/path before concluding anything. Do not carry over prior image facts unless they are explicitly re-confirmed on the new screenshot. If the user sends `Неа` or another correction after an image interpretation, treat that as a failed read of this exact image and re-analyze the same attachment or say what remains unreadable.
 
 - Pitfall: when rewriting a short user-facing prompt, leaving the main action vague while the supporting action duplicates it.
   Fix: make the main action concrete and outcome-oriented, and keep the small/supporting action clearly subordinate. Do a quick overlap check before sending: if the small action could be mistaken for the main task, tighten the main task or change the supporting one.
