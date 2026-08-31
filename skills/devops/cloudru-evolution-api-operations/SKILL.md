@@ -188,6 +188,28 @@ That can produce asymmetric routing: ingress arrives on the public interface, bu
 - Pitfall: proving auth and then calling guessed console or generic API hosts.
   Fix: derive the service base URL from the service OpenAPI `servers:` block.
 
+- Pitfall: diagnosing a Cloud.ru load balancer with `ping` and treating missing ICMP as proof the LB is broken.
+  Fix: verify the published listener instead of ICMP. For NLB, test the actual `IP:port` with `curl -v http://...`, `nc -vz ... <port>`, or another listener-appropriate probe. A VIP can refuse or ignore ICMP while the listener path is healthy.
+
+- Pitfall: stopping at partial LB evidence such as `VMs exist`, `target group exists`, or `security groups look open`.
+  Fix: verify the whole chain explicitly and keep control-plane facts separate from runtime facts:
+  1. current backend VM ids and interface ids;
+  2. target-group membership by exact VM/interface ids;
+  3. LB rule/listener -> target_group_id wiring;
+  4. VIP reachability on the listener port;
+  5. direct backend response versus VIP response.
+  If direct backend requests work but VIP requests fail, frame it as an LB-runtime issue rather than a generic VM/network issue.
+
+- Pitfall: in Evolution DNS, checking only that an `A` record exists inside Cloud.ru and concluding the domain should already work.
+  Fix: verify three separate layers:
+  1. the zone/record exists in Evolution DNS;
+  2. the zone level is correct (`example.com` zone with `www` record vs a separately delegated `www.example.com` zone);
+  3. public resolution really works from outside via `dig` or another resolver check.
+  A common failure pattern is creating a public zone for `www.example.com` while the registrar delegates only `example.com`.
+
+- Pitfall: treating internal-LB runtime failures and DNS-delegation failures as the same class of problem.
+  Fix: for internal LB, prove VIP listener behavior from an internal VM; for public DNS, prove external name resolution separately. Keep `LB wiring`, `VIP runtime`, and `public delegation` as three different verdicts in the final answer.
+
 - Pitfall: treating `404` on a guessed endpoint as evidence the key or API is broken.
   Fix: first confirm token issuance, then verify the correct service host.
 

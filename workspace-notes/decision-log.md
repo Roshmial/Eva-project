@@ -1,3 +1,35 @@
+[2026-08-30 15:52 UTC] — Memory Archive MVP light: базовый локальный family-archive контур разворачивается на 178 как episode-first system без тяжёлого visual/generative слоя
+
+Context:
+- Пользователь выбрал направление семейного архива воспоминаний с упором на базовый слой, а не на визуальную магию.
+- По живой проверке сервер `178.104.207.89` имеет `8 vCPU`, `15 GiB RAM`, `150G` диска, без GPU и без `ffmpeg`, поэтому full visual memory-relive engine там пока нецелесообразен.
+- Было согласовано использовать этот сервер как площадку для MVP light.
+
+Decision:
+- Делать MVP как episode-first memory archive, а не как цифрового человека.
+- В v1 включить: media ingest, SQLite metadata, people/episodes CRUD, attach media to episode, search, evidence-backed Q&A, простой local web UI.
+- Не включать в текущий контур: тяжёлую video generation, talking avatar, свободный persona-chat, voice cloning.
+
+Implemented:
+- На `178.104.207.89` развернут проект `/home/hermes/workspace/memory-archive-mvp-light`.
+- Поднят FastAPI-сервис `memory-archive-mvp-light.service` на порту `8810`.
+- Реализованы и проверены: `/api/health`, `/api/media/upload`, `/api/media/import-folder`, `/api/people`, `/api/episodes`, `/api/episodes/{id}/attach-media`, `/api/episodes/{id}/ask`, `/api/search`.
+- Развернут простой web UI на корневом `/`.
+
+Verified:
+- Remote test suite on 178: `python -m pytest -q test_app.py` → `1 passed`.
+- Live probe against `http://178.104.207.89:8810` подтвердил:
+  - health OK;
+  - folder import OK;
+  - person create OK;
+  - episode create OK;
+  - attach media OK;
+  - evidence-backed ask OK.
+
+Boundary:
+- Это рабочий MVP light базового слоя.
+- Face clustering, transcription pipeline и media preprocessing beyond image thumbnails остаются следующей итерацией.
+
 [2026-07-12 09:40 UTC] — Delivery-first behavior tightened: safe local improvements auto-apply, adjacent branches are gated, final verification is mandatory
 
 Context:
@@ -6890,3 +6922,30 @@ Verified:
 Why this matters:
 - Это уменьшает риск ложного диагноза «провайдер плохой, надо срочно менять модель», когда проблема решается проверкой fallback chain или сбросом exhaustion state.
 - Улучшение укладывается в local-first дисциплину Hermes: сначала использовать встроенный operational surface, потом уже думать о внешних адаптерах и сложном routing.
+
+[2026-08-30 05:00 UTC] — Hermes self-development: в hermes-agent добавлен короткий differential-diagnosis runbook
+
+Context:
+- Еженедельная self-development проверка сверила недавние self-learning кейсы, текущие навыки и live Hermes CLI/docs.
+- Выявился высокоокупаемый procedural gap: нужные built-in диагностические поверхности в Hermes уже есть, но они были размазаны по большому skill `hermes-agent` и не были собраны в короткую стартовую лестницу для типовых жалоб вроде «стал хуже», «плывёт формат», «ломаются tools», «cron вроде жив, но пользы нет».
+- Live CLI подтвердил, что у установленного Hermes есть штатные команды `prompt-size`, `monitoring status`, `verify`, `fallback`, `auth status/reset`, `cron status` и изоляционные флаги `--safe-mode` / `--ignore-user-config --ignore-rules`.
+
+Agreed:
+- Для Hermes-self задач первым ходом должна быть не широкая ad-hoc диагностика и не ручная смена модели, а короткий built-in differential diagnosis.
+- Базовая лестница: `prompt-size` -> изоляция через safe-mode / ignore-rules -> built-in status/logs/monitoring/cron -> fallback/auth triage -> `verify` для runtime/codebase-кейсов.
+
+Implemented:
+- Пропатчен existing skill `autonomous-ai-agents/hermes-agent`.
+- В начало operational части добавлен раздел `Five-minute Hermes differential diagnosis` с конкретными командами и правилами эскалации.
+
+Verified:
+- Live `hermes --help` подтвердил наличие реальных поверхностей: `fallback`, `secrets`, `egress`, `verify`, `monitoring`, `approvals`, `cron`, `logs`, `prompt-size`.
+- Live `hermes monitoring --help` подтвердил contour `monitoring status`.
+- Live `hermes verify --help` подтвердил built-in verifier для project/runtime smoke path.
+- Live `hermes cron status` подтвердил, что gateway/scheduler сейчас жив и этот operational surface реален, а не только документирован.
+- Docs fetched напрямую с `https://hermes-agent.nousresearch.com/docs/reference/cli-commands` подтвердили актуальность CLI reference; `web_extract` для docs в этом окружении не подходит из-за `ddgs`, поэтому source-of-truth проверялся через raw HTTP fetch.
+- Чтение skill-файла подтвердило, что новый runbook реально записан в `~/.hermes/skills/autonomous-ai-agents/hermes-agent/SKILL.md`.
+
+Why this matters:
+- Это повышает полезность агента в Hermes-debugging задачах: сначала использовать штатную локальную наблюдаемость и изоляцию, а уже потом расширять расследование.
+- Такой порядок снижает лишние гипотезы, ранний model churn и ad-hoc shell archaeology, а значит помогает быть умнее, быстрее и стабильнее именно в живых runtime/cron/provider/browser кейсах.

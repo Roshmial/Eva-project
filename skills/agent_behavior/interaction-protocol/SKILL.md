@@ -228,3 +228,27 @@ A frequent live-console mistake is to infer the final system state from the fact
   - UI save -> refreshed snapshot/DOM/value check;
   - remote console screenshot -> ask the vision tool to read the exact confirming line or use another tool path that exposes it directly.
 - If only indirect evidence exists, downgrade the wording: `цепочка дошла без видимой ошибки, но сам итоговый state на этом экране не подтверждён`.
+
+### 22. For Session-History Diagnostics, Start from the Known Session/Thread, Not Wishful FTS Queries
+A recurring failure mode in self-diagnosis or user-reported quality reviews is to answer with introspection prose first, then run a few literal `session_search(query=...)` guesses such as the exact complaint text (`повторяю ключ`, `не прав`, `данных недостаточно`) and treat `0 results` as if the evidence surface were exhausted.
+- If the complaint is about the CURRENT session, the immediately previous session, or a clearly named recent thread, inspect that concrete session first with `session_search(session_id=...)` or scroll from the known anchor message. Do not start with broad FTS fishing.
+- Use discovery search to find the candidate session only when the target thread is not already identifiable from recent browse results, reply context, title, timestamp, or an existing session id.
+- Prefer this order:
+  1. browse recent sessions / identify the likely thread;
+  2. read the full small session or scroll the exact large session around the disputed messages;
+  3. only then use FTS for cross-session pattern expansion.
+- Treat literal user-complaint phrases as weak search keys. Users often paraphrase the failure differently from the original thread, so `0 hits` on those phrases is not evidence that the pattern did not happen.
+- When the user says `не рассуждай, а делай диагностику`, switch immediately into evidence collection. Do not spend another full answer on self-analysis before reading the relevant sessions/logs/files.
+- For recent-behavior audits, ground the diagnosis in quoted message ids / concrete sessions / read-back excerpts before proposing fixes to skills or workflow.
+
+### 23. When a Concrete Live Target Is Already Named, Probe It Directly Before Alias/Search Detours
+A recurring operational mistake is to delay obvious live verification by first trying local aliases, guessed SSH hostnames, or session-search recollection, even though the task already contains a concrete target such as a full host/IP/URL/path/resource name.
+- If the user message, quoted context, pinned memory, or a just-mentioned artifact already provides the exact live target (`178.104.207.89`, a full URL, a specific file path, a named prod host), start with that target.
+- Do not prefer convenience aliases (`ssh 178`), stale remembered nicknames, or session-history fishing over the explicit target already in hand.
+- If an alias is the only thing available, test it. But if a concrete target appears anywhere in active context, that concrete target wins immediately.
+- Session history can clarify provenance, but it is not a prerequisite for probing a live resource that is already fully identified.
+- Reporting pattern:
+  1. exact target used;
+  2. direct probe result;
+  3. only if that fails, whether alias/history/config investigation is needed.
+- This rule is strongest for prod/runtime questions, because the user usually wants the real resource checked now, not an indirect reconstruction of how it might be named.

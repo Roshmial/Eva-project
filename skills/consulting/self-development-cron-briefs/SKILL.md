@@ -43,8 +43,11 @@ Trigger this skill when the task includes any of the following:
    - Start exactly with `Доброе утро, Миша!`
    - Then one short factual line with day/date and weather only.
    - Weather line must explicitly include both: temperature and rain/no rain.
-   - The core contract for this user's self-development daily is structural, not atmospheric: exactly 1 main goal and exactly 2 small goals.
-   - Do NOT silently drift from that contract into a mood note, day-description, event/no-event meta commentary, or reflective mini-message even if style tuning is underway.
+   - The structural contract is authoritative at the prompt/preflight level, not from this skill by itself.
+   - If the current prompt says `1 main + 1 small`, follow that literally.
+   - If the current prompt says `1 main + 2 small`, follow that literally.
+   - Only when the prompt does not restate the structure may you fall back to the older default shape used in this stream.
+   - Do NOT silently drift from the active contract into a mood note, day-description, event/no-event meta commentary, or reflective mini-message even if style tuning is underway.
    - After the weather line, the brief must still function as a daily plan with recommendations, not as an observation about the day.
    - Do NOT default to a rigid `Фокус дня:` rubric plus two symmetric bullets. That structure itself can make the text sound generated.
    - Prefer a short Telegram-style shape: one natural main-goal line, then exactly 2 useful support lines with genuinely different layers.
@@ -176,8 +179,8 @@ Trigger this skill when the task includes any of the following:
    - Editorial quality failures for this user include methodical phrasing like `выписать 3 мысли`, `записать 3 наблюдения`, `отметить один принцип`, and soft artificial lead-ins like `если захочется коротко переключиться` when a simpler sentence lands better.
    - Also reject soft service-y tails like `до сих пор правда полезно`, `проветрить голову`, `без обязательств`, `если понадобится, вот метод`, or similar gentle filler that sounds correct but not alive.
 
-7. For Misha's morning daily, preserve the hard output contract even during style repairs.
-   - The brief is still a plan: exactly 1 main goal and exactly 2 small goals.
+7. For Misha's morning daily, preserve the active hard output contract even during style repairs.
+   - The brief is still a plan, but its exact shape comes from the current prompt/preflight contract.
    - Do not let a style-debugging pass drift into atmospheric notes, meta-commentary about the day, or abstract mood-setting.
    - A structurally correct but lifeless brief is still a failure.
    - After picking the best candidate, run one more edit pass focused only on liveliness and density.

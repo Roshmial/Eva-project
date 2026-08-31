@@ -75,6 +75,43 @@ Recommended verification order:
 
 This sequence is high leverage because many Hermes troubleshooting mistakes come from checking only one surface: only docs, only stale skill text, or only guessed CLI behavior.
 
+## Five-minute Hermes differential diagnosis
+
+When the symptom is broad — for example "Hermes стал тупее", "хуже держит формат", "ломаются tools", "cron вроде жив, но пользы нет", or "после изменений всё ведёт себя странно" — do not jump straight to model churn, broad config edits, or ad-hoc shell probing. Use this compact ladder first.
+
+1. Measure the fixed prompt surface.
+   - `hermes prompt-size --platform cli --json`
+   - `hermes prompt-size --platform telegram --json`
+   Use this early when the complaint is about verbosity, weaker Russian delivery, tool-discipline drift, or general "became worse" behavior.
+
+2. Separate core runtime from local customizations.
+   - `hermes --safe-mode --help`
+   - `hermes --ignore-user-config --ignore-rules -z "<короткий repro>"`
+   This is the fastest way to tell whether the issue belongs to Hermes core or to skills, memory, plugins, MCP, AGENTS/rules, or profile config.
+
+3. Check built-in observability before raw shell archaeology.
+   - `hermes status --all`
+   - `hermes logs --since 1h`
+   - `hermes logs gateway --level WARNING --since 1h`
+   - `hermes monitoring status`
+   - `hermes cron status`
+   Prefer these over wide `grep`/manual log walks for the first pass.
+
+4. Check provider/fallback state before changing models by hand.
+   - `hermes fallback list`
+   - `hermes auth status <provider>`
+   - `hermes auth reset <provider>` when valid creds are stuck in exhausted state
+
+5. If the task is about a codebase/runtime artifact, use the built-in verifier.
+   - `hermes verify --detect-only`
+   - `hermes verify --json`
+   Prefer this before inventing a custom smoke script for a standard local project.
+
+Operational rule:
+- do the smallest built-in probe that can falsify the main hypothesis;
+- only after these steps escalate to custom shell diagnostics, code patches, or architecture changes;
+- when one of these probes already explains the symptom, stop expanding the investigation sideways.
+
 ## Quick Start
 
 ```bash
