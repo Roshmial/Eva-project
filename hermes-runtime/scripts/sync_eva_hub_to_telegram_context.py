@@ -4,7 +4,6 @@ from __future__ import annotations
 import argparse
 import re
 import time
-from datetime import datetime, timezone
 from pathlib import Path
 
 import duckdb
@@ -111,7 +110,6 @@ def build_context() -> str:
         topic_text = _normalize_text(str(topic))
         lines.append(f'- decision-log [{entry_date}]: {topic_text}')
 
-    lines.append(f'Обновлено: {datetime.now(timezone.utc).isoformat()}')
     return '\n'.join(lines).strip() + '\n'
 
 

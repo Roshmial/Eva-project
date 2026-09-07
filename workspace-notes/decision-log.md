@@ -6949,3 +6949,32 @@ Verified:
 Why this matters:
 - Это повышает полезность агента в Hermes-debugging задачах: сначала использовать штатную локальную наблюдаемость и изоляцию, а уже потом расширять расследование.
 - Такой порядок снижает лишние гипотезы, ранний model churn и ad-hoc shell archaeology, а значит помогает быть умнее, быстрее и стабильнее именно в живых runtime/cron/provider/browser кейсах.
+## 2026-08-31 — weekly Moscow events picker: anti-single-source logic
+
+- Decision: weekly Moscow events подборка должна по умолчанию приоритизировать локальные короткоживущие события, старты недели и большие городские поводы недели, а не добираться долгими выставками одной площадки.
+- Decision: по умолчанию максимум 2 пункта с одной площадки; 3+ допустимы только для реально недельного городского кластера уровня День города / фестиваль / спецпрограмма.
+- Decision: если на неделе есть крупный городской повод, он обязан быть проверен и как минимум один раз отражён в подборке.
+- Decision: place bias из прошлых weekly outputs использовать как штраф к повторному доминированию одной институции.
+- Rejected for now: логика, где список добивается преимущественно одной удобной площадкой вроде МАММ только потому, что там легко верифицировать много пунктов.
+
+[2026-09-06] — Hermes browser: устойчивое локальное восстановление через собственный Chromium и CDP
+
+Context:
+- После обновления `agent-browser --session` мог формально открыть страницу, но следующий `snapshot` или `console` возвращал `(empty page)` / `about:blank`.
+
+Decision:
+- Для локального browser path Hermes запускать собственный Chromium с временным профилем и подключать `agent-browser` только через concrete CDP WebSocket.
+- Не использовать HTTP CDP discovery root как `--cdp` endpoint; сначала получить полный `ws://.../devtools/browser/...` через `DevToolsActivePort` и `/json/version`.
+
+Implemented:
+- Добавлен local-CDP launcher, сохранение PID/profile metadata в session и cleanup этих ресурсов.
+- В browser subprocess env добавлены user-space runtime libraries; предпочтён Playwright Chromium.
+- Recovery runbook записан в skill `hermes-browser-debugging`.
+
+Verified:
+- После перезапуска gateway live browser tool прошёл `navigate -> snapshot -> console` на `https://example.com/`; snapshot содержит реальный DOM, URL подтверждён через CDP.
+- Targeted regression suite: `3 passed`.
+
+Rejected:
+- Не возвращаться к настройке случайных session names, retry пустого snapshot и к `agent-browser --session` как способу починить потерю вкладки на этом хосте.
+

@@ -1,7 +1,6 @@
 from pathlib import Path
 import shutil
 import subprocess
-from datetime import datetime, timezone
 
 LOCAL_PROJECT = Path('/home/hermes/workspace/hermes-web-mvp-react-8793')
 LOCAL_TG_API = Path('/home/hermes/workspace/TG-API')
@@ -198,7 +197,6 @@ def copy_remote_systemd() -> None:
 
 
 def write_root_files() -> None:
-    timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')
     (LOCAL_BACKUP / 'README.md').write_text(
         '# Cons project backup\n\n'
         'Это curated backup составного живого контура Hermes Web: frontend 8803 на сервере 95.182.85.233 + backend/runtime-контур на 178.104.207.89 + TG API contour на 95.\n\n'
@@ -216,7 +214,7 @@ def write_root_files() -> None:
         'Назначение:\n'
         '- backup полного рабочего контура агента под репозиторий Cons-project\n'
         '- хранение frontend 8803, backend 178 и TG API в одном private GitHub repo\n\n'
-        f'Последнее обновление: {timestamp}\n',
+        'Состояние отражает содержимое текущего snapshot.\n',
         encoding='utf-8',
     )
     (LOCAL_BACKUP / '.gitignore').write_text('.DS_Store\n*.pyc\n__pycache__/\n*.log\n.env\n', encoding='utf-8')

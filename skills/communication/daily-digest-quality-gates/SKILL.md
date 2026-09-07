@@ -63,6 +63,20 @@ Symptoms:
 - the final digest ignores it without a real conflict;
 - a concrete opportunity is replaced by generic advice.
 
+### 4. Pseudo-recommendation
+Symptoms:
+- the line merely checks that a basic bodily need was met, for example water;
+- the suggested action is trivial household maintenance or a generic checklist item;
+- the user could receive the same instruction from any task manager, with no added context, selection, or benefit.
+
+Reject classes:
+- water-control prompts;
+- checking a calendar, subscription, or one small expense without a stated decision;
+- tidying a bag, desk, shelf, tab, or file only to fill the message;
+- vague administrative commands such as «одним взглядом проверить» or «оставить опору на завтра».
+
+A supporting line is acceptable only when it is independently worth receiving: a current concrete event, a context-relevant route, or a named resource with a direct link and a clear reason to use it.
+
 ## Evaluation rubric
 
 When evaluating or filtering candidates, check:
@@ -79,7 +93,8 @@ A candidate should be rejected if:
 - it is artificial;
 - it is generic enough to fit many similar days;
 - it ignores a valid concrete same-day hook without a reason;
-- it is useful only in the weak sense of being unobjectionable.
+- it is useful only in the weak sense of being unobjectionable;
+- it is a pseudo-recommendation from the reject classes above.
 
 ## Pipeline guidance
 
@@ -91,6 +106,11 @@ When improving the workflow, prefer staged contours:
 
 Do not let fallback become a convenient escape hatch for weak generation.
 Fallback is acceptable only as an honest minimum, not as a preferred winner over better contextual candidates.
+
+### Contextual suitability gate
+Before releasing a candidate, check whether its action fits the actual day conditions. A route, outdoor walk, or open-air plan must be excluded when the verified forecast materially conflicts with it, for example probable rain. Do not preserve a candidate merely because it has a link.
+
+Make reject rules deterministic where the pipeline has a candidate registry: filter invalid classes before selection, rather than asking the final writer to notice them. If the remaining pool cannot produce a worthy supporting line, fail the selection step or omit that line when the format permits; never silently fall back to a banned pseudo-recommendation.
 
 ## User-specific operating notes
 

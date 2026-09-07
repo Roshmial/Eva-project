@@ -32,6 +32,7 @@ When a tool reports an environment/backend limitation, treat that as a routing s
 - Do not retry the same `web_extract` pattern against more URLs in that turn.
 - When backend capability is uncertain for the current environment, do a one-URL canary first instead of parallel fan-out across several URLs. Only fan out after one extraction succeeds.
 - If the same backend limitation was already seen earlier in the session/day for the same tool path, treat that capability as known-broken and skip the canary entirely: pivot immediately.
+- If that exact limitation has repeated across recent sessions in the same profile/environment, escalate it from a session quirk to a standing routing rule: do not spend fresh turns retrying `web_extract` first just because the topic is new. Assume the path is still broken until one explicit successful canary proves otherwise.
 - Pivot immediately to a tool that fits the environment: `browser_*` for interactive page reads, `terminal`/`curl` for plain fetches, or a local script fetch via `execute_code`.
 - Do NOT try to turn additional `web_search` snippet queries into proof for the same fact after this error. More snippets are still snippets.
 - If the user or preflight already supplied concrete source URLs/domains, treat them as a strong routing asset: probe those exact domains/obvious path variants directly before spending search budget on rediscovery.
@@ -89,6 +90,7 @@ Do not treat them as sufficient proof for exact dates, opening hours, direct-lin
 - A snippet may be stale, truncated, mixed across pages, or point to a generic listing page instead of the exact event/artifact page.
 - If the request requires `working direct link`, `точная дата/время`, `точно на этой неделе`, `current`, or similar, confirm from a page-fetch/browser/raw-HTTP read of the actual target URL before stating it as verified.
 - If the environment blocks that verification path, narrow the claim (`нашла кандидата по snippet, но точную дату/страницу не довела`) or return fewer verified items instead of filling quota with inferred facts.
+- For ranking / placement / “какое место занимает” questions, snippet-only evidence is still discovery, not confirmation. Do not say `подтверждено`, `точно`, or `занимает N-е место`, unless a direct page read verified the ranking table/report/primary source. Safe wording is narrower: `по найденным snippet-источникам выглядит как…`, `похоже, что…`, `обычно ставят…`.
 - Never let quota pressure or formatting pressure convert discovery guesses into verified entries.
 
 ### 9a. When a Required Verification Path Fails, Do Not Quietly Backfill a Required Field from Snippets

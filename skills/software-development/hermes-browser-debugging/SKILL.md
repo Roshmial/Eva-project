@@ -81,6 +81,23 @@ When local Linux mode has false-success navigation:
 - If you add a new local-mode path, keep cloud/CDP override behavior untouched.
 - If a direct Python repro through `tools/browser_tool.py` is green but the already-running Hermes browser wrapper still returns `about:blank` / empty snapshots, treat that as likely stale host-process state or an old tool session — not immediate proof that the patch failed. Verify with a fresh task/session or restart the long-lived Hermes host before reopening the code.
 
+## Recovery runbook: local session becomes `about:blank`
+
+Use this sequence when `browser_navigate` reports success but a same-session snapshot or console call sees `(empty page)` / `about:blank`.
+
+1. Prove the exact failure on `https://example.com`: `navigate -> snapshot -> console(window.location.href)`.
+2. Check `browser.cdp_url`; remove a stale persistent endpoint before changing anything else.
+3. Verify local Chromium libraries are included in the browser-child environment (`LD_LIBRARY_PATH` from the user-space runtime).
+4. Test both `agent-browser --session` and explicit CDP mode. If session mode loses the tab while `--cdp <concrete websocket>` keeps `open -> snapshot -> eval` stable, do not keep tuning session names or retries.
+5. Use the local-CDP architecture: Hermes launches Playwright-managed Chromium with a temporary profile and `--remote-debugging-port=0`, reads `DevToolsActivePort`, resolves `/json/version` to the complete `ws://.../devtools/browser/...` URL, then routes every browser command through `--cdp`.
+6. Store the Chrome process and temporary profile path in session metadata. Cleanup must terminate this owned process and remove the profile.
+7. Treat both process death and a wedged renderer as session failures. When an owned Chromium process has exited, or a command returns `tab is not responding`, a closed WebSocket, or a timeout, evict the whole owned-browser session and terminate its process before the next call. Replacing only the CDP client reconnects to the same poisoned tab.
+8. Verify the recovery path with a deliberately slow or unresponsive page followed by `https://example.com`; the second navigation and snapshot must succeed without manual cleanup.
+9. Run focused tests and a live post-restart acceptance: `navigate -> snapshot -> console`, then a follow-up browser action.
+8. Restart the gateway from outside its own child process. If invoked inside the gateway, ordinary `hermes gateway restart` is intentionally blocked; schedule or request an external systemd restart, then verify a new `MainPID`/start timestamp before testing.
+
+Do not use an HTTP CDP discovery root as the `agent-browser --cdp` value on this host: resolve and pass the concrete WebSocket URL instead. Do not declare completion from a direct Python repro before the restarted gateway passes the same user-facing browser-tool sequence.
+
 ## Mid-session CDP override recovery
 When a configured CDP override is healthy at first but dies between commands:
 1. Reproduce with the exact sequence `navigate -> snapshot -> console/eval` on one task id.

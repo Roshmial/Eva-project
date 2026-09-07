@@ -3,7 +3,7 @@
     {
       "id": "c0846e6fe8c7",
       "name": "daily-telegram-it-consulting-digest",
-      "prompt": "Ежедневный digest Telegram-каналов по ИТ-консалтингу для Миши.\n\nРабочая папка: /home/hermes/workspace/TG-API.\n\nСкрипт перед этим сообщением уже вывел JSON-контекст. Используй его как источник фактов о последнем collector run.\n\nПорядок работы:\n1. Если в JSON-контексте `collector_status` = `no_new_messages`, верни только:\n   `Дайджест ИТ-консалтинга за DD.MM.YYYY. Важных обновлений по мониторингу сегодня не найдено.`\n2. Если `collector_status` не `ok`, коротко сообщи, что digest не собран из-за ошибки в сборщике.\n3. Если `collector_status` = `ok`, открой файл `digest_payload_path` из JSON-контекста.\n4. Используй только данные из этого payload и не придумывай факты.\n5. Статистику показывай только по непустым сообщениям: строка вида `Обработано непустых сообщений: N; в дайджесте: M.`\n6. Отбери до 10 самых сильных пунктов по `top_candidates` в payload.\n7. Для каждого пункта покажи:\n   - короткую тему;\n   - канал;\n   - нормализованное время;\n   - ссылку на оригинальный Telegram-пост как [пост](url);\n   - блок `Краткое содержание` в 2–3 коротких фразах строго по `саммари`/`краткому содержанию` из payload;\n   - блок `Ссылки` только если `external_links` непустой, показывай домен как текст ссылки.\n8. Не показывай Telegram-метрики.\n9. Не добавляй `Почему важно`, reasoning, техлоги, QA-комментарии и внутренние `selection_reasons`.\n10. Если `requires_review_count` > 0, после дайджеста добавь одну короткую строку: `Есть сообщения, которым может понадобиться уточнение классификации.`\n11. В конце отдельной строкой приложи CSV-файл из `csv_path` как `MEDIA:/absolute/path`.\n\nФормат:\n- Заголовок: `Дайджест ИТ-консалтинга за DD.MM.YYYY`\n- Затем строка статистики.\n- Затем пункты дайджеста.\n- Затем при необходимости строка про уточнение классификации.\n- Затем строка `MEDIA:...`\n\nДополнительные правила:\n- Финальный текст должен быть полностью готов к отправке сразу.\n- Не добавляй комментарии, мета-пояснения, варианты, идеи для улучшения, служебные заметки или техразметку сверх обязательной строки `MEDIA:/...` для CSV-вложения.\n- Не используй данные старых запусков, если они не указаны в текущем JSON-контексте скрипта.",
+      "prompt": "Ежедневный digest Telegram-каналов по ИТ-консалтингу для Миши.\n\nРабочая папка: /home/hermes/workspace/TG-API.\nСкрипт перед этим сообщением уже вывел JSON-контекст. Используй его как источник фактов о последнем collector run.\n\nПорядок работы:\n1. Если `collector_status` = `no_new_messages`, верни только: `Дайджест ИТ-консалтинга за DD.MM.YYYY. Важных обновлений по мониторингу сегодня не найдено.`\n2. Если `collector_status` не `ok`, верни короткую строку: `Дайджест сегодня не собран: ошибка в подготовке данных.`\n3. Если `digest_payload_path` или `csv_path` отсутствует либо недоступен, верни: `Дайджест сегодня не собран: недоступен подготовленный файл данных.`\n4. При `collector_status = ok` открой `digest_payload_path`. Используй только данные из него.\n5. Статистика: `Обработано непустых сообщений: N; в дайджесте: M.`\n6. Отбери до 10 сильных пунктов по `top_candidates`.\n7. Для каждого пункта: короткая тема; канал; нормализованное время; [пост](url); `Краткое содержание` в 2–3 коротких фразах строго по payload; `Ссылки` только при наличии external_links.\n8. Не показывай Telegram-метрики, reasoning, QA-комментарии, внутренние selection_reasons и строку о необходимости уточнения классификации.\n9. В конце приложи CSV как `MEDIA:/absolute/path`.\n\nФормат: заголовок, статистика, пункты, затем `MEDIA:...`.\nФинальный текст готов к отправке. Не добавляй служебные комментарии, мета-пояснения, внутреннюю проверку, валидацию дат или процесс отбора.",
       "skills": [],
       "skill": null,
       "model": null,
@@ -20,15 +20,15 @@
       "schedule_display": "0 15 * * *",
       "repeat": {
         "times": null,
-        "completed": 99
+        "completed": 106
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-05-27T15:43:18.595108+00:00",
-      "next_run_at": "2026-08-31T15:00:00+00:00",
-      "last_run_at": "2026-08-30T15:00:45.033483+00:00",
+      "next_run_at": "2026-09-07T15:00:00+00:00",
+      "last_run_at": "2026-09-06T15:01:48.950558+00:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -44,7 +44,14 @@
       ],
       "workdir": "/home/hermes/workspace/TG-API",
       "profile": null,
-      "fire_claim": null
+      "fire_claim": null,
+      "failure_streak": 0,
+      "last_dispatch": {
+        "scheduled_at": "2026-09-06T15:00:00+00:00",
+        "dispatched_at": "2026-09-06T15:00:45.048067+00:00",
+        "lateness_seconds": 45.0,
+        "kind": "on_time"
+      }
     },
     {
       "id": "de89221045ae",
@@ -66,15 +73,15 @@
       "schedule_display": "55 14 * * *",
       "repeat": {
         "times": null,
-        "completed": 98
+        "completed": 105
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-05-28T14:07:14.429160+00:00",
-      "next_run_at": "2026-08-31T14:55:00+00:00",
-      "last_run_at": "2026-08-30T14:55:31.055998+00:00",
+      "next_run_at": "2026-09-07T14:55:00+00:00",
+      "last_run_at": "2026-09-06T14:55:52.110037+00:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -88,7 +95,14 @@
       "enabled_toolsets": null,
       "workdir": "/home/hermes/workspace/TG-API",
       "profile": null,
-      "fire_claim": null
+      "fire_claim": null,
+      "failure_streak": 0,
+      "last_dispatch": {
+        "scheduled_at": "2026-09-06T14:55:00+00:00",
+        "dispatched_at": "2026-09-06T14:55:39.945728+00:00",
+        "lateness_seconds": 39.9,
+        "kind": "on_time"
+      }
     },
     {
       "id": "d4ee53b4795c",
@@ -110,17 +124,17 @@
       "schedule_display": "30 15 * * 0",
       "repeat": {
         "times": null,
-        "completed": 20
+        "completed": 21
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-05-28T14:07:15.436653+00:00",
-      "next_run_at": "2026-09-06T15:30:00+00:00",
-      "last_run_at": "2026-08-30T15:31:18.263519+00:00",
-      "last_status": "ok",
-      "last_error": null,
+      "next_run_at": "2026-09-13T15:30:00+00:00",
+      "last_run_at": "2026-09-06T15:32:19.289299+00:00",
+      "last_status": "error",
+      "last_error": "Interrupted by shutdown before terminal completion.",
       "last_delivery_error": null,
       "deliver": "origin",
       "origin": {
@@ -132,7 +146,14 @@
       "enabled_toolsets": null,
       "workdir": "/home/hermes/workspace/TG-API",
       "profile": null,
-      "fire_claim": null
+      "fire_claim": null,
+      "last_dispatch": {
+        "scheduled_at": "2026-09-06T15:30:00+00:00",
+        "dispatched_at": "2026-09-06T15:30:46.928402+00:00",
+        "lateness_seconds": 46.9,
+        "kind": "on_time"
+      },
+      "failure_streak": 1
     },
     {
       "id": "5e291c60ab09",
@@ -154,17 +175,17 @@
       "schedule_display": "0 17 * * 0",
       "repeat": {
         "times": null,
-        "completed": 19
+        "completed": 20
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-05-29T23:47:34.685920+00:00",
-      "next_run_at": "2026-09-06T17:00:00+00:00",
-      "last_run_at": "2026-08-30T17:01:33.286888+00:00",
-      "last_status": "ok",
-      "last_error": null,
+      "next_run_at": "2026-09-13T17:00:00+00:00",
+      "last_run_at": "2026-09-06T17:02:46.989428+00:00",
+      "last_status": "error",
+      "last_error": "Interrupted by shutdown before terminal completion.",
       "last_delivery_error": null,
       "deliver": "origin",
       "origin": {
@@ -180,62 +201,19 @@
       ],
       "workdir": "/home/hermes/workspace",
       "profile": null,
-      "fire_claim": null
-    },
-    {
-      "id": "d388f28758d4",
-      "name": "eva-moscow-afisha-picker",
-      "prompt": "[IMPORTANT: You are running as a scheduled cron job. DELIVERY: Your final response will be automatically delivered to the user — do NOT use send_message or try to deliver the output yourself. Just produce your report/output as your final response and the system handles the rest. SILENT: If there is genuinely nothing new to report, respond with exactly \"[SILENT]\" (nothing else) to suppress delivery. Never combine [SILENT] with content — either report your findings normally, or say [SILENT] and nothing more.]\n\nYou are a helper cron job for Eva. Your only purpose is to prepare one possible Moscow leisure suggestion for the 9:30 daily brief.\n\nBefore writing:\n- Determine today's date and weekday in Moscow time.\n- If today is not Saturday or Sunday, return exactly: NO_AFISHA\n- Search for one concrete and current Moscow leisure option for today from a reliable source.\n- The option may be lively, social, cinematic, urban, design-oriented, playful, atmospheric, or simply a fresh change of scene.\n- Suitable categories include: exhibition, museum, film screening, lecture, concert, creative workshop, language club, speaking club, pub quiz, themed bar event, board-game cafe event, city walk, park program, market, meetup, or another realistic same-day leisure option.\n- Prefer a specific event page over a generic venue homepage.\n- Only keep it if you can verify that it is for today or currently running and that the link points to the event page.\n- If nothing reliable is found quickly, return exactly: NO_AFISHA\n\nTaste and ranking rules:\n- Do NOT optimize for generic respectability or safe-but-dull options.\n- Slightly prefer something more alive, social, urban, contemporary, cinematic, design-oriented, or simply fresh.\n- A banal option is acceptable only if it is concrete, timely, and honestly the best practical choice found.\n- Avoid hype language, ratings, and unverified claims.\n- Keep it practical.\n\nOutput format when an option is found:\nAFISHA_FOUND: yes\nTYPE: <exhibition|film|lecture|workshop|language_club|bar_event|board_games|walk|concert|other>\nTITLE: <short title>\nPLACE: <venue>\nTIME: <time or open hours if clearly known>\nURL: <full link>\nNOTE: <one short Russian line explaining why this option may be a good change of scene today>\n\nOutput format when no option is found:\nNO_AFISHA\n\nAdditional rules:\n- Return only the final helper block or NO_AFISHA.\n- Do not add commentary, logs, technical markup, markdown fences, or service notes.",
-      "skills": [],
-      "skill": null,
-      "model": null,
-      "provider": null,
-      "base_url": null,
-      "script": null,
-      "no_agent": false,
-      "context_from": null,
-      "schedule": {
-        "kind": "cron",
-        "expr": "0 6 * * *",
-        "display": "0 6 * * *"
+      "fire_claim": null,
+      "last_dispatch": {
+        "scheduled_at": "2026-09-06T17:00:00+00:00",
+        "dispatched_at": "2026-09-06T17:00:52.785860+00:00",
+        "lateness_seconds": 52.8,
+        "kind": "on_time"
       },
-      "schedule_display": "0 6 * * *",
-      "repeat": {
-        "times": null,
-        "completed": 95
-      },
-      "enabled": true,
-      "state": "scheduled",
-      "paused_at": null,
-      "paused_reason": null,
-      "created_at": "2026-05-30T07:43:25.073759+00:00",
-      "next_run_at": "2026-09-01T06:00:00+00:00",
-      "last_run_at": "2026-08-30T06:03:49.018815+00:00",
-      "last_status": "ok",
-      "last_error": null,
-      "last_delivery_error": null,
-      "deliver": "local",
-      "origin": {
-        "platform": "telegram",
-        "chat_id": "381204086",
-        "chat_name": "Михаил Рощин",
-        "thread_id": null
-      },
-      "enabled_toolsets": [
-        "web",
-        "terminal"
-      ],
-      "workdir": "/home/hermes/workspace",
-      "profile": null,
-      "fire_claim": {
-        "at": "2026-08-31T06:00:33.944350+00:00",
-        "by": "server-oig0ig:430:a6559276e4684f3c9c04e963c8d2e3f0"
-      }
+      "failure_streak": 1
     },
     {
       "id": "3c26e0954d43",
       "name": "eva-weekly-moscow-events-pick",
-      "prompt": "[IMPORTANT: You are running as a scheduled cron job. DELIVERY: Your final response will be automatically delivered to the user — do NOT use send_message or try to deliver the output yourself. Just produce your report/output as your final response and the system handles the rest. SILENT: If there is genuinely nothing useful to report, respond with exactly \"[SILENT]\" (nothing else) to suppress delivery. Never combine [SILENT] with content — either report your findings normally, or say [SILENT] and nothing more.]\n\nНиже уже дан preflight-контекст от script: границы недели по Москве, 4 разрешённых source-кластера и названия из недавних weekly outputs.\nИспользуй его как рабочую рамку, а не начинай поиск с нуля.\n\nЗадача:\nСобрать короткую недельную подборку событий в Москве на текущую неделю: 8–10 реально пригодных вариантов с понедельника по воскресенье.\n\nКонтур работы:\n1. Сначала опирайся на source URLs из preflight script.\n2. По каждому source-кластеру сначала пытайся извлечь официальную страницу напрямую через `web_extract`.\n3. `web_search` используй только как rescue path, если официальный URL не даёт достаточно пригодной конкретики.\n4. По каждому source-кластеру разрешён максимум 1 rescue `web_search`.\n5. Суммарно нельзя делать больше 4 `web_search` вызовов.\n6. Как только собрано 8–10 verified пунктов, сразу останавливай поиск.\n7. Не гонись за идеальным жанровым балансом и не переформулируй один и тот же поиск много раз.\n8. Не включай событие, если не удалось подтвердить, что оно проходит на этой неделе или выставка/программа доступна на этой неделе.\n9. Старайся не дублировать то, что уже недавно попадало в weekly output, если у текущей недели есть другие сильные варианты.\n\nПравила отбора:\n- Каждый пункт обязан иметь прямую рабочую ссылку.\n- Предпочтение: современное, городское, живое, небанальное.\n- Если у одного места сильный кластер недели, это допустимо.\n- Если verified вариантов меньше 8, выдай меньше, но только проверенные.\n- Никаких служебных сообщений, логов и объяснения процесса.\n\nФормат каждого пункта:\nN. <категория> — <название>\nГде: <место>\nКогда: <дата/время этой недели или «всю неделю»>\nПочему может зайти: <1 короткая живая практичная фраза>\nСсылка: <url>\n\nФормат ответа:\nСтарт ровно так:\nДоброе утро, Миша! Собрала подборку на неделю по Москве.\n\nДальше:\n- одна короткая строка с диапазоном недели;\n- одна короткая строка про состав подборки;\n- при необходимости одна короткая строка про то, что нашлось меньше 8–10, но ниже всё проверенное.\n\nПосле списка:\n3 самых быстрых варианта на эту неделю:\n1) ...\n2) ...\n3) ...\n\n2 более необычных варианта на эту неделю:\n1) ...\n2) ...\n\nФинальная строка:\nЕсли хочешь, в следующий раз могу сразу сузить подборку под настроение: спокойное / культурное / социальное / лёгкое / необычное.\n\nТолько русский. Коротко. По-человечески. Не как афиша-бот.",
+      "prompt": "[IMPORTANT: You are running as a scheduled cron job. DELIVERY: Your final response will be automatically delivered to the user — do NOT use send_message or try to deliver the output yourself. Just produce your report/output as your final response and the system handles the rest. SILENT: If there is genuinely nothing useful to report, respond with exactly \"[SILENT]\" (nothing else) to suppress delivery. Never combine [SILENT] with content — either report your findings normally, or say [SILENT] and nothing more.]\n\nНиже уже дан preflight-контекст от script: границы недели по Москве, source URLs, недавние weekly titles, place bias и domain bias. Используй это как рабочую рамку.\n\nЗадача:\nСобрать короткую недельную подборку событий в Москве на текущую неделю: 8–10 реально пригодных вариантов с понедельника по воскресенье.\n\nАбсолютное ограничение по датам:\n- Нельзя включать события вне интервала week_start..week_end.\n- Если событие начинается после week_end, оно запрещено даже если оно очень сильное.\n- Перед финальным ответом отдельно перепроверь каждую дату против week_end.\n\nГлавный приоритет отбора:\n1. локальные события и программы, которые доступны ограниченное время;\n2. события, которые стартуют именно на этой неделе или идут последние дни;\n3. городские программы недели, если у них есть конкретный повод именно сейчас;\n4. только потом — долгоидущие выставки как добор, если без них не хватает сильных verified вариантов.\n\nЖёсткие правила логики:\n1. Нельзя собирать выдачу с явным перекосом в одну площадку или один домен-источник.\n2. По умолчанию максимум 2 пункта с одной площадки.\n3. По умолчанию максимум 2 пункта с одного домена.\n4. 3+ пункта с одной площадки или одного домена допустимы только если это городской кластер уровня День города / фестиваль / специальная недельная программа, и это должно быть явно объяснимо по неделе.\n5. Если на неделе есть большой городской повод, например День города, открытие сезона, крупная фестивальная программа, он обязан быть проверен и как минимум один раз отражён в подборке.\n6. Не заполняй список долгоживущими выставками только потому, что по ним проще набрать объём.\n7. Если verified сильных пунктов только 6–7, лучше выдать 6–7, чем добивать слабыми вечными экспозициями.\n8. Последние 1–2 пункта списка проходят дополнительный фильтр: если это не событие с ограниченным окном, не старт недели и не заметный городской повод, лучше выбросить пункт и отдать более короткий список.\n9. Если у пункта нет точной даты/времени или короткого ясного диапазона именно на этой неделе, его нельзя включать, кроме явных citywide-программ недели.\n\nКонтур работы:\n1. Сначала проверь официальные и первичные страницы из script output.\n2. Для городских поводов недели сначала проверь citywide/official sources, потом площадки.\n3. `web_extract` предпочитай `web_search`.\n4. `web_search` используй как rescue path, когда официальный URL не даёт пригодной конкретики.\n5. Суммарно нельзя делать больше 5 `web_search` вызовов.\n6. Как только собрано 8–10 verified пунктов, остановись.\n7. Следи за `RECENT_PLACE_BIAS` и `RECENT_DOMAIN_BIAS`: если площадка или домен уже доминировали в прошлых подборках, нужен более высокий порог, чтобы снова отдавать им много мест.\n\nПравила отбора по содержанию:\n- Каждый пункт обязан иметь прямую рабочую ссылку.\n- Нужна подтверждённая доступность именно на этой неделе.\n- Предпочтение: новое, стартующее, ограниченное по времени, городское, живое, небанальное.\n- Штрафуй вечные и слишком универсальные варианты.\n- Если нашёл сильный городской weekend block, лучше включить его, чем третью-четвёртую выставку одной институции.\n- Для обычных площадочных событий предпочитай точную дату и время; формулировки вроде «ещё идёт» или «ещё актуально» используй только если на странице нет точнее и событие правда заканчивается скоро.\n\nФормат каждого пункта:\nN. <категория> — <название>\nГде: <место>\nКогда: <дата/время этой недели или короткий диапазон>\nПочему может зайти: <1 короткая живая практичная фраза>\nСсылка: <url>\n\nФормат ответа:\nСтарт ровно так:\nДоброе утро, Миша! Собрала подборку на неделю по Москве.\n\nДальше:\n- одна короткая строка с диапазоном недели;\n- одна короткая строка, что в приоритете короткоживущие / стартующие / городские события недели;\n- если есть большой городской повод недели, упомяни его уже во второй строке;\n- если verified вариантов меньше 8–10, честно скажи это одной строкой.\n\nПосле списка:\n3 самых быстрых варианта на эту неделю:\n1) ...\n2) ...\n3) ...\n\n2 варианта, которые стоит ловить именно сейчас:\n1) ...\n2) ...\n\nТолько русский. Коротко. По-человечески. Не как афиша-бот.",
       "skills": [],
       "skill": null,
       "model": null,
@@ -252,15 +230,15 @@
       "schedule_display": "45 6 * * 1",
       "repeat": {
         "times": 999,
-        "completed": 19
+        "completed": 23
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-01T06:55:18.124834+00:00",
-      "next_run_at": "2026-08-31T06:45:00+00:00",
-      "last_run_at": "2026-08-24T06:51:02.943405+00:00",
+      "next_run_at": "2026-09-07T06:45:00+00:00",
+      "last_run_at": "2026-08-31T16:28:54.092799+00:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -299,17 +277,17 @@
       "schedule_display": "20 18 * * *",
       "repeat": {
         "times": null,
-        "completed": 88
+        "completed": 95
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-03T13:04:32.165457+00:00",
-      "next_run_at": "2026-08-31T18:20:00+00:00",
-      "last_run_at": "2026-08-30T18:20:48.085261+00:00",
-      "last_status": "ok",
-      "last_error": null,
+      "next_run_at": "2026-09-07T18:20:00+00:00",
+      "last_run_at": "2026-09-06T18:21:01.158523+00:00",
+      "last_status": "error",
+      "last_error": "Script exited with code 1\nstderr:\nTraceback (most recent call last):\n  File \"/home/hermes/workspace/eva-data/backup_eva_hub.py\", line 47, in main\n    con = duckdb.connect(str(DB_PATH))\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nduckdb.duckdb.IOException: IO Error: Could not set lock on file \"/home/hermes/workspace/eva-data/eva_hub.duckdb\": Conflicting lock is held in /usr/bin/python3.12 (PID 529200) by user hermes. See also https://duckdb.org/docs/stable/connect/concurrency\n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File \"/home/hermes/.hermes/scripts/eva_hub_backup.py\", line 4, in <module>\n    runpy.run_path('/home/hermes/workspace/eva-data/backup_eva_hub.py', run_name='__main__')\n  File \"<frozen runpy>\", line 286, in run_path\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/home/hermes/workspace/eva-data/backup_eva_hub.py\", line 97, in <module>\n    main()\n  File \"/home/hermes/workspace/eva-data/backup_eva_hub.py\", line 64, in main\n    raise RuntimeError(\nRuntimeError: Live Eva Hub is locked; backup is not refreshed from stale fallback /home/hermes/workspace/eva-data/backups/eva_hub_latest.duckdb",
       "last_delivery_error": null,
       "deliver": "local",
       "origin": {
@@ -321,7 +299,14 @@
       "enabled_toolsets": null,
       "workdir": null,
       "profile": null,
-      "fire_claim": null
+      "fire_claim": null,
+      "failure_streak": 2,
+      "last_dispatch": {
+        "scheduled_at": "2026-09-06T18:20:00+00:00",
+        "dispatched_at": "2026-09-06T18:20:59.036381+00:00",
+        "lateness_seconds": 59.0,
+        "kind": "on_time"
+      }
     },
     {
       "id": "ca9b2de84277",
@@ -343,15 +328,15 @@
       "schedule_display": "every 120m",
       "repeat": {
         "times": null,
-        "completed": 987
+        "completed": 1070
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-06T23:55:03.424901+00:00",
-      "next_run_at": "2026-08-31T06:18:38.069162+00:00",
-      "last_run_at": "2026-08-31T04:18:38.069162+00:00",
+      "next_run_at": "2026-09-07T07:11:06.278401+00:00",
+      "last_run_at": "2026-09-07T05:11:06.278401+00:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -365,7 +350,14 @@
       "enabled_toolsets": null,
       "workdir": null,
       "profile": null,
-      "fire_claim": null
+      "fire_claim": null,
+      "failure_streak": 0,
+      "last_dispatch": {
+        "scheduled_at": "2026-09-07T05:08:58.213274+00:00",
+        "dispatched_at": "2026-09-07T05:09:49.072436+00:00",
+        "lateness_seconds": 50.9,
+        "kind": "on_time"
+      }
     },
     {
       "id": "329913efa98a",
@@ -378,26 +370,24 @@
       "base_url": null,
       "script": "cron_daily_brief_prep.py",
       "no_agent": false,
-      "context_from": [
-        "d388f28758d4"
-      ],
+      "context_from": null,
       "schedule": {
         "kind": "cron",
-        "expr": "30 6 * * *",
-        "display": "30 6 * * *"
+        "expr": "30 4 * * *",
+        "display": "30 4 * * *"
       },
-      "schedule_display": "30 6 * * *",
+      "schedule_display": "30 4 * * *",
       "repeat": {
         "times": null,
-        "completed": 212
+        "completed": 223
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-09T08:53:20.923608+00:00",
-      "next_run_at": "2026-08-31T06:30:00+00:00",
-      "last_run_at": "2026-08-30T06:31:11.885730+00:00",
+      "next_run_at": "2026-09-08T04:30:00+00:00",
+      "last_run_at": "2026-09-07T04:31:58.938247+00:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -413,12 +403,19 @@
       ],
       "workdir": "/home/hermes/workspace",
       "profile": null,
-      "fire_claim": null
+      "fire_claim": null,
+      "failure_streak": 0,
+      "last_dispatch": {
+        "scheduled_at": "2026-09-07T04:30:00+00:00",
+        "dispatched_at": "2026-09-07T04:30:47.177719+00:00",
+        "lateness_seconds": 47.2,
+        "kind": "on_time"
+      }
     },
     {
       "id": "319fed30bd3b",
       "name": "eva-agent-self-learning-daily",
-      "prompt": "Ты работаешь для собственного улучшения агента Евы в профиле default. Это внутренняя self-learning задача, не для пользователя. Через session_search посмотри последние 2–3 дня реальных сессий и найди повторяющиеся промахи: лишние уточнения, ошибки формата, недоиспользование инструментов, слабую проверку результатов, пропуски live-валидации, устаревшие команды Hermes, неаккуратную local-first архитектуру. Если данных недостаточно — так и скажи. Если найден устойчивый паттерн, обнови существующий skill через skill_manage(action='patch') или создай новый skill только если это действительно новый повторяемый workflow. Не придумывай факты, не меняй user memory и не делай косметические правки ради отчёта. Верни короткий внутренний отчёт: какой паттерн найден, что обновлено или почему no change, и какой ожидаемый эффект.",
+      "prompt": "Внутренняя ежедневная проверка поведенческих и delivery-паттернов Евы в профиле default. Это не пользовательский отчёт.\n\nЧерез session_search проверь последние 2–3 дня. Ищи только повторяющиеся дефекты поведения: лишние уточнения, нарушение формата, слабую проверку результата, пропуск live-валидации, неестественную русскую выдачу.\n\nИзменять skill через skill_manage можно только если паттерн подтверждён минимум в двух независимых пользовательских сессиях либо воспроизводится как прямое нарушение уже действующего контракта. При единичном сигнале верни `no change` и коротко зафиксируй его как наблюдение.\n\nНе меняй Hermes CLI/runbook, архитектурные правила, providers, cron, browser или local-first практики: это зона weekly job. Перед любой правкой проверь последние 7 дней output этой job, чтобы не повторять уже внесённый guardrail. Не трогай user memory.\n\nВерни короткий внутренний отчёт: доказательство паттерна, изменённый навык или no change, ожидаемый эффект.",
       "skills": [],
       "skill": null,
       "model": null,
@@ -435,15 +432,15 @@
       "schedule_display": "35 4 * * *",
       "repeat": {
         "times": null,
-        "completed": 77
+        "completed": 84
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-14T19:58:38.653901+00:00",
-      "next_run_at": "2026-09-01T04:35:00+00:00",
-      "last_run_at": "2026-08-31T04:36:37.899407+00:00",
+      "next_run_at": "2026-09-08T04:35:00+00:00",
+      "last_run_at": "2026-09-07T04:37:01.146431+00:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -456,12 +453,19 @@
       },
       "enabled_toolsets": null,
       "workdir": "/home/hermes/workspace",
-      "fire_claim": null
+      "fire_claim": null,
+      "failure_streak": 0,
+      "last_dispatch": {
+        "scheduled_at": "2026-09-07T04:35:00+00:00",
+        "dispatched_at": "2026-09-07T04:35:47.843535+00:00",
+        "lateness_seconds": 47.8,
+        "kind": "on_time"
+      }
     },
     {
       "id": "6dfe0d3e6fa0",
       "name": "eva-agent-self-development-weekly",
-      "prompt": "Еженедельный self-development самой Евы в профиле default. Сверь недавние трудные кейсы, текущие навыки и актуальные возможности Hermes. Если задача касается Hermes itself, используй документацию Hermes как source of truth и при необходимости навык hermes-agent. Найди один high-leverage gap в знаниях или процедуре, который реально мешает агенту быть умнее и полезнее. Если gap подтверждается, обнови существующий skill или создай новый точечный skill. Приоритет: Hermes CLI/config/providers/tools/cron/browser/runtime/debugging, живая проверка результатов, disciplined tool use, local-first решения и качество русской выдачи. Не трогай user memory, не спамь внешние каналы, не придумывай улучшения ради отчёта. Если достойного улучшения нет — зафиксируй no change. В конце верни внутренний отчёт: источник сигнала, что обновлено, почему это повысит полезность агента.",
+      "prompt": "Внутренняя еженедельная проверка Hermes/tooling/runbook в профиле default. Это не пользовательский отчёт.\n\nПроверь актуальные возможности Hermes, CLI/config/providers/tools/cron/browser/runtime/debugging и живую проверку результатов. До любых изменений прочитай последние 4 weekly outputs и целевой skill. Если сигнал лишь уточняет уже закрытый runbook, верни `no change`; патч допустим при измеримом противоречии, отсутствующем обязательном шаге или новом воспроизводимом gap.\n\nНе меняй поведенческие и delivery-format правила по отдельным сессиям: это зона daily self-learning. Не трогай user memory и не создавай skills ради отчёта.\n\nВерни короткий внутренний отчёт: источник сигнала, что изменено или почему no change, ожидаемый эффект.",
       "skills": [],
       "skill": null,
       "model": null,
@@ -478,15 +482,15 @@
       "schedule_display": "5 5 * * 0",
       "repeat": {
         "times": null,
-        "completed": 11
+        "completed": 12
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-14T19:58:39.664902+00:00",
-      "next_run_at": "2026-09-06T05:05:00+00:00",
-      "last_run_at": "2026-08-30T05:09:22.825395+00:00",
+      "next_run_at": "2026-09-13T05:05:00+00:00",
+      "last_run_at": "2026-09-06T05:11:23.113439+00:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -499,7 +503,8 @@
       },
       "enabled_toolsets": null,
       "workdir": "/home/hermes/workspace",
-      "fire_claim": null
+      "fire_claim": null,
+      "failure_streak": 0
     },
     {
       "id": "2a42427656fa",
@@ -521,15 +526,15 @@
       "schedule_display": "0 6 * * 1",
       "repeat": {
         "times": null,
-        "completed": 11
+        "completed": 12
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-17T19:26:57.855186+00:00",
-      "next_run_at": "2026-09-07T06:00:00+00:00",
-      "last_run_at": "2026-08-24T06:00:47.103526+00:00",
+      "next_run_at": "2026-09-14T06:00:00+00:00",
+      "last_run_at": "2026-08-31T06:00:42.257063+00:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -543,8 +548,14 @@
       "enabled_toolsets": null,
       "workdir": null,
       "fire_claim": {
-        "at": "2026-08-31T06:00:33.955461+00:00",
-        "by": "server-oig0ig:430:c99906735f17492591cc8533c0a9f90a"
+        "at": "2026-09-07T06:00:59.220005+00:00",
+        "by": "server-oig0ig:460278:8aab0fcea5b147209f3a65e7604333c8"
+      },
+      "last_dispatch": {
+        "scheduled_at": "2026-09-07T06:00:00+00:00",
+        "dispatched_at": "2026-09-07T06:00:58.169259+00:00",
+        "lateness_seconds": 58.2,
+        "kind": "on_time"
       }
     },
     {
@@ -567,15 +578,15 @@
       "schedule_display": "0 1 * * 1",
       "repeat": {
         "times": null,
-        "completed": 12
+        "completed": 13
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-17T19:53:46.524810+00:00",
-      "next_run_at": "2026-09-07T01:00:00+00:00",
-      "last_run_at": "2026-08-31T01:02:23.981011+00:00",
+      "next_run_at": "2026-09-14T01:00:00+00:00",
+      "last_run_at": "2026-09-07T01:02:46.872205+00:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -588,7 +599,14 @@
       },
       "enabled_toolsets": null,
       "workdir": null,
-      "fire_claim": null
+      "fire_claim": null,
+      "last_dispatch": {
+        "scheduled_at": "2026-09-07T01:00:00+00:00",
+        "dispatched_at": "2026-09-07T01:00:32.043599+00:00",
+        "lateness_seconds": 32.0,
+        "kind": "on_time"
+      },
+      "failure_streak": 0
     },
     {
       "id": "f000ef2be83c",
@@ -610,15 +628,15 @@
       "schedule_display": "0 9 * * *",
       "repeat": {
         "times": null,
-        "completed": 73
+        "completed": 80
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-24T10:12:45.727335+00:00",
-      "next_run_at": "2026-08-31T09:00:00+00:00",
-      "last_run_at": "2026-08-30T09:00:05.819500+00:00",
+      "next_run_at": "2026-09-07T09:00:00+00:00",
+      "last_run_at": "2026-09-06T09:15:22.134967+00:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -631,7 +649,14 @@
       },
       "enabled_toolsets": null,
       "workdir": "/home/hermes/workspace/hermes-web-mvp-react-8793/services/backend",
-      "fire_claim": null
+      "fire_claim": null,
+      "failure_streak": 0,
+      "last_dispatch": {
+        "scheduled_at": "2026-09-06T09:00:00+00:00",
+        "dispatched_at": "2026-09-06T09:14:20.960058+00:00",
+        "lateness_seconds": 861.0,
+        "kind": "late"
+      }
     },
     {
       "id": "976226ba72f4",
@@ -657,15 +682,15 @@
       "schedule_display": "10 9 * * *",
       "repeat": {
         "times": null,
-        "completed": 69
+        "completed": 76
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-24T10:23:07.186519+00:00",
-      "next_run_at": "2026-08-31T09:10:00+00:00",
-      "last_run_at": "2026-08-30T09:10:18.999645+00:00",
+      "next_run_at": "2026-09-07T09:10:00+00:00",
+      "last_run_at": "2026-09-06T09:14:25.210547+00:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -682,8 +707,21 @@
         "skills"
       ],
       "workdir": "/home/hermes/workspace/hermes-web-mvp-react-8793/services/backend",
-      "fire_claim": null
+      "fire_claim": null,
+      "failure_streak": 0,
+      "monitor_script": "runtime_audit_signal_monitor.py",
+      "monitor_url": null,
+      "monitor_state": {
+        "last_output_hash": "a602cd2aad8f92f23fd3748eaf3e2e149e44b7e9553f77eb93e863df417387d4",
+        "last_changed_at": "2026-09-05T09:10:36.809466+00:00"
+      },
+      "last_dispatch": {
+        "scheduled_at": "2026-09-06T09:10:00+00:00",
+        "dispatched_at": "2026-09-06T09:14:20.960058+00:00",
+        "lateness_seconds": 261.0,
+        "kind": "on_time"
+      }
     }
   ],
-  "updated_at": "2026-08-31T06:00:33.956322+00:00"
+  "updated_at": "2026-09-07T06:00:59.220993+00:00"
 }

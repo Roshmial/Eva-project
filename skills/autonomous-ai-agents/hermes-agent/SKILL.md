@@ -294,6 +294,10 @@ hermes cron edit ID         Edit schedule, prompt, delivery
 hermes cron pause/resume ID Control job state
 hermes cron run ID          Queue a specific job for the next scheduler tick
 hermes cron tick            Run due jobs once immediately, then exit
+hermes cron runs [ID]       Show durable execution attempts (optionally for one job)
+hermes cron incidents       List detected/alerted/closed job incidents
+hermes cron doctor          Scan all scheduled jobs for actionable health issues
+hermes cron notepad         Read/write persistent per-job state across runs
 hermes cron remove ID       Delete a job
 hermes cron status          Scheduler status
 ```

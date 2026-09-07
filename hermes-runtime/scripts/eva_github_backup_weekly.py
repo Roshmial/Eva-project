@@ -1,7 +1,6 @@
 from pathlib import Path
 import shutil
 import subprocess
-from datetime import datetime, timezone
 
 SRC_SKILLS = Path('/home/hermes/.hermes/skills')
 BACKUP = Path('/home/hermes/workspace/eva-github-backup')
@@ -129,7 +128,6 @@ def copy_hermes_runtime() -> None:
 
 
 def write_root_files() -> None:
-    timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')
     (BACKUP / 'README.md').write_text(
         '# Eva backup\n\n'
         'Это локальный backup-репозиторий ключевых элементов рабочей конфигурации Евы и комплекта для переноса на чистый сервер.\n\n'
@@ -152,7 +150,7 @@ def write_root_files() -> None:
         'Назначение:\n'
         '- безопасный backup знаний, навыков и ключевой operational-конфигурации Евы\n'
         '- база для восстановления на новом сервере после установки Hermes\n\n'
-        f'Последнее обновление: {timestamp}\n',
+        'Состояние отражает содержимое текущего snapshot.\n',
         encoding='utf-8',
     )
     (BACKUP / '.gitignore').write_text('.DS_Store\n*.pyc\n__pycache__/\n*.log\n.env\n', encoding='utf-8')

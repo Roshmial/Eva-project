@@ -67,6 +67,12 @@ Split the job into two layers:
 - Run it manually right away.
 - Read the produced cron output artifact and verify the actual delivered text, not only scheduler status.
 
+7. Treat input freshness as a release gate
+- A no-signal report is valid only after the source file exists, is readable, and is fresh for the job window.
+- Missing, malformed, or stale telemetry must produce an explicit failed/degraded status; never render it as a clean report with zero findings.
+- A backup job may succeed only when it copied the live source. If it falls back to an older backup, do not create a new dated snapshot or silently advance retention.
+- Keep QA jobs read-only by default. A report that applies inferred overrides is a state-changing classifier and must be a separate explicit job with a deliberate apply boundary.
+
 ## Prompt-writing rules that helped
 
 ### For weekly event jobs

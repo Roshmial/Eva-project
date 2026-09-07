@@ -56,6 +56,17 @@ def item_tokens(item: dict) -> set[str]:
     return {t for t in toks if t not in stop}
 
 
+def allowed_items(items: list[dict], semantic_bans: list[str]) -> list[dict]:
+    banned = [normalize(value) for value in semantic_bans if normalize(value)]
+    allowed = []
+    for item in items:
+        text = normalize(item.get('text', ''))
+        if any(ban in text for ban in banned):
+            continue
+        allowed.append(item)
+    return allowed
+
+
 def used_recent_ids(items: list[dict], recent_texts: list[str]) -> set[str]:
     haystack = normalize('\n'.join(recent_texts))
     used = set()
@@ -79,6 +90,15 @@ def recent_families(items: list[dict], recent_texts: list[str], cooldown: int) -
 def choose_main(items: list[dict], recent_texts: list[str], day_seed: int, cooldown: int) -> dict:
     used_ids = used_recent_ids(items, recent_texts)
     used_families = recent_families(items, recent_texts, cooldown)
+    fresh = [item for item in items if item['id'] not in used_ids and item.get('family') not in used_families]
+    if fresh:
+        ranked = []
+        for item in fresh:
+            stable = (sum(ord(c) for c in item['id']) + day_seed) % 97
+            ranked.append(((stable, item['id']), item))
+        ranked.sort(key=lambda x: x[0])
+        return ranked[0][1]
+
     ranked = []
     for item in items:
         same_recent = item['id'] in used_ids
@@ -94,6 +114,25 @@ def choose_small(items: list[dict], recent_texts: list[str], day_seed: int, cool
     used_families = recent_families(items, recent_texts, cooldown)
     main_tokens = item_tokens(main_item)
     main_family = main_item.get('family')
+    fresh = []
+    for item in items:
+        if item['id'] in used_ids:
+            continue
+        if item.get('family') in used_families:
+            continue
+        if item.get('family') == main_family:
+            continue
+        if main_tokens & item_tokens(item):
+            continue
+        fresh.append(item)
+    if fresh:
+        ranked = []
+        for item in fresh:
+            stable = (sum(ord(c) for c in item['id']) + day_seed + 17) % 97
+            ranked.append(((stable, item['id']), item))
+        ranked.sort(key=lambda x: x[0])
+        return ranked[0][1]
+
     ranked = []
     for item in items:
         same_recent = item['id'] in used_ids
@@ -110,22 +149,6 @@ def choose_small(items: list[dict], recent_texts: list[str], day_seed: int, cool
 def choose_pair(main_items: list[dict], small_items: list[dict], recent_texts: list[str], day_seed: int, cooldown: int) -> tuple[dict, dict]:
     main_item = choose_main(main_items, recent_texts, day_seed, cooldown)
     small_item = choose_small(small_items, recent_texts, day_seed, cooldown, main_item)
-    if main_item.get('has_link') or small_item.get('has_link'):
-        return main_item, small_item
-
-    linked_mains = [item for item in main_items if item.get('has_link')]
-    if linked_mains:
-        alt_main = choose_main(linked_mains, recent_texts, day_seed, cooldown)
-        alt_small = choose_small(small_items, recent_texts, day_seed, cooldown, alt_main)
-        if alt_small.get('family') != alt_main.get('family'):
-            return alt_main, alt_small
-
-    linked_smalls = [item for item in small_items if item.get('has_link')]
-    if linked_smalls:
-        alt_small = choose_small(linked_smalls, recent_texts, day_seed, cooldown, main_item)
-        if alt_small.get('family') != main_item.get('family'):
-            return main_item, alt_small
-
     return main_item, small_item
 
 
@@ -152,15 +175,29 @@ def fetch_weather_summary() -> dict:
         if icon in {'09', '10', '11', '12', '13'}:
             rain_likely = True
 
-    daytime = max((temp for hour, temp in temps if 12 <= hour <= 20), default=current_temp)
+    day_temps = [temp for hour, temp in temps if 8 <= hour <= 20]
     if current_temp is not None and current_text:
-        line = f'Погода: в Москве сейчас +{current_temp} °C, {current_text}'
-        if daytime is not None:
-            line += f'; днём до +{daytime} °C'
-        line += '; дождь сегодня возможен.' if rain_likely else '; без дождя.'
+        if day_temps:
+            low, high = min(day_temps), max(day_temps)
+            temp_text = f'+{low}…+{high} °C' if low != high else f'около +{high} °C'
+        else:
+            temp_text = f'около +{current_temp} °C'
+        raw_condition = current_text.rstrip('.').lower()
+        natural_conditions = {
+            'облачность с просветами': 'облачно с прояснениями',
+            'переменная облачность': 'облачно с прояснениями',
+            'небольшая облачность': 'облачно с прояснениями',
+        }
+        condition = natural_conditions.get(raw_condition, raw_condition)
+        line = f'В Москве {temp_text}, {condition}'
+        line += '; временами дождь.' if rain_likely else '; без дождя.'
     else:
-        line = 'Погода: сегодня лучше ещё раз свериться с прогнозом.'
-    return {'url': WEATHER_URL, 'weather_line': line}
+        line = 'Погода в Москве: прогноз сейчас не удалось подтвердить.'
+    return {
+        'url': WEATHER_URL,
+        'weather_line': line,
+        'rain_likely': rain_likely,
+    }
 
 
 def main() -> None:
@@ -175,7 +212,20 @@ def main() -> None:
     weather = fetch_weather_summary()
     seed = now.date().toordinal()
 
-    main_item, small_item = choose_pair(registry['main_items'], registry['small_items'], recent, seed, cooldown)
+    main_items = [
+        item for item in allowed_items(registry['main_items'], registry.get('semantic_bans', []))
+        if item.get('family') in {'body', 'reading', 'communication'}
+    ]
+    small_items = [
+        item for item in allowed_items(registry['small_items'], registry.get('semantic_bans', []))
+        if item.get('has_link')
+    ]
+    # При осадках не предлагать прогулочный маршрут как «маленькую» рекомендацию.
+    if weather['rain_likely']:
+        small_items = [item for item in small_items if item.get('family') != 'walk']
+    if not main_items or not small_items:
+        raise RuntimeError('Daily registry has no valid candidates after semantic bans and usefulness/weather gates')
+    main_item, small_item = choose_pair(main_items, small_items, recent, seed, cooldown)
 
     print('DAILY_CONTEXT')
     print(f'today: {today}')
@@ -218,7 +268,7 @@ def main() -> None:
     print('- Не давай main и small из одного семейства.')
     print('- Не перефразируй abstract-management мысли.')
     print('- Если linked-item выбран, ссылка уже встроена в текст и не должна теряться.')
-    print('- Если возможно, хотя бы одна из строк 3 или 4 должна быть linked-item.')
+    print('- Не подменяй полезность случайной ссылкой: linked-item выбирай только когда он сам уместен.')
     print('\nSEMANTIC_BANS')
     for value in registry.get('semantic_bans', []):
         print(f'- {value}')

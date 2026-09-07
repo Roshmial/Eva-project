@@ -41,6 +41,17 @@ Execution persistence rule:
   4. the remaining step needs an explicit user decision, secret, access, or policy choice.
 - If none of these stop conditions applies, continue the task instead of reporting "not done yet" as if that were the deliverable.
 
+## Gateway restart continuation rule
+
+When a live task requires restarting a gateway/service, a restart is an implementation step, not a handoff or completion point.
+
+- Do not send a status-only reply such as “gateway restarted; дальше продолжу” and stop while the original task remains actionable.
+- Before restarting, preserve the task's exact next operation and acceptance criterion.
+- After the service is healthy, immediately resume that operation in the same execution cycle; report the user-facing result, not merely service liveness.
+- For a gateway restart, do not infer recovery from systemd alone: after restart, verify that the chat platform is connected and send an explicit recovery/continuation message into the affected chat before treating the restart as complete. Use a delivery path independent of the restarted gateway when necessary.
+- Treat service liveness as a prerequisite check. It never substitutes for completion of the user’s original request.
+- Restart only once per coherent change set unless a later verified failure requires another change.
+
 ## Completion Rules
 
 Before any final answer, explicitly verify:

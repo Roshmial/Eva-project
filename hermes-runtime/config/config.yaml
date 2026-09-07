@@ -1,16 +1,16 @@
 model:
-  default: gpt-5.4
+  default: gpt-5.6-terra-900k
   provider: openai-codex
-  base_url: https://chatgpt.com/backend-api/codex
   fallback_providers: '["openai-codex"]'
   fallback_models: '["gemma-4-26b-a4b-it", "gpt-5.4"]'
+  base_url: https://chatgpt.com/backend-api/codex
 fallback_providers: []
 toolsets:
   - hermes-cli
 agent:
   max_turns: 150
   gateway_timeout: 1800
-  restart_drain_timeout: 180
+  restart_drain_timeout: 20
   api_max_retries: 3
   service_tier: ''
   tool_use_enforcement: auto
@@ -19,6 +19,7 @@ agent:
   environment_probe: true
   environment_hint: ''
   coding_context: auto
+  verify_on_stop: false
   gateway_timeout_warning: 900
   clarify_timeout: 600
   gateway_notify_interval: 180
@@ -67,7 +68,7 @@ agent:
       \ you today! Every question is AMAZING and we're gonna CRUSH IT together! This\
       \ is gonna be LEGENDARY! ARE YOU READY?! LET'S DO THIS! \U0001F4AA\U0001F624\
       \U0001F680
-  verify_on_stop: false
+  restart_after_turn_timeout: 600
 terminal:
   backend: local
   modal_mode: auto
@@ -83,6 +84,7 @@ terminal:
   singularity_image: docker://nikolaik/python-nodejs:python3.11-nodejs20
   modal_image: nikolaik/python-nodejs:python3.11-nodejs20
   daytona_image: nikolaik/python-nodejs:python3.11-nodejs20
+  vercel_runtime: node24
   container_cpu: 1
   container_memory: 5120
   container_disk: 51200
@@ -92,7 +94,6 @@ terminal:
   docker_extra_args: []
   docker_run_as_host_user: false
   persistent_shell: true
-  vercel_runtime: node24
   lifetime_seconds: 300
 web:
   backend: ddgs
@@ -106,7 +107,7 @@ browser:
   allow_private_urls: false
   engine: auto
   auto_local_for_private_urls: true
-  cdp_url: http://127.0.0.1:9224
+  cdp_url: ''
   dialog_policy: must_respond
   dialog_timeout_s: 300
   camofox:
@@ -118,6 +119,7 @@ browser:
     loopback_host_alias: host.docker.internal
   cloud_provider: local
   use_gateway: false
+  backend: 'off'
 checkpoints:
   enabled: true
   max_snapshots: 20
@@ -125,8 +127,8 @@ checkpoints:
   max_file_size_mb: 10
   auto_prune: true
   retention_days: 7
-  delete_orphans: true
   min_interval_hours: 24
+  delete_orphans: true
 file_read_max_chars: 100000
 mcp_discovery_timeout: 1.5
 tool_output:
@@ -150,23 +152,12 @@ compression:
   target_ratio: 0.2
   protect_last_n: 20
   hygiene_hard_message_limit: 250
+  hygiene_failure_cooldown_seconds: 1800
   protect_first_n: 3
   abort_on_summary_failure: false
   codex_gpt55_autoraise: true
   in_place: false
   hygiene_notify_timeout: false
-  hygiene_failure_cooldown_seconds: 1800
-kanban:
-  dispatch_in_gateway: true
-  dispatch_interval_seconds: 60
-  failure_limit: 2
-  worker_log_rotate_bytes: 2097152
-  worker_log_backup_count: 1
-  orchestrator_profile: ''
-  default_assignee: ''
-  auto_decompose: true
-  auto_decompose_per_tick: 3
-  dispatch_stale_timeout_seconds: 14400
 prompt_caching:
   cache_ttl: 5m
 openrouter:
@@ -192,12 +183,6 @@ auxiliary:
     api_key: ''
     timeout: 120
     download_timeout: 30
-  web_extract:
-    provider: custom
-    model: gemma-4-26b-a4b-it
-    base_url: http://127.0.0.1:8080/v1
-    api_key: ''
-    timeout: 360
   compression:
     provider: custom
     model: gemma-4-26b-a4b-it
@@ -265,9 +250,15 @@ auxiliary:
     base_url: ''
     api_key: ''
     timeout: 60
+  web_extract:
+    provider: custom
+    model: gemma-4-26b-a4b-it
+    base_url: http://127.0.0.1:8080/v1
+    api_key: ''
+    timeout: 360
 display:
   compact: false
-  personality: concise
+  personality: ''
   resume_display: full
   resume_exchanges: 10
   resume_max_user_chars: 300
@@ -282,6 +273,7 @@ display:
   show_reasoning: false
   reasoning_full: false
   memory_notifications: 'on'
+  background_process_notifications: concise
   streaming: false
   timestamps: false
   final_response_markdown: strip
@@ -323,7 +315,6 @@ display:
   copy_shortcut: auto
   tool_progress: all
   cleanup_progress: false
-  background_process_notifications: all
 dashboard:
   theme: default
   show_token_analytics: false
@@ -372,7 +363,6 @@ tts:
   use_gateway: false
 stt:
   enabled: true
-  provider: local
   local:
     model: base
     language: ''
@@ -385,6 +375,7 @@ stt:
     language_code: ''
     tag_audio_events: false
     diarize: false
+  provider: local
 voice:
   record_key: ctrl+b
   max_recording_seconds: 120
@@ -404,8 +395,8 @@ memory:
   write_approval: false
   memory_char_limit: 2200
   user_char_limit: 2200
-  provider: ''
   nudge_interval: 10
+  provider: ''
   flush_min_turns: 6
 delegation:
   model: ''
@@ -414,10 +405,10 @@ delegation:
   api_key: ''
   api_mode: ''
   inherit_mcp_toolsets: true
-  max_iterations: 50
+  max_iterations: 250
   child_timeout_seconds: 600
   reasoning_effort: ''
-  max_concurrent_children: 3
+  max_concurrent_children: 10
   max_spawn_depth: 1
   orchestrator_enabled: true
   subagent_auto_approve: false
@@ -499,9 +490,10 @@ approvals:
   mcp_reload_confirm: true
   destructive_slash_confirm: false
 command_allowlist:
-  - delete in root path
-  - recursive delete
   - stop/restart hermes gateway (kills running agents)
+  - recursive delete
+  - delete in root path
+  - execute_code
 hooks_auto_accept: false
 security:
   allow_private_urls: false
@@ -524,6 +516,17 @@ cron:
     expected_audience: ''
     nas_jwks_url: ''
   wrap_response: false
+kanban:
+  dispatch_in_gateway: true
+  dispatch_interval_seconds: 60
+  failure_limit: 2
+  worker_log_rotate_bytes: 2097152
+  worker_log_backup_count: 1
+  orchestrator_profile: ''
+  default_assignee: ''
+  auto_decompose: true
+  auto_decompose_per_tick: 3
+  dispatch_stale_timeout_seconds: 14400
 code_execution:
   mode: project
   timeout: 300
@@ -544,7 +547,6 @@ logging:
 model_catalog:
   enabled: true
   url: https://hermes-agent.nousresearch.com/docs/api/model-catalog.json
-  ttl_hours: 1
 network:
   force_ipv4: false
 gateway:
@@ -602,7 +604,7 @@ secrets:
 paste_collapse_threshold: 5
 paste_collapse_threshold_fallback: 5
 paste_collapse_char_threshold: 2000
-_config_version: 33
+_config_version: 40
 model_aliases:
   light:
     provider: custom
