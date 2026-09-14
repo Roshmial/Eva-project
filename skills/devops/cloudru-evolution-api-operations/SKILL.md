@@ -48,6 +48,14 @@ For Evolution VPC docs, the OpenAPI exposed:
 - VPC list path: `GET /v1/vpcs?projectId=<PROJECT_UUID>`
 - note: this VPC API uses `/v1/...` paths and camelCase query params such as `projectId`, unlike the Compute-style `/api/v1/...` shape
 
+For AI Agents, first retrieve the product OpenAPI from the API reference rather than deriving its host from Compute:
+- base host: `https://ai-agents.api.cloud.ru`
+- project agent list: `GET /api/v1/{projectId}/agents?limit=100`
+- project agent-system list: `GET /api/v1/{projectId}/agentSystems?limit=100`
+- project product status and quota: `GET /api/v1/{projectId}`
+- use the same IAM bearer token as Compute.
+- Treat these lists as the Public API inventory of ordinary agents and agent systems. If the console shows EvoClaw resources while both lists are empty, do not report that EvoClaw is absent: first compare the console project selector and the product-specific resource type, because EvoClaw may use a distinct console contour.
+
 For VM create in a public-only contour, a live-safe pattern was confirmed:
 - VM create path: `POST https://compute.api.cloud.ru/api/v1.1/vms`
 - `interfaces[].type` may be `direct_ip`
@@ -212,6 +220,9 @@ That can produce asymmetric routing: ingress arrives on the public interface, bu
 
 - Pitfall: treating `404` on a guessed endpoint as evidence the key or API is broken.
   Fix: first confirm token issuance, then verify the correct service host.
+
+- Pitfall: declaring that AI Agents or EvoClaw resources are absent from one empty API list.
+  Fix: confirm the exact project ID shown in the console and query both `/agents` and `/agentSystems`; keep Public API inventory separate from product-specific console resources, because their scopes may differ.
 
 - Pitfall: assuming the VPC API follows the same path shape as Compute.
   Fix: for VPC, check the spec and use `/v1/...` with the documented query params such as `projectId`.

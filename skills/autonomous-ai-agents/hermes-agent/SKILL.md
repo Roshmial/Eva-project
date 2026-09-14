@@ -307,6 +307,14 @@ Important operational distinction:
 - `hermes cron tick` executes a scheduler tick now and is the fastest verification path after cron/runtime fixes when waiting for the next real schedule would leave the result unverified.
 - If jobs are expected to fire automatically, verify the gateway/scheduler is actually running; a normal CLI chat session does not drive cron by itself.
 
+#### Cron approval boundary
+
+Before prescribing or putting `execute_code` into an unattended cron prompt, inspect `hermes config get approvals.cron_mode`.
+
+- `deny` means scheduled agent runs cannot use `execute_code`, even if ordinary interactive sessions can. Do not retry it or treat the cron run as successful after the blocked call.
+- For deterministic Python work under this policy, use a reviewed script in `~/.hermes/scripts/` with a `--no-agent` job where possible; for agent jobs, use the available approved tools and keep any terminal use minimal and explicitly verified.
+- Confirm the repair through `hermes cron runs <job-id> --limit N` and the concrete output artifact, not only `cron status`.
+
 ### Webhooks
 
 ```

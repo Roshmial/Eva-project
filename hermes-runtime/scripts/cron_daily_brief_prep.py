@@ -11,6 +11,32 @@ TZ = ZoneInfo('Europe/Moscow')
 DAILY_OUT = Path('/home/hermes/.hermes/cron/output/329913efa98a')
 REGISTRY_PATH = Path('/home/hermes/workspace/eva-daily-usefulness-registry.yaml')
 WEATHER_URL = 'https://pogoda.mail.ru/prognoz/moskva/'
+POOL_FAMILIES = frozenset({'work', 'learning', 'communication', 'finance', 'body', 'systems', 'digital', 'life-quality'})
+RESOURCE_FAMILIES = frozenset({'video', 'audio', 'article', 'route', 'culture', 'tool'})
+
+
+def validate_main_pool(registry: dict) -> None:
+    """Reject a malformed weekly refresh before it can drive the daily selector."""
+    items = registry.get('main_items', [])
+    target = int(registry.get('settings', {}).get('pool_target', 0) or 0)
+    if target and len(items) != target:
+        raise ValueError(f'Daily main pool must contain exactly {target} items, got {len(items)}')
+    ids = [item.get('id') for item in items]
+    if any(not item_id for item_id in ids) or len(set(ids)) != len(ids):
+        raise ValueError('Daily main pool contains missing or duplicate ids')
+    kinds = [item.get('kind', 'action') for item in items]
+    if any(kind not in {'action', 'resource'} for kind in kinds):
+        raise ValueError('Daily main pool contains an unknown item kind')
+    resources = [item for item in items if item.get('kind') == 'resource']
+    if resources and len(resources) != 18:
+        raise ValueError('A resource-enabled daily pool must contain exactly 18 resource cards')
+    for item in items:
+        family = item.get('family')
+        if item.get('kind', 'action') == 'resource':
+            if family not in RESOURCE_FAMILIES or not item.get('source_checked') or not item.get('url'):
+                raise ValueError('Resource card misses a verified family, url, or source_checked flag')
+        elif family not in POOL_FAMILIES:
+            raise ValueError('Action card has an invalid family')
 
 
 def extract_response(text: str) -> str:
@@ -43,6 +69,7 @@ def load_registry() -> dict:
     data.setdefault('small_items', [])
     data.setdefault('semantic_bans', [])
     data.setdefault('settings', {})
+    validate_main_pool(data)
     return data
 
 
@@ -67,6 +94,30 @@ def allowed_items(items: list[dict], semantic_bans: list[str]) -> list[dict]:
     return allowed
 
 
+def eligible_main_items(registry: dict) -> list[dict]:
+    """Return every non-banned main family; the pool, not a legacy allowlist, drives rotation."""
+    return allowed_items(registry.get('main_items', []), registry.get('semantic_bans', []))
+
+
+def is_actionable_linked_item(item: dict) -> bool:
+    """A supplementary link must describe an action, never merely advertise a reference."""
+    text = item.get('text', '')
+    if not item.get('has_link') or not re.search(r'\[[^\]]+\]\(https?://[^\)]+\)', text):
+        return False
+    action_markers = ('разбери', 'проверь', 'сравни', 'сделай', 'собери', 'пройди', 'открой', 'выбери')
+    return any(marker in normalize(text) for marker in action_markers)
+
+
+def eligible_small_items(registry: dict, rain_likely: bool) -> list[dict]:
+    items = [
+        item for item in allowed_items(registry.get('small_items', []), registry.get('semantic_bans', []))
+        if is_actionable_linked_item(item)
+    ]
+    if rain_likely:
+        items = [item for item in items if item.get('family') != 'walk']
+    return items
+
+
 def used_recent_ids(items: list[dict], recent_texts: list[str]) -> set[str]:
     haystack = normalize('\n'.join(recent_texts))
     used = set()
@@ -87,66 +138,39 @@ def recent_families(items: list[dict], recent_texts: list[str], cooldown: int) -
     return {item.get('family') for item in items if item.get('id') in used_ids}
 
 
-def choose_main(items: list[dict], recent_texts: list[str], day_seed: int, cooldown: int) -> dict:
+def choose_main(items: list[dict], recent_texts: list[str], day_seed: int, cooldown: int) -> dict | None:
+    """Choose only a genuinely fresh main recommendation; never fall back to a repeat."""
     used_ids = used_recent_ids(items, recent_texts)
     used_families = recent_families(items, recent_texts, cooldown)
     fresh = [item for item in items if item['id'] not in used_ids and item.get('family') not in used_families]
-    if fresh:
-        ranked = []
-        for item in fresh:
-            stable = (sum(ord(c) for c in item['id']) + day_seed) % 97
-            ranked.append(((stable, item['id']), item))
-        ranked.sort(key=lambda x: x[0])
-        return ranked[0][1]
-
-    ranked = []
-    for item in items:
-        same_recent = item['id'] in used_ids
-        family_repeat = item.get('family') in used_families
-        stable = (sum(ord(c) for c in item['id']) + day_seed) % 97
-        ranked.append(((same_recent, family_repeat, stable, item['id']), item))
-    ranked.sort(key=lambda x: x[0])
-    return ranked[0][1]
+    if not fresh:
+        return None
+    return min(fresh, key=lambda item: ((sum(ord(c) for c in item['id']) + day_seed) % 97, item['id']))
 
 
-def choose_small(items: list[dict], recent_texts: list[str], day_seed: int, cooldown: int, main_item: dict) -> dict:
+def choose_small(
+    items: list[dict], recent_texts: list[str], day_seed: int, cooldown: int, main_item: dict | None,
+) -> dict | None:
+    """Choose only a fresh supporting recommendation; absence is better than a replay."""
     used_ids = used_recent_ids(items, recent_texts)
     used_families = recent_families(items, recent_texts, cooldown)
-    main_tokens = item_tokens(main_item)
-    main_family = main_item.get('family')
-    fresh = []
-    for item in items:
-        if item['id'] in used_ids:
-            continue
-        if item.get('family') in used_families:
-            continue
-        if item.get('family') == main_family:
-            continue
-        if main_tokens & item_tokens(item):
-            continue
-        fresh.append(item)
-    if fresh:
-        ranked = []
-        for item in fresh:
-            stable = (sum(ord(c) for c in item['id']) + day_seed + 17) % 97
-            ranked.append(((stable, item['id']), item))
-        ranked.sort(key=lambda x: x[0])
-        return ranked[0][1]
-
-    ranked = []
-    for item in items:
-        same_recent = item['id'] in used_ids
-        family_repeat = item.get('family') in used_families
-        same_family = item.get('family') == main_family
-        overlap = len(main_tokens & item_tokens(item))
-        stable = (sum(ord(c) for c in item['id']) + day_seed + 17) % 97
-        prefer_link = 0 if item.get('has_link') else 1
-        ranked.append(((same_recent, same_family, overlap, family_repeat, prefer_link, stable, item['id']), item))
-    ranked.sort(key=lambda x: x[0])
-    return ranked[0][1]
+    main_tokens = item_tokens(main_item) if main_item else set()
+    main_family = main_item.get('family') if main_item else None
+    fresh = [
+        item for item in items
+        if item['id'] not in used_ids
+        and item.get('family') not in used_families
+        and item.get('family') != main_family
+        and not (main_tokens & item_tokens(item))
+    ]
+    if not fresh:
+        return None
+    return min(fresh, key=lambda item: ((sum(ord(c) for c in item['id']) + day_seed + 17) % 97, item['id']))
 
 
-def choose_pair(main_items: list[dict], small_items: list[dict], recent_texts: list[str], day_seed: int, cooldown: int) -> tuple[dict, dict]:
+def choose_pair(
+    main_items: list[dict], small_items: list[dict], recent_texts: list[str], day_seed: int, cooldown: int,
+) -> tuple[dict | None, dict | None]:
     main_item = choose_main(main_items, recent_texts, day_seed, cooldown)
     small_item = choose_small(small_items, recent_texts, day_seed, cooldown, main_item)
     return main_item, small_item
@@ -212,19 +236,10 @@ def main() -> None:
     weather = fetch_weather_summary()
     seed = now.date().toordinal()
 
-    main_items = [
-        item for item in allowed_items(registry['main_items'], registry.get('semantic_bans', []))
-        if item.get('family') in {'body', 'reading', 'communication'}
-    ]
-    small_items = [
-        item for item in allowed_items(registry['small_items'], registry.get('semantic_bans', []))
-        if item.get('has_link')
-    ]
-    # При осадках не предлагать прогулочный маршрут как «маленькую» рекомендацию.
-    if weather['rain_likely']:
-        small_items = [item for item in small_items if item.get('family') != 'walk']
-    if not main_items or not small_items:
-        raise RuntimeError('Daily registry has no valid candidates after semantic bans and usefulness/weather gates')
+    main_items = eligible_main_items(registry)
+    small_items = eligible_small_items(registry, weather['rain_likely'])
+    if not main_items:
+        raise RuntimeError('Daily registry has no valid main candidates after semantic bans')
     main_item, small_item = choose_pair(main_items, small_items, recent, seed, cooldown)
 
     print('DAILY_CONTEXT')
@@ -249,20 +264,26 @@ def main() -> None:
     }
     day_line = f"{ru_weekdays.get(weekday, weekday)}, {now.day} {month_names[now.month]}. {weather['weather_line']}"
     print(day_line)
-    print('\nSELECTED_MAIN')
-    print(f"- id: {main_item['id']}")
-    print(f"- family: {main_item['family']}")
-    print(f"- has_link: {str(bool(main_item.get('has_link'))).lower()}")
-    print(f"- text: {main_item['text']}")
-    print('\nSELECTED_SMALL')
-    print(f"- id: {small_item['id']}")
-    print(f"- family: {small_item['family']}")
-    print(f"- has_link: {str(bool(small_item.get('has_link'))).lower()}")
-    print(f"- text: {small_item['text']}")
-    print('\nSELECTED_MAIN_RENDERED')
-    print(main_item['text'])
-    print('\nSELECTED_SMALL_RENDERED')
-    print(small_item['text'])
+    print('\nRECOMMENDATION_AVAILABILITY')
+    print(f"- main_fresh: {str(main_item is not None).lower()}")
+    print(f"- small_fresh: {str(small_item is not None).lower()}")
+    print(f"- no_fresh_recommendations: {str(main_item is None and small_item is None).lower()}")
+    if main_item:
+        print('\nSELECTED_MAIN')
+        print(f"- id: {main_item['id']}")
+        print(f"- family: {main_item['family']}")
+        print(f"- has_link: {str(bool(main_item.get('has_link'))).lower()}")
+        print(f"- text: {main_item['text']}")
+        print('\nSELECTED_MAIN_RENDERED')
+        print(main_item['text'])
+    if small_item:
+        print('\nSELECTED_SMALL')
+        print(f"- id: {small_item['id']}")
+        print(f"- family: {small_item['family']}")
+        print(f"- has_link: {str(bool(small_item.get('has_link'))).lower()}")
+        print(f"- text: {small_item['text']}")
+        print('\nSELECTED_SMALL_RENDERED')
+        print(small_item['text'])
     print('\nANTI_REPEAT_RULES')
     print('- Не повторяй свежие идеи из recent outputs.')
     print('- Не давай main и small из одного семейства.')

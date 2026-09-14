@@ -35,27 +35,37 @@ Do not spend the first pass on architecture notes, broad redesigns, or abstract 
 3. Reuse the existing local branch.
    Extend the user's current local implementation first instead of building a parallel subsystem. If one path is already mature, attach the new behavior there and prove value before extracting a general layer.
 
-4. Add telemetry in the same change.
+4. Measure the real economic baseline before changing anything.
+   For an agent runtime, inspect both fixed prompt surface and recent production usage: `hermes prompt-size --platform <platform> --json`, then read session-level input, output, cache-read, and tool-call usage from the local state store. Separate uncached input from cache-read tokens: a cached fixed prompt can still consume context capacity and cold-start budget, but a byte reduction is not automatically a proportional billing saving.
+
+5. For long tool-heavy cycles, profile the transcript before optimizing the fixed prompt.
+   Group persisted message volume by `role` and `tool_name`, then rank the largest contributors. Treat repeated `read_file`, `skill_view`, terminal logs, and patch results as a history-growth problem: preserve the canonical artifact, keep a compact result/reference in the conversation, and retain a protected recent tail. Enable or tune the runtime's existing episodic proactive tool-result pruning before designing a new compaction subsystem; it should fire only after a material reclaim threshold so it does not break prompt caching on every turn.
+
+6. Set a material-impact gate before implementation.
+   Do not present cosmetic cleanup as an optimization result. For users who expect tangible savings, bundle only changes whose combined verified effect is materially visible against the baseline; use a target such as 20%+ fixed-prompt reduction or a comparable measured reduction in recurring model calls. Report smaller edits as hygiene and keep them out of the claimed optimization outcome.
+
+7. Add telemetry in the same change.
    Optimization work is incomplete if the effect cannot be measured. Add counters or reports for:
    - how often the optimization fires
    - chars/tokens saved when feasible
    - policy distribution when multiple output policies exist
+   - before/after fixed prompt and cache-read attribution when the change affects prompt assembly
 
-5. Add focused tests.
+8. Add focused tests.
    Prefer one of these patterns:
    - failing targeted test before implementation
    - targeted regression test for the new path
    - follow-up smoke/regression slice on the affected area
 
-6. Measure the effect after implementation.
+9. Measure the effect after implementation.
    Validate with both:
    - tests
    - a small synthetic or real-path scenario showing concrete before/after size reduction
 
-7. Generalize only after multiple concrete wins exist.
+10. Generalize only after multiple concrete wins exist.
    Once several optimizations are in place, extract a minimal shared selector/contract rather than inventing a framework up front.
 
-8. Standardize the output contract before building a framework.
+11. Standardize the output contract before building a framework.
    Use this progression:
    - land concrete quick wins first;
    - introduce a tiny shared policy selector such as `full / compact / reference / delta`;
@@ -65,7 +75,7 @@ Do not spend the first pass on architecture notes, broad redesigns, or abstract 
 
    Keep this descriptor thin and implementation-driven. It should describe already-working behavior, not speculate about future framework layers.
 
-9. Close the stream explicitly when the user asks for a turnkey result.
+12. Close the stream explicitly when the user asks for a turnkey result.
    In bounded closeout mode:
    - define what is in v1 and what is intentionally out of scope;
    - stop proposing the next micro-improvement by default;
@@ -103,6 +113,7 @@ Use this vocabulary as a light selector layer over existing implementations. Avo
 - Do not jump to fuzzy matching or cross-task/global reuse before proving exact, task-scoped behavior.
 - Do not introduce new infrastructure when the current local code path can absorb the change.
 - Do not stop at "the tests pass" if a tiny runtime measurement can show real savings.
+- Do not repeatedly load a full skill within one active phase when its guidance is already present in the retained context; preserve the loaded guidance and emit a compact reuse acknowledgement instead, because repeated skill bodies become a dominant history payload in long cycles.
 
 # Reporting back to the user
 

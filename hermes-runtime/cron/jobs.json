@@ -20,15 +20,15 @@
       "schedule_display": "0 15 * * *",
       "repeat": {
         "times": null,
-        "completed": 106
+        "completed": 113
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-05-27T15:43:18.595108+00:00",
-      "next_run_at": "2026-09-07T15:00:00+00:00",
-      "last_run_at": "2026-09-06T15:01:48.950558+00:00",
+      "next_run_at": "2026-09-14T15:00:00+00:00",
+      "last_run_at": "2026-09-13T15:01:14.273328+00:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -47,9 +47,9 @@
       "fire_claim": null,
       "failure_streak": 0,
       "last_dispatch": {
-        "scheduled_at": "2026-09-06T15:00:00+00:00",
-        "dispatched_at": "2026-09-06T15:00:45.048067+00:00",
-        "lateness_seconds": 45.0,
+        "scheduled_at": "2026-09-13T15:00:00+00:00",
+        "dispatched_at": "2026-09-13T15:00:03.452813+00:00",
+        "lateness_seconds": 3.5,
         "kind": "on_time"
       }
     },
@@ -73,15 +73,15 @@
       "schedule_display": "55 14 * * *",
       "repeat": {
         "times": null,
-        "completed": 105
+        "completed": 112
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-05-28T14:07:14.429160+00:00",
-      "next_run_at": "2026-09-07T14:55:00+00:00",
-      "last_run_at": "2026-09-06T14:55:52.110037+00:00",
+      "next_run_at": "2026-09-14T14:55:00+00:00",
+      "last_run_at": "2026-09-13T14:55:12.984052+00:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -98,9 +98,9 @@
       "fire_claim": null,
       "failure_streak": 0,
       "last_dispatch": {
-        "scheduled_at": "2026-09-06T14:55:00+00:00",
-        "dispatched_at": "2026-09-06T14:55:39.945728+00:00",
-        "lateness_seconds": 39.9,
+        "scheduled_at": "2026-09-13T14:55:00+00:00",
+        "dispatched_at": "2026-09-13T14:55:03.283416+00:00",
+        "lateness_seconds": 3.3,
         "kind": "on_time"
       }
     },
@@ -124,17 +124,17 @@
       "schedule_display": "30 15 * * 0",
       "repeat": {
         "times": null,
-        "completed": 21
+        "completed": 22
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-05-28T14:07:15.436653+00:00",
-      "next_run_at": "2026-09-13T15:30:00+00:00",
-      "last_run_at": "2026-09-06T15:32:19.289299+00:00",
-      "last_status": "error",
-      "last_error": "Interrupted by shutdown before terminal completion.",
+      "next_run_at": "2026-09-20T15:30:00+00:00",
+      "last_run_at": "2026-09-13T15:31:48.786620+00:00",
+      "last_status": "ok",
+      "last_error": null,
       "last_delivery_error": null,
       "deliver": "origin",
       "origin": {
@@ -148,12 +148,12 @@
       "profile": null,
       "fire_claim": null,
       "last_dispatch": {
-        "scheduled_at": "2026-09-06T15:30:00+00:00",
-        "dispatched_at": "2026-09-06T15:30:46.928402+00:00",
-        "lateness_seconds": 46.9,
+        "scheduled_at": "2026-09-13T15:30:00+00:00",
+        "dispatched_at": "2026-09-13T15:30:05.210522+00:00",
+        "lateness_seconds": 5.2,
         "kind": "on_time"
       },
-      "failure_streak": 1
+      "failure_streak": 0
     },
     {
       "id": "5e291c60ab09",
@@ -175,17 +175,17 @@
       "schedule_display": "0 17 * * 0",
       "repeat": {
         "times": null,
-        "completed": 20
+        "completed": 21
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-05-29T23:47:34.685920+00:00",
-      "next_run_at": "2026-09-13T17:00:00+00:00",
-      "last_run_at": "2026-09-06T17:02:46.989428+00:00",
-      "last_status": "error",
-      "last_error": "Interrupted by shutdown before terminal completion.",
+      "next_run_at": "2026-09-20T17:00:00+00:00",
+      "last_run_at": "2026-09-13T17:01:23.076184+00:00",
+      "last_status": "ok",
+      "last_error": null,
       "last_delivery_error": null,
       "deliver": "origin",
       "origin": {
@@ -203,12 +203,12 @@
       "profile": null,
       "fire_claim": null,
       "last_dispatch": {
-        "scheduled_at": "2026-09-06T17:00:00+00:00",
-        "dispatched_at": "2026-09-06T17:00:52.785860+00:00",
-        "lateness_seconds": 52.8,
+        "scheduled_at": "2026-09-13T17:00:00+00:00",
+        "dispatched_at": "2026-09-13T17:00:18.225743+00:00",
+        "lateness_seconds": 18.2,
         "kind": "on_time"
       },
-      "failure_streak": 1
+      "failure_streak": 0
     },
     {
       "id": "3c26e0954d43",
@@ -230,15 +230,15 @@
       "schedule_display": "45 6 * * 1",
       "repeat": {
         "times": 999,
-        "completed": 23
+        "completed": 24
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-01T06:55:18.124834+00:00",
-      "next_run_at": "2026-09-07T06:45:00+00:00",
-      "last_run_at": "2026-08-31T16:28:54.092799+00:00",
+      "next_run_at": "2026-09-14T06:45:00+00:00",
+      "last_run_at": "2026-09-07T06:48:52.324892+00:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -255,7 +255,14 @@
       ],
       "workdir": "/home/hermes/workspace",
       "profile": null,
-      "fire_claim": null
+      "fire_claim": null,
+      "last_dispatch": {
+        "scheduled_at": "2026-09-07T06:45:00+00:00",
+        "dispatched_at": "2026-09-07T06:45:00.285508+00:00",
+        "lateness_seconds": 0.3,
+        "kind": "on_time"
+      },
+      "failure_streak": 0
     },
     {
       "id": "c8b630f1fbb9",
@@ -277,17 +284,17 @@
       "schedule_display": "20 18 * * *",
       "repeat": {
         "times": null,
-        "completed": 95
+        "completed": 102
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-03T13:04:32.165457+00:00",
-      "next_run_at": "2026-09-07T18:20:00+00:00",
-      "last_run_at": "2026-09-06T18:21:01.158523+00:00",
+      "next_run_at": "2026-09-14T18:20:00+00:00",
+      "last_run_at": "2026-09-13T18:20:26.233222+00:00",
       "last_status": "error",
-      "last_error": "Script exited with code 1\nstderr:\nTraceback (most recent call last):\n  File \"/home/hermes/workspace/eva-data/backup_eva_hub.py\", line 47, in main\n    con = duckdb.connect(str(DB_PATH))\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nduckdb.duckdb.IOException: IO Error: Could not set lock on file \"/home/hermes/workspace/eva-data/eva_hub.duckdb\": Conflicting lock is held in /usr/bin/python3.12 (PID 529200) by user hermes. See also https://duckdb.org/docs/stable/connect/concurrency\n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File \"/home/hermes/.hermes/scripts/eva_hub_backup.py\", line 4, in <module>\n    runpy.run_path('/home/hermes/workspace/eva-data/backup_eva_hub.py', run_name='__main__')\n  File \"<frozen runpy>\", line 286, in run_path\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/home/hermes/workspace/eva-data/backup_eva_hub.py\", line 97, in <module>\n    main()\n  File \"/home/hermes/workspace/eva-data/backup_eva_hub.py\", line 64, in main\n    raise RuntimeError(\nRuntimeError: Live Eva Hub is locked; backup is not refreshed from stale fallback /home/hermes/workspace/eva-data/backups/eva_hub_latest.duckdb",
+      "last_error": "Script exited with code 1\nstderr:\nTraceback (most recent call last):\n  File \"/home/hermes/workspace/eva-data/backup_eva_hub.py\", line 47, in main\n    con = duckdb.connect(str(DB_PATH))\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nduckdb.duckdb.IOException: IO Error: Could not set lock on file \"/home/hermes/workspace/eva-data/eva_hub.duckdb\": Conflicting lock is held in /usr/bin/python3.12 (PID 981863) by user hermes. See also https://duckdb.org/docs/stable/connect/concurrency\n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File \"/home/hermes/.hermes/scripts/eva_hub_backup.py\", line 4, in <module>\n    runpy.run_path('/home/hermes/workspace/eva-data/backup_eva_hub.py', run_name='__main__')\n  File \"<frozen runpy>\", line 286, in run_path\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/home/hermes/workspace/eva-data/backup_eva_hub.py\", line 97, in <module>\n    main()\n  File \"/home/hermes/workspace/eva-data/backup_eva_hub.py\", line 64, in main\n    raise RuntimeError(\nRuntimeError: Live Eva Hub is locked; backup is not refreshed from stale fallback /home/hermes/workspace/eva-data/backups/eva_hub_latest.duckdb",
       "last_delivery_error": null,
       "deliver": "local",
       "origin": {
@@ -300,11 +307,11 @@
       "workdir": null,
       "profile": null,
       "fire_claim": null,
-      "failure_streak": 2,
+      "failure_streak": 9,
       "last_dispatch": {
-        "scheduled_at": "2026-09-06T18:20:00+00:00",
-        "dispatched_at": "2026-09-06T18:20:59.036381+00:00",
-        "lateness_seconds": 59.0,
+        "scheduled_at": "2026-09-13T18:20:00+00:00",
+        "dispatched_at": "2026-09-13T18:20:23.997304+00:00",
+        "lateness_seconds": 24.0,
         "kind": "on_time"
       }
     },
@@ -328,15 +335,15 @@
       "schedule_display": "every 120m",
       "repeat": {
         "times": null,
-        "completed": 1070
+        "completed": 1152
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-06T23:55:03.424901+00:00",
-      "next_run_at": "2026-09-07T07:11:06.278401+00:00",
-      "last_run_at": "2026-09-07T05:11:06.278401+00:00",
+      "next_run_at": "2026-09-14T06:07:35.961525+00:00",
+      "last_run_at": "2026-09-14T04:07:35.961525+00:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -353,18 +360,21 @@
       "fire_claim": null,
       "failure_streak": 0,
       "last_dispatch": {
-        "scheduled_at": "2026-09-07T05:08:58.213274+00:00",
-        "dispatched_at": "2026-09-07T05:09:49.072436+00:00",
-        "lateness_seconds": 50.9,
+        "scheduled_at": "2026-09-14T04:05:25.077091+00:00",
+        "dispatched_at": "2026-09-14T04:06:17.881709+00:00",
+        "lateness_seconds": 52.8,
         "kind": "on_time"
       }
     },
     {
       "id": "329913efa98a",
       "name": "eva-daily-self-development-brief",
-      "prompt": "[IMPORTANT: You are running as a scheduled cron job. DELIVERY: Your final response will be automatically delivered to the user as the message itself. Do not ask questions. Do not explain your process.]\n\nСначала используй output preflight script. Затем полностью прочитай и выполни `/home/hermes/workspace/eva-daily-v4.md`.\n\nВерни только готовое утреннее сообщение.",
-      "skills": [],
-      "skill": null,
+      "prompt": "[IMPORTANT: Ты работаешь как scheduled cron job. Финальный ответ автоматически доставляется Мише. Верни только готовый текст либо строго `[SILENT]`; не объясняй процесс и не задавай вопросов.]\n\nИспользуй preflight script как источник истины и затем прочитай `/home/hermes/workspace/eva-daily-v4.md`.\n\nЖёсткое правило: не создавай, не перефразируй и не возвращай рекомендации помимо `SELECTED_MAIN_RENDERED` и `SELECTED_SMALL_RENDERED`. Если preflight сообщает `no_fresh_recommendations: true`, верни ровно `[SILENT]`. Если доступна только одна свежая рекомендация, не дополняй сообщение выдуманной второй строкой.\n\nВерни только финальное утреннее сообщение.",
+      "skills": [
+        "daily-digest-quality-gates",
+        "personal-digest-editorial-loop"
+      ],
+      "skill": "daily-digest-quality-gates",
       "model": null,
       "provider": null,
       "base_url": null,
@@ -379,15 +389,15 @@
       "schedule_display": "30 4 * * *",
       "repeat": {
         "times": null,
-        "completed": 223
+        "completed": 231
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-09T08:53:20.923608+00:00",
-      "next_run_at": "2026-09-08T04:30:00+00:00",
-      "last_run_at": "2026-09-07T04:31:58.938247+00:00",
+      "next_run_at": "2026-09-15T04:30:00+00:00",
+      "last_run_at": "2026-09-14T04:30:54.968315+00:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -406,9 +416,9 @@
       "fire_claim": null,
       "failure_streak": 0,
       "last_dispatch": {
-        "scheduled_at": "2026-09-07T04:30:00+00:00",
-        "dispatched_at": "2026-09-07T04:30:47.177719+00:00",
-        "lateness_seconds": 47.2,
+        "scheduled_at": "2026-09-14T04:30:00+00:00",
+        "dispatched_at": "2026-09-14T04:30:19.154579+00:00",
+        "lateness_seconds": 19.2,
         "kind": "on_time"
       }
     },
@@ -432,15 +442,15 @@
       "schedule_display": "35 4 * * *",
       "repeat": {
         "times": null,
-        "completed": 84
+        "completed": 91
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-14T19:58:38.653901+00:00",
-      "next_run_at": "2026-09-08T04:35:00+00:00",
-      "last_run_at": "2026-09-07T04:37:01.146431+00:00",
+      "next_run_at": "2026-09-15T04:35:00+00:00",
+      "last_run_at": "2026-09-14T04:36:26.432770+00:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -456,9 +466,9 @@
       "fire_claim": null,
       "failure_streak": 0,
       "last_dispatch": {
-        "scheduled_at": "2026-09-07T04:35:00+00:00",
-        "dispatched_at": "2026-09-07T04:35:47.843535+00:00",
-        "lateness_seconds": 47.8,
+        "scheduled_at": "2026-09-14T04:35:00+00:00",
+        "dispatched_at": "2026-09-14T04:35:19.784058+00:00",
+        "lateness_seconds": 19.8,
         "kind": "on_time"
       }
     },
@@ -482,15 +492,15 @@
       "schedule_display": "5 5 * * 0",
       "repeat": {
         "times": null,
-        "completed": 12
+        "completed": 13
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-14T19:58:39.664902+00:00",
-      "next_run_at": "2026-09-13T05:05:00+00:00",
-      "last_run_at": "2026-09-06T05:11:23.113439+00:00",
+      "next_run_at": "2026-09-20T05:05:00+00:00",
+      "last_run_at": "2026-09-13T05:14:14.215308+00:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -504,7 +514,13 @@
       "enabled_toolsets": null,
       "workdir": "/home/hermes/workspace",
       "fire_claim": null,
-      "failure_streak": 0
+      "failure_streak": 0,
+      "last_dispatch": {
+        "scheduled_at": "2026-09-13T05:05:00+00:00",
+        "dispatched_at": "2026-09-13T05:05:18.311378+00:00",
+        "lateness_seconds": 18.3,
+        "kind": "on_time"
+      }
     },
     {
       "id": "2a42427656fa",
@@ -526,15 +542,15 @@
       "schedule_display": "0 6 * * 1",
       "repeat": {
         "times": null,
-        "completed": 12
+        "completed": 13
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-17T19:26:57.855186+00:00",
-      "next_run_at": "2026-09-14T06:00:00+00:00",
-      "last_run_at": "2026-08-31T06:00:42.257063+00:00",
+      "next_run_at": "2026-09-21T06:00:00+00:00",
+      "last_run_at": "2026-09-07T06:01:07.860212+00:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -548,15 +564,16 @@
       "enabled_toolsets": null,
       "workdir": null,
       "fire_claim": {
-        "at": "2026-09-07T06:00:59.220005+00:00",
-        "by": "server-oig0ig:460278:8aab0fcea5b147209f3a65e7604333c8"
+        "at": "2026-09-14T06:00:28.065122+00:00",
+        "by": "server-oig0ig:662008:048998b6e4c743b3a827ded83ec4c445"
       },
       "last_dispatch": {
-        "scheduled_at": "2026-09-07T06:00:00+00:00",
-        "dispatched_at": "2026-09-07T06:00:58.169259+00:00",
-        "lateness_seconds": 58.2,
+        "scheduled_at": "2026-09-14T06:00:00+00:00",
+        "dispatched_at": "2026-09-14T06:00:26.046357+00:00",
+        "lateness_seconds": 26.0,
         "kind": "on_time"
-      }
+      },
+      "failure_streak": 0
     },
     {
       "id": "cf27d7146dc2",
@@ -578,15 +595,15 @@
       "schedule_display": "0 1 * * 1",
       "repeat": {
         "times": null,
-        "completed": 13
+        "completed": 14
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-17T19:53:46.524810+00:00",
-      "next_run_at": "2026-09-14T01:00:00+00:00",
-      "last_run_at": "2026-09-07T01:02:46.872205+00:00",
+      "next_run_at": "2026-09-21T01:00:00+00:00",
+      "last_run_at": "2026-09-14T01:02:10.900966+00:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -601,9 +618,9 @@
       "workdir": null,
       "fire_claim": null,
       "last_dispatch": {
-        "scheduled_at": "2026-09-07T01:00:00+00:00",
-        "dispatched_at": "2026-09-07T01:00:32.043599+00:00",
-        "lateness_seconds": 32.0,
+        "scheduled_at": "2026-09-14T01:00:00+00:00",
+        "dispatched_at": "2026-09-14T01:00:00.979018+00:00",
+        "lateness_seconds": 1.0,
         "kind": "on_time"
       },
       "failure_streak": 0
@@ -628,15 +645,15 @@
       "schedule_display": "0 9 * * *",
       "repeat": {
         "times": null,
-        "completed": 80
+        "completed": 87
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-24T10:12:45.727335+00:00",
-      "next_run_at": "2026-09-07T09:00:00+00:00",
-      "last_run_at": "2026-09-06T09:15:22.134967+00:00",
+      "next_run_at": "2026-09-14T09:00:00+00:00",
+      "last_run_at": "2026-09-13T09:01:11.888810+00:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -652,10 +669,10 @@
       "fire_claim": null,
       "failure_streak": 0,
       "last_dispatch": {
-        "scheduled_at": "2026-09-06T09:00:00+00:00",
-        "dispatched_at": "2026-09-06T09:14:20.960058+00:00",
-        "lateness_seconds": 861.0,
-        "kind": "late"
+        "scheduled_at": "2026-09-13T09:00:00+00:00",
+        "dispatched_at": "2026-09-13T09:00:35.811277+00:00",
+        "lateness_seconds": 35.8,
+        "kind": "on_time"
       }
     },
     {
@@ -682,15 +699,15 @@
       "schedule_display": "10 9 * * *",
       "repeat": {
         "times": null,
-        "completed": 76
+        "completed": 83
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-24T10:23:07.186519+00:00",
-      "next_run_at": "2026-09-07T09:10:00+00:00",
-      "last_run_at": "2026-09-06T09:14:25.210547+00:00",
+      "next_run_at": "2026-09-14T09:10:00+00:00",
+      "last_run_at": "2026-09-13T09:10:40.174112+00:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -716,12 +733,78 @@
         "last_changed_at": "2026-09-05T09:10:36.809466+00:00"
       },
       "last_dispatch": {
-        "scheduled_at": "2026-09-06T09:10:00+00:00",
-        "dispatched_at": "2026-09-06T09:14:20.960058+00:00",
-        "lateness_seconds": 261.0,
+        "scheduled_at": "2026-09-13T09:10:00+00:00",
+        "dispatched_at": "2026-09-13T09:10:36.271680+00:00",
+        "lateness_seconds": 36.3,
         "kind": "on_time"
       }
+    },
+    {
+      "id": "77c55ff55f7e",
+      "name": "eva-weekly-advice-pool-refresh",
+      "prompt": "Еженедельное обновление пула ежедневных рекомендаций для Миши.\n\nРаботай только с `/home/hermes/workspace/eva-daily-usefulness-registry.yaml` и последними output основного daily job в `/home/hermes/.hermes/cron/output/329913efa98a/`.\n\nПул состоит из ровно 48 `main_items` и все они равноправны для selector. Целевой состав: 30 практических рекомендаций (`kind: action`) и 18 самостоятельных ресурсных рекомендаций (`kind: resource`).\n\nBootstrap: если в текущем пуле resource-карточек меньше 18, сначала доведи их до 18, заменяя только action-карточки. В этом единственном bootstrap-запуске разрешено заменить больше 12 карточек. После достижения состава 30/18 в обычный еженедельный запуск обновляй ровно 12 карточек: шесть action и шесть resource.\n\nРесурсная карточка сама является полноценной рекомендацией, а не приложением к совету. Для каждой resource-карточки обязательны: уникальный `id`, `family` (`video`, `audio`, `article`, `route`, `culture` или `tool`), `kind: resource`, короткий естественный текст по формуле «что посмотреть/послушать/открыть и зачем», прямая Markdown-ссылка, `url`, `source_checked: true`. Перед добавлением проверь ресурс через web: страница доступна, соответствует описанию, ссылка ведёт на сам материал или официальный источник. Не добавляй общую страницу документации, поисковую выдачу, плейлист без конкретного повода, устаревшее событие или непроверенную ссылку.\n\nДля action-карточки обязательны: уникальный `id`, одно из семейств `work`, `learning`, `communication`, `finance`, `body`, `systems`, `digital`, `life-quality`, `kind: action`, короткий конкретный текст. Никаких бытовых чек-листов, воды, псевдополезных действий, фиктивных ссылок и выдуманных фактов. Не используй semantic_bans.\n\nСохрани `semantic_bans` и `settings`; `settings.pool_target` должен быть 48, `settings.weekly_refresh_count` — 12. Если невозможно соблюсти все инварианты, исходный файл не меняй и верни JSON с `updated:false` и причиной.\n\nПосле изменения перечитай файл и верни только JSON: `{ \"updated\": true|false, \"bootstrap\": true|false, \"main_count\": N, \"action_count\": N, \"resource_count\": N, \"replaced_ids\": [...], \"invalid_items\": [] }`.",
+      "skills": [
+        "daily-digest-quality-gates"
+      ],
+      "skill": "daily-digest-quality-gates",
+      "model": null,
+      "provider": null,
+      "provider_snapshot": "openai-codex",
+      "model_snapshot": "gpt-5.6-terra-900k",
+      "base_url": null,
+      "script": null,
+      "no_agent": false,
+      "monitor_script": null,
+      "monitor_url": null,
+      "monitor_state": null,
+      "context_from": [
+        "self"
+      ],
+      "schedule": {
+        "kind": "cron",
+        "expr": "45 3 * * 1",
+        "display": "45 3 * * 1"
+      },
+      "schedule_display": "45 3 * * 1",
+      "repeat": {
+        "times": null,
+        "completed": 1
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-09-11T06:03:08.870344+00:00",
+      "next_run_at": "2026-09-21T03:45:00+00:00",
+      "last_run_at": "2026-09-14T03:48:16.175355+00:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "last_delivery_unverified": null,
+      "failure_streak": 0,
+      "deliver": "local",
+      "origin": {
+        "platform": "telegram",
+        "chat_id": "381204086",
+        "chat_name": "Михаил Рощин",
+        "thread_id": null,
+        "user_id": "381204086",
+        "scope_id": null
+      },
+      "enabled_toolsets": [
+        "file",
+        "web"
+      ],
+      "workdir": "/home/hermes/workspace",
+      "failure_deliver": "local",
+      "last_dispatch": {
+        "scheduled_at": "2026-09-14T03:45:00+00:00",
+        "dispatched_at": "2026-09-14T03:45:13.812638+00:00",
+        "lateness_seconds": 13.8,
+        "kind": "on_time"
+      },
+      "fire_claim": null
     }
   ],
-  "updated_at": "2026-09-07T06:00:59.220993+00:00"
+  "updated_at": "2026-09-14T06:00:28.066231+00:00"
 }

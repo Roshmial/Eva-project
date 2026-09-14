@@ -158,6 +158,9 @@ compression:
   codex_gpt55_autoraise: true
   in_place: false
   hygiene_notify_timeout: false
+  proactive_prune_tokens: 48000
+  proactive_prune_min_result_chars: 12000
+  proactive_prune_min_reclaim_tokens: 8192
 prompt_caching:
   cache_ttl: 5m
 openrouter:
@@ -423,6 +426,13 @@ skills:
   guard_agent_created: false
   write_approval: false
   creation_nudge_interval: 15
+  dynamic_index:
+    enabled: true
+    platforms:
+      - telegram
+    window_days: 30
+    min_loads: 2
+    max_skills: 80
 curator:
   enabled: true
   interval_hours: 168

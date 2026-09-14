@@ -112,6 +112,21 @@ Before releasing a candidate, check whether its action fits the actual day condi
 
 Make reject rules deterministic where the pipeline has a candidate registry: filter invalid classes before selection, rather than asking the final writer to notice them. If the remaining pool cannot produce a worthy supporting line, fail the selection step or omit that line when the format permits; never silently fall back to a banned pseudo-recommendation.
 
+A candidate selector must return no candidate when fresh inventory is exhausted. Never rank a repeated item as a fallback merely to satisfy a fixed output shape; the delivery contract must permit a shorter message or `[SILENT]`.
+
+### Renewable advice inventory
+For recurring daily advice, maintain a finite, curated candidate pool rather than substituting city events or a generic web scout when advice inventory runs low. Keep the sent-item ledger separate from the candidate pool: the ledger blocks repeats, while the pool supplies the next advice.
+
+Target a pool of 40–50 concrete cards across balanced families. Refresh a defined subset weekly, and trigger an earlier refresh when the number of eligible cards falls below the safety threshold. A refresh must replace weak, repeated, or overrepresented families before creating novelty for its own sake.
+
+Run the daily selector over every eligible family; do not hard-code a narrow subset that silently exhausts while valid inventory exists elsewhere. Require an explicit family distribution check before enabling a new pool.
+
+Treat supplementary recommendations as optional. Admit a linked card only when the text asks for a concrete action and the link is part of completing it; reject bare documentation, resource directories, and raw URLs because a reference alone is not daily advice.
+
+When testing a replenishment run, inspect the produced pool and simulate consecutive selections before deployment. Verify item counts, family distribution, unique IDs, and non-repetition; report only the actual job result, never a queued run as if it had produced a pool.
+
+Use `[SILENT]` only as the honest fail-safe while replenishment is unavailable or fails validation. It is not the normal replenishment strategy.
+
 ## User-specific operating notes
 
 For this user:
