@@ -252,6 +252,15 @@ Supported platforms: Telegram, Discord, Slack, WhatsApp, Signal, Email, SMS, Mat
 
 Platform docs: https://hermes-agent.nousresearch.com/docs/user-guide/messaging/
 
+### Проверка после обновления
+
+Если CLI показывает предупреждение о незавершённом restart после `hermes update`, не перезапускай gateway только по этому banner: marker может пережить уже выполненный restart.
+
+1. Сначала выполни read-only `hermes update --plan`: он сопоставляет установленный commit и runtime всех профилей.
+2. Если план показывает gateway на текущем commit, считавай banner stale; не делай restart и зафиксируй расхождение как runtime/CLI defect.
+3. Если plan показывает старый runtime, сначала проверь активные agent/cron runs и только затем выполняй явно согласованный `hermes gateway restart` или `hermes update`.
+4. После реального обновления или restart повтори `hermes update --plan`, `hermes gateway status` и проверку нужного пользовательского пути; успешный systemd status сам по себе не подтверждает новую версию кода.
+
 ### Scripted delivery without the agent loop
 
 For local scripts, cron jobs, CI notifications, and one-way operational messages, prefer the built-in `hermes send` command before inventing a custom bot script or routing the message through a full agent run.

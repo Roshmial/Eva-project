@@ -139,6 +139,19 @@ This skill governs how to package advisory answers for Misha so the result is im
    - If Misha explicitly decides to use a temporary credential, secret, or access key for a bounded live probe, do not get stuck re-litigating the security warning after stating it once. Make the smallest low-risk verification call first, confirm whether the contour is alive, and only then ask for rotation or safer handling as the next operational step.
    - If Misha explicitly decides to use a temporary credential, secret, or access key for a bounded live probe, do not get stuck re-litigating the security warning after stating it once. Make the smallest low-risk verification call first, confirm whether the contour is alive, and only then ask for rotation or safer handling as the next operational step.
 
+# Reference-driven presentation rule
+
+When Misha asks to use an earlier presentation as a reference, treat the reference as a structural and sales-language template unless he explicitly asks to retain its subject matter.
+
+1. Inspect the reference before drafting and extract its slide grammar: executive summary, benefits by role, current situation, target concept, use cases, evidence/impact, enabling architecture, rollout, and next decision.
+2. Build a one-line content contract for the new topic: subject, current state, roles, use cases, evidence status, and required systems. Use this contract to prevent terminology from the reference topic leaking into the new deck.
+3. For SAP-style sales decks, use conclusion-led titles and compact case blocks: situation → management gap → mechanism → decision → potential effect.
+4. Separate evidence classes visibly: user-provided current facts; synthetic model illustrations; external benchmarks; achieved client results. Never present a synthetic number or market association as a realized effect.
+5. Put role-specific value on one slide when requested. Preserve the roles exactly as named by Misha rather than replacing them with generic CIO/CFO personas.
+6. If automation is in scope, name the required operating components and their jobs, including the central project/resource/time system (PSA/PPM such as Timetta), CRM, HR, ERP/payroll, integration/data layer, calculation layer, and BI.
+7. Before delivery, scan the deck for terminology inherited only from the reference. Remove it unless it belongs to the new subject.
+8. For financial-model sales decks, treat Excel as the pilot instrument and PSA/PPM plus integrations as the subsequent automation stage unless Misha states otherwise. Put the plan–fact–forecast mechanics for project and budget on one dedicated slide, compress use cases into at most one or two slides, and strengthen the executive-summary slide with sourced benchmarks for cost, utilization, productivity, staffing, or reporting efficiency. Label industry comparisons, vendor-reported cases, synthetic examples, and pilot targets separately; never add or present them as guaranteed cumulative benefit.
+
 # Pitfalls
 
 - Pitfall: answering in a layered way (“short answer” + long expansion) when the user asked for brevity.

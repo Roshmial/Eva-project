@@ -29,13 +29,16 @@ metadata:
 4. Generate or adapt through Gamma deliberately.
    - Resolve an existing user-provided credential from approved secret storage or session history before declaring that access is unavailable; never expose it in text or saved artifacts.
    - Generate a `presentation` with `cardOptions.dimensions: "16x9"` whenever the user requests a wide-screen deck.
+   - When the user names an existing deck as the design reference, treat its visual system as a hard requirement: inspect the actual export and reuse its Gamma theme instead of approximating the style in prose. Follow `references/gamma-theme-reuse.md` for the verified API path.
    - For corrections to an approved deck, adapt the current Gamma with `/v1.0/generations/from-template`; name only the slides to change, state that all others must remain literal, and avoid a fresh storyline generation unless the user requests one.
    - Use a stable theme and an explicit visual instruction: executive B2B, diagrams and cards, no stock people unless requested. Ask for editable text, cards, lines, and arrows when information must remain legible; decorative generated images often lose labels and causal structure.
+   - Prefer a simple matrix or equal cards over a dense hub-and-spoke or long dual-chain diagram when every label is mandatory; Gamma may retain the visual while dropping editable labels.
    - Poll the generation to completion, download the export, and retain the editable Gamma URL plus the exported `.pptx`.
    - Keep no more than two active variants: current and one fallback. After the new export passes verification, archive intermediate adaptations and older Gamma documents, then confirm archive state through the API.
 
 5. Verify the actual generated deck, not the prompt.
    - Inspect exported slide text and count using `python-pptx`; traverse grouped shapes as well as top-level text frames when checking literal labels.
+   - Record word count and minimum font size per slide. For this user, keep ordinary body text at 14 pt or larger where practical; reserve 9–11 pt for sources and explicit footnotes. Split or simplify a slide when Gamma compresses core content below 12 pt.
    - Verify the slide ratio is 16:9, slide count matches the intended narrative, required headings survived, and no duplicate stakeholder slide remains.
    - Compare extracted text for every untouched slide against the prior export after a targeted adaptation; archive the prior version only when the named slides changed and all other slides stayed intact.
    - Inspect the actual visual assets or rendered slide for every named visual correction. Text presence does not prove that arrows, labels, spacing, or reading order survived export.
