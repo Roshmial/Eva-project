@@ -72,6 +72,7 @@ Recommended verification order:
    - Tool enable/disable changes usually require a fresh session (`/reset` in chat, relaunch in CLI).
    - Gateway/runtime changes often require restart.
    - Cron fixes should be checked with `hermes cron status` and then `hermes cron tick` when immediate verification matters.
+   - Browser availability requires one real `browser_navigate`/session-launch probe; `hermes doctor` or `hermes tools list` only confirm registration and static dependencies. If launch fails before DevTools (for example a missing shared library), treat it as a runtime dependency gap and do not alter browser-provider configuration until the host dependency is repaired.
 
 This sequence is high leverage because many Hermes troubleshooting mistakes come from checking only one surface: only docs, only stale skill text, or only guessed CLI behavior.
 

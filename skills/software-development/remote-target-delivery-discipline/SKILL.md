@@ -74,6 +74,32 @@ Correction:
 - run import/create/process/review/accept/query through the live API or UI;
 - report the exact result and where the detailed report is stored.
 
+## Decommissioning a remote host
+
+For shutdown, cleanup, or retirement requests, treat the work as a migration-and-destruction procedure rather than a normal deployment.
+
+1. Establish the exact host before any destructive action.
+- Resolve a short nickname through the current thread, SSH configuration, or deployment notes.
+- If the nickname does not resolve to a reachable target, request the canonical IP or alias; never run cleanup against a guessed host.
+
+2. Inventory actual use before interpreting the host as empty.
+- Inspect enabled services, timers/cron, listeners, project directories, data stores, recent writes, and repository remotes.
+- Separate real end-user use from background/prototype activity, but report both. A host may be safe to retire even with running jobs; those jobs still need an explicit stop-and-preserve decision.
+
+3. Preserve recovery material before stopping services.
+- Keep source, deployment units, non-secret configuration, schedules, and the small data stores required to reproduce a prototype.
+- Exclude credentials, SSH keys, sessions, `.env` files, and unneeded chat/runtime history from Git; require fresh credentials on restoration.
+- For GitHub size limits, package recoverable binary data into sub-100 MB parts or use an approved artifact store.
+- Verify both local and remote commit SHA match, then run `git fsck --full` before deletion.
+
+4. Disable before deleting.
+- Stop and disable every application service and timer, then verify that all application ports have disappeared from `ss -ltnp`.
+- Delete user-owned application trees, backups, caches, and user systemd definitions only after the recovery snapshot is verified.
+
+5. Classify privileged leftovers correctly.
+- Check ownership before cleanup. Root-owned files and system services require root access; do not claim a clean decommission if they remain.
+- State the exact residual path/services and the minimal privileged action needed to close the host.
+
 ## Minimum completion bar
 
 A remote turnkey task is not complete until all of these are true:

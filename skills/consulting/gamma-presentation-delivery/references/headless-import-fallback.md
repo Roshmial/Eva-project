@@ -1,0 +1,6 @@
+# Headless Gamma import fallback
+
+- For missing Linux Chrome libraries without sudo, download the missing Ubuntu packages with `apt-get download`, extract with `dpkg-deb -x` into a user-owned scratch root, and launch with its `usr/lib/x86_64-linux-gnu` in `LD_LIBRARY_PATH`. Resolve transitive dependencies too: libcups may require libavahi-common3/libavahi-client3, accessibility libraries may require libxi6. Never mistake the first successful Chrome launch for a working browser: verify a populated Gamma page, not about:blank or an empty snapshot.
+- Bound dependency/browser recovery; if navigation remains broken, report the actual CDP/navigation failure, not an invented authentication blocker. Use an explicitly authorized API fallback rather than implying PPTX import succeeded.
+- GET Gamma metadata accepts the doc ID without a leading decorative hyphen: `jlbfmapel26dahx`, not `-jlbfmapel26dahx`. Preserve the user URL as supplied; derive the API ID separately.
+- Export directly from Gamma for rendering verification when local LibreOffice cannot be located: POST `/v1.0/gammas/{gammaId}/export` with `{"format":"pdf"}`, poll GET `/v1.0/exports/{exportId}`, download `exportUrl`. Compare the rendered cover against an exported reference, then inspect all slides and text/count/ratio. A from-template generation is an adaptation, not an exact PPTX import.

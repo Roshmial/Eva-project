@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import csv
 import json
+import os
 import re
 import sqlite3
 import sys
@@ -2057,8 +2058,15 @@ def summarize(conn: duckdb.DuckDBPyConnection):
 
 
 def main() -> None:
+    global DB_PATH
     BASE_DIR.mkdir(parents=True, exist_ok=True)
     BACKUPS_DIR.mkdir(parents=True, exist_ok=True)
+    live_db_path = DB_PATH
+    staging_path = BASE_DIR / 'eva_hub.next.duckdb'
+    for path in (staging_path, Path(str(staging_path) + '.wal')):
+        if path.exists():
+            path.unlink()
+    DB_PATH = staging_path
     imported_at = now_iso()
     conn = duckdb.connect(str(DB_PATH))
     configure_connection(conn)
@@ -2083,14 +2091,15 @@ def main() -> None:
     optimize_database(conn)
     summary = summarize(conn)
     size_info = conn.execute("SELECT database_size, wal_size FROM pragma_database_size()") .fetchone()
+    conn.close()
+    os.replace(staging_path, live_db_path)
     print(json.dumps({
-        'db_path': str(DB_PATH),
+        'db_path': str(live_db_path),
         'imported_at': imported_at,
         'database_size': size_info[0],
         'wal_size': size_info[1],
         'summary': [{'dataset': ds, 'rows': cnt} for ds, cnt in summary],
     }, ensure_ascii=False, indent=2))
-    conn.close()
 
 
 if __name__ == '__main__':
