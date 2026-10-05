@@ -52,6 +52,10 @@ Deliver a working, auditable Excel model whose units, calculation layers, resour
    - For costless products, use an explicit catalog rule such as recognition at sale. Match stable rule codes or a deliberate prefix, not an exact display phrase that may contain an explanation.
    - Show sold hours, actual hours, hour variance, planned revenue per sold hour, recognized revenue per actual hour, margin per actual hour and margin percentage.
    - Let overruns reduce margin and per-hour economics; never increase contract revenue merely because more hours were consumed.
+   - For a rolling forecast, lock every closed month to fact and calculate only the open-period residual: full-horizon target less actual sales, target direction revenue less actual direction revenue, and forecast resource state starting from factual month-end headcount. Use one closed-period driver as the source of truth; do not maintain competing fact-month parameters on several sheets.
+   - For a fixed-cost licence pool with target margin `m`, validate the full-horizon coverage condition `actual_related_revenue + forecast_related_revenue >= total_pool_cost / (1 − m)`. Do not apply the margin target only to future cost or forecast revenue when fact has already occurred.
+   - When planning has mutually constraining targets, keep values in input tables with a status and priority rather than hard-coding exceptions in formulas or an optimizer. Classify financial coverage and integer staffing rules as hard; express desired product/direction mix and period profile as hard, soft, or corridor rules explicitly.
+   - Run a feasibility check before optimization. If a fixed pool requires a higher revenue share than the target mix permits, report the exact gap and scenario alternatives; never silently exceed the target total or target share to obtain a feasible solution.
 
 7. Preserve model usability while editing.
    - Organize tabs into three visible groups: data entry, results, and calculations/checks. Use stable ordering, tab colors and a start sheet with links; keep the start/dashboard first even when results are otherwise grouped together.

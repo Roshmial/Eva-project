@@ -26,6 +26,12 @@ The agent must verify that the response is in the user's requested language (Rus
 ### 4. Self-Verification Loop
 Before delivering a response, the agent must perform a mental-check: "Does this response contain the tool call I promised? Does it explain the failure if the tool failed?".
 
+### 4a. Never Emit an Empty Assistant Turn
+Every assistant turn must either make a concrete tool call or deliver a meaningful result/status. Never send an empty assistant message after a tool result, delegation status check, or user follow-up such as `Иии?`.
+- If work is still running, inspect its current state and report the verified status or continue the available work in the same turn.
+- If a tool produced no usable result, state that plainly and take the next valid action; silence is not a status update.
+- In an interactive user session, a blank turn is a delivery failure even when background work remains active.
+
 ### 5. Backend-Specific Tool Failures Require a Pivot, Not Repetition
 When a tool reports an environment/backend limitation, treat that as a routing signal.
 - Example: `web_extract` returning `DuckDuckGo (ddgs) is a search-only backend and cannot extract URL content` means extraction will keep failing on the same path.
