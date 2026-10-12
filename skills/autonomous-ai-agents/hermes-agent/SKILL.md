@@ -293,7 +293,17 @@ hermes sessions rename ID T Rename a session
 hermes sessions delete ID   Delete a session
 hermes sessions prune       Clean up old sessions (--older-than N days)
 hermes sessions stats       Session store statistics
+hermes sessions archive     Soft-hide matching sessions without deleting them
+hermes sessions optimize    Merge FTS5 segments + VACUUM without deleting sessions
+hermes sessions optimize-storage  Rebuild the compact FTS index; no conversation data changes
 ```
+
+Session-storage triage:
+- If `hermes doctor` reports a large `state.db`, run `hermes sessions stats` first. Do not treat `/compress` as disk cleanup: it only reduces active model context.
+- Prefer non-destructive `hermes sessions optimize` before deletion. Use `optimize-storage` when doctor reports a stale/pending FTS layout or explicitly recommends it.
+- `optimize`, `optimize-storage`, and `prune` rewrite the database. They must be run offline with every gateway, Desktop, dashboard, cron, and other holder of `state.db` stopped. Do not bypass the holder check with `--force` during normal maintenance.
+- Enable `sessions.auto_prune` only as an explicit retention decision: it deletes ended sessions older than `sessions.retention_days` (default 90), while pinned sessions are exempt. Preview manual deletion with `hermes sessions prune --dry-run` first.
+- Never delete `state.db-wal` or `state.db-shm`, and never copy `state.db` alone as a backup; use `hermes backup` or `hermes sessions recover`.
 
 ### Cron Jobs
 

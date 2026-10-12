@@ -40,7 +40,7 @@ metadata:
 4. Generate or adapt through Gamma deliberately.
    - When the user explicitly requests Gamma, make the editable Gamma document and its URL acceptance criteria; an exported `.pptx` is a verified companion artifact, not a substitute for creating the deck in Gamma.
    - Resolve an existing user-provided credential from approved secret storage or session history before declaring that access is unavailable; never expose it in text or saved artifacts.
-   - Generate a `presentation` with `cardOptions.dimensions: "16x9"` whenever the user requests a wide-screen deck.
+   - Generate a `presentation` with `cardOptions.dimensions: "16x9"` whenever the user requests a wide-screen deck. If the user says “16:9, but vertical,” keep the 16:9 canvas and build a top-to-bottom reading flow inside each slide and across the storyline; do not switch to portrait dimensions unless explicitly requested.
    - When the user names an existing deck as the design reference, treat the whole visual grammar as a hard requirement: inspect the actual export and preserve cover treatment, grid, card geometry, title hierarchy, density, colors, footer, numbering, and custom-generated visuals. Reusing only `themeId` is insufficient because a Gamma theme does not preserve composition.
    - Compare the title slide first. A reference cover shaped as `full-height custom visual on the left + compact title block on the right` must retain that exact composition; a full-width heading, process diagram, stock illustration, or empty image area is a different design and must block delivery.
    - If the new deck intentionally keeps the reference slide count, sequence, or layout jobs, create it with `/v1.0/generations/from-template` from the reference Gamma and map each new slide to the corresponding reference composition. Use a fresh generation with only `themeId` only when the storyline and layout genuinely diverge. Follow `references/gamma-theme-reuse.md` for the decision rule and API recipe.
@@ -49,7 +49,7 @@ metadata:
    - Use a stable theme and an explicit visual instruction: executive B2B, diagrams and cards, no stock people unless requested. Ask for editable text, cards, lines, and arrows when information must remain legible; decorative generated images often lose labels and causal structure.
    - For a Russian deck created through the Generate API, use `textMode: "generate"` with `textOptions.language: "ru"` and repeat the Russian-only constraint in the prompt; `preserve` ignores language options and can leave generated labels in English.
    - Prefer a simple matrix or equal cards over a dense hub-and-spoke or long dual-chain diagram when every label is mandatory; Gamma may retain the visual while dropping editable labels.
-   - Poll the generation to completion, download the export, and retain the editable Gamma URL plus the exported `.pptx`.
+   - Poll the generation to completion, download the export, and retain the editable Gamma URL plus the exported `.pptx`. For `/generations/from-template`, include `"exportAs": "pptx"` in the request when an immediate export is required; a completed response otherwise may contain the Gamma URL without `exportUrl`.
    - Keep no more than two active variants by default: current and one fallback. An explicit user request to preserve or duplicate a version overrides this cleanup rule; create the copy through `/v1.0/generations/from-template`, compare its exported text and slide count with the source, and never delete either preserved version. Before any cleanup, verify the endpoint semantics: `DELETE /v1.0/gammas/{gammaId}` reports deletion, so use it only for rejected drafts, never for the viable fallback; then confirm the current Gamma remains active through the API.
 
 5. Verify the actual generated deck, not the prompt.
@@ -62,6 +62,18 @@ metadata:
    - Search the export for every mandatory numeric label and its qualifier. Gamma can create a metric card while omitting the number itself; require figures such as `ДО 15%` as ordinary editable text and verify the literal strings in the PPTX text layer.
    - Search for mandatory facts, role wording, commercial boundaries, case labels, and the continuous management cycle. Regenerate with stronger title-level constraints if Gamma compresses or omits a mandatory point.
    - For a continuous-management slide, make the cycle itself the headline when it is mandatory. For operating management use `Планировать → Рассчитывать → Решать → Корректировать`; for a strategy offer use `Стратегия → Реализация дорожной карты → Сопровождение и контроль достижения → Пересмотр стратегии`, and state that value depends on both adaptability and execution support.
+
+## Short diagnostic sales deck pattern
+
+For a maximum-five-slide deck that sells a routed executive diagnosis, use:
+
+1. Promise and target audience.
+2. One-pager with `Что / Для кого / Зачем / Что сказать`.
+3. Vertical flow `executive entry conversation → one primary track → depth of continuation`, plus only a compact methodology strip.
+4. Two clearly labeled example outcomes for distinct tracks, each as `situation → management conclusion → first wave → output`.
+5. One further example, the common result card, and a concrete starting step.
+
+Keep named external frameworks as methodological reference points rather than implied endorsements or copied scoring systems. Use official sources, keep long URLs out of the body, and avoid logos unless requested. Mark example findings as illustrative so sales copy cannot be mistaken for achieved client results.
 
 ## RSM/TBM Pitch Pattern
 
