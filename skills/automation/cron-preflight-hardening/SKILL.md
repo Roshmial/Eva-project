@@ -3,14 +3,19 @@ name: cron-preflight-hardening
 description: "Use when flaky cron jobs need preflight hardening."
 version: 1.0.0
 author: Hermes Agent
+license: MIT
 created_by: agent
+metadata:
+  hermes:
+    tags: [cron, automation, reliability, preflight]
+    related_skills: [scheduled-hermes-monitoring, hermes-agent]
 ---
 
 # Cron preflight hardening
 
 Use when a recurring Hermes cron job technically runs but behaves unstably: loops on web search, wastes turns re-deriving deterministic context, drifts stylistically, or produces outputs that are valid syntactically but weak operationally.
 
-This skill is for local-first Hermes cron jobs. Prefer tightening the existing Hermes job before inventing a separate daemon or external scheduler.
+This skill is for Hermes-managed cron jobs. Prefer tightening the existing Hermes job before inventing a separate daemon or external scheduler.
 
 ## When to use
 
@@ -68,16 +73,22 @@ Split the job into two layers:
 - `no_agent` scripts are executed by the scheduler's interpreter, so a shebang does not select another Python. Make the cron launcher explicitly `exec` the project Python or spawn it by absolute path before importing project packages.
 - Route every entry point for the same data pipeline — cron wrappers, systemd services, collectors, backups, and refresh hooks — to the same project environment. Fixing only the job that alerted leaves sibling jobs broken.
 
-7. Check capacity before data refresh or backup
+7. Check capacity and coordinate database jobs
 - Before a database rebuild or backup, check free space against live database + staging copy + retained backup + safety margin. Atomic rebuilds and backup rotation temporarily require multiple full-size copies.
 - If space is exhausted, remove only verified rebuildable caches first; never delete live databases, WAL/SHM files, or the last valid backup to make room.
 - Prefer atomic staging plus `os.replace` for analytical rebuilds so an interrupted or ENOSPC run cannot corrupt the live database.
+- Do not let a frequent collector synchronously trigger a full analytical rebuild. Keep collection cheap and schedule the heavy refresh separately; otherwise several healthy jobs can combine into continuous CPU/RAM pressure.
+- If refresh and backup touch the same database, serialize them with one shared OS lock. Hold the lock across `exec` or wrap the entire systemd `ExecStart` with `flock`; a Python lock descriptor must be inheritable or it vanishes when the launcher replaces itself.
+- For a periodic service whose runtime may exceed its interval, schedule from completion with `OnUnitInactiveSec`, not from start with `OnUnitActiveSec`; the latter can restart the job immediately and keep it running almost continuously.
+- Stream large SQLite-to-DuckDB imports in bounded batches and compute status aggregates in SQL. Avoid materializing all message content twice in Python, because payload expansion can exceed RAM even when the database fits on disk.
 
 8. Live-verify immediately
 - Update the job and run it manually right away.
 - Read `hermes cron runs <id>` and the produced artifact; scheduler success alone is insufficient.
 - For backups, recompute the checksum and inspect the manifest/source counts. For sync jobs, verify the target file changed or was correctly reported unchanged.
 - Run one sibling job that shares the repaired runtime, then check the next scheduled execution path or service unit points to the same environment.
+- After a Hermes runtime change, inspect `hermes cron list --all`, not just the job that alerted. Group jobs by shared launcher, project environment, web provider, database, and delivery target; repair the dependency boundary once per group and rerun every previously failed job.
+- For user-facing jobs, verify execution and delivery separately. A durable `completed` run without `delivery_outcome=delivered` is not a recovered notification pipeline.
 
 9. Treat input freshness as a release gate
 - A no-signal report is valid only after the source file exists, is readable, and is fresh for the job window.
@@ -108,6 +119,8 @@ Split the job into two layers:
 - Do not rely on a prompt-only fix when the instability comes from the job mixing context collection and synthesis.
 - Do not install project-only Python packages into Hermes's managed runtime as the durable repair; the next runtime generation can remove them.
 - Do not validate an `exec`-based launcher only with static syntax checks; run it through `hermes cron run` because the scheduler's execution wrapper changes `__file__`, argv, environment, and interpreter behavior.
+- Do not repair only the first missing import after a runtime replacement. Import-test the whole project entry point and pin its transitive runtime dependencies, because the next missing package otherwise appears one cron cycle later.
+- Do not mark an entire cron estate fixed from scheduler heartbeat or a count of active jobs. Check the latest durable run for every previously failed job, verify delivery for user-facing jobs, and test one representative path from each shared dependency family.
 
 ## Verification checklist
 
@@ -120,4 +133,5 @@ Split the job into two layers:
 
 ## References
 
-- See `references/weekly-and-daily-cron-redesign-2026-08.md` for a concrete redesign pattern: weekly event preflight plus daily brief preflight, including the relative-script-path pitfall.
+- See `references/weekly-event-and-daily-brief-preflights.md` for reusable weekly-event and daily-brief preflight shapes, including the relative-script-path pitfall.
+- See `references/database-refresh-backup-coordination.md` for a reusable locking, scheduling, batching, and verification recipe for analytical hubs.

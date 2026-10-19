@@ -63,16 +63,18 @@ which are proposed for deletion and why (duplicate of which keeper, stale,
 empty). Wait for the user's go-ahead. Exception: a single rename the user
 explicitly dictated can be done directly.
 
-④ **Act with the safest primitive.**
+④ **Choose a retention tier before deleting.**
 - Prefer `archive` (reversible soft-hide) over `delete`/`prune`.
-- Always run destructive commands with `--dry-run` first and show the output,
-  then re-run with `--yes` after confirmation.
-- Before deleting anything with meaningful content, offer
-  `hermes sessions export --format md` as a backup.
+- When cleanup is driven by database size, do not jump from raw online history straight to deletion. Keep recent sessions raw online; keep older useful sessions as searchable thesis-style summaries; retain their raw records in a compressed cold archive.
+- Preserve important, pinned, active, or unresolved sessions raw regardless of age.
+- Treat a summary as an index, never as the source of truth: include the task, decisions and reasons, rejected options, constraints, verified results, artifacts, open items, and a stable pointer to the raw session/archive.
+- Before pruning a meaningful session, require all four gates: a validated summary, a verified raw archive, a summary-to-source link, and an explicit completeness check for decisions and artifacts.
+- Always run destructive commands with `--dry-run` first and show the output, then re-run with `--yes` after confirmation.
+- If a monolithic export is too resource-intensive, export in bounded batches or archive a transactionally consistent database snapshot; never treat an incomplete export as protection.
 
-⑤ **Report.** Renames applied, sessions archived (count + how to undo:
-archived sessions remain in the DB and are listed with `--include-archived`),
-anything exported, anything skipped and why.
+⑤ **Act and verify.** Apply the approved rename/archive/prune plan with the safest primitive. For tiered retention, query several retained summaries, follow their source pointers, and restore or inspect a sample raw session before deleting the online originals.
+
+⑥ **Report.** Renames applied, sessions archived (count + how to undo: archived sessions remain in the DB and are listed with `--include-archived`), summaries created, raw archives verified, anything pruned, and anything skipped and why.
 
 ## Parallel Workstreams
 
@@ -95,6 +97,8 @@ later via `session_search`.
   an existing title.
 - **Archived ≠ deleted.** Archive hides sessions from default listings only.
   Say which one you did.
+- **Do not substitute a backup for usable memory.** A compressed raw database protects recoverability but does not preserve day-to-day recall; create and validate searchable summaries before pruning online history.
+- **Do not present expected space savings as achieved.** Measure database size after prune/index rebuild/VACUUM; page reuse and FTS structure make pre-clean estimates unreliable.
 - **Cross-profile session links** (`@session:<profile>/<id>`) are read-only
   from another profile; management commands act on the current profile's DB.
 
@@ -102,4 +106,9 @@ later via `session_search`.
 
 After a cleanup pass, re-run the discovery query and `hermes sessions list`
 to confirm the library reflects the plan (keepers present with new titles,
-archived ones gone from the default listing).
+archived ones gone from the default listing). For tiered retention, also verify
+summary search, summary-to-raw traceability, archive integrity, and one sample
+restore before claiming the old sessions are safely removable.
+
+See `references/tiered-session-retention.md` for the summary contract, gates,
+and a reusable hot/warm/cold retention design.

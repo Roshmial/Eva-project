@@ -306,6 +306,8 @@ hermes sessions optimize-storage  Rebuild the compact FTS index; no conversation
 
 Session-storage triage:
 - If `hermes doctor` reports a large `state.db`, run `hermes sessions stats` first. Do not treat `/compress` as disk cleanup: it only reduces active model context.
+- Before destructive retention work, create a native Hermes quick snapshot and inspect its manifest for `failed_dbs` and `oversized_skipped`; do not infer that an `--output` argument produced a standalone archive when the command reports a state-snapshot ID.
+- On a low-memory gateway, do not use one monolithic `hermes sessions export` as the safety copy for a large store. The exporter may materialize the selected history and compete with the gateway for RAM. Prefer the native snapshot, then compress or export it offline or in bounded date/session batches.
 - Prefer non-destructive `hermes sessions optimize` before deletion. Use `optimize-storage` when doctor reports a stale/pending FTS layout or explicitly recommends it.
 - `optimize`, `optimize-storage`, and `prune` rewrite the database. They must be run offline with every gateway, Desktop, dashboard, cron, and other holder of `state.db` stopped. Do not bypass the holder check with `--force` during normal maintenance.
 - Enable `sessions.auto_prune` only as an explicit retention decision: it deletes ended sessions older than `sessions.retention_days` (default 90), while pinned sessions are exempt. Preview manual deletion with `hermes sessions prune --dry-run` first.
