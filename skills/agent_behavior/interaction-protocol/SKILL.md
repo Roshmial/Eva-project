@@ -32,6 +32,12 @@ Every assistant turn must either make a concrete tool call or deliver a meaningf
 - If a tool produced no usable result, state that plainly and take the next valid action; silence is not a status update.
 - In an interactive user session, a blank turn is a delivery failure even when background work remains active.
 
+### 4b. Internal Notifications Are Control Events, Not User Requests
+Gateway/background completion and failure notices are operational events. Absorb them, update the workflow, and send at most one useful consolidated status when user-facing communication is warranted.
+- Never answer an internal notification with a generic user error such as `Your request was not processed` or ask the user to resend a request that was not addressed by that notification.
+- For a fan-out batch, do not emit one chat reply per failed child. Wait for the consolidated batch when possible, report the actual succeeded/failed counts once, and retry or pivot from the preserved artifacts.
+- If the user asks whether the process is running, inspect the live status and distinguish `running`, `completed`, `failed`, and `no output created`; do not infer progress from the original dispatch.
+
 ### 5. Backend-Specific Tool Failures Require a Pivot, Not Repetition
 When a tool reports an environment/backend limitation, treat that as a routing signal.
 - Example: `web_extract` returning `DuckDuckGo (ddgs) is a search-only backend and cannot extract URL content` means extraction will keep failing on the same path.

@@ -54,7 +54,16 @@ def copy_if_exists(src: Path, dst: Path) -> None:
 
 def copy_workspace_notes() -> None:
     copy_if_exists(WORKSPACE / 'decision-log.md', BACKUP / 'workspace-notes' / 'decision-log.md')
+    copy_if_exists(WORKSPACE / 'decision-log-policy.md', BACKUP / 'workspace-notes' / 'decision-log-policy.md')
     copy_if_exists(WORKSPACE / 'interaction-notes.md', BACKUP / 'workspace-notes' / 'interaction-notes.md')
+    copy_if_exists(
+        WORKSPACE / 'decision-log-audit' / 'consolidation-report.md',
+        BACKUP / 'workspace-notes' / 'decision-log-audit' / 'consolidation-report.md',
+    )
+    copy_if_exists(
+        WORKSPACE / 'decision-log-audit' / 'verification-report.md',
+        BACKUP / 'workspace-notes' / 'decision-log-audit' / 'verification-report.md',
+    )
 
 
 def copy_eva_data_docs() -> None:
@@ -133,7 +142,7 @@ def write_root_files() -> None:
         'Это локальный backup-репозиторий ключевых элементов рабочей конфигурации Евы и комплекта для переноса на чистый сервер.\n\n'
         'Что включено:\n'
         '- skills из `~/.hermes/skills`\n'
-        '- `decision-log.md`\n'
+        '- `decision-log.md`, его policy и итоговые отчёты coverage-аудита\n'
         '- `interaction-notes.md`\n'
         '- выборочные рабочие документы из `workspace/eva-data`\n'
         '- curated snapshot `workspace/TG-API`\n'
@@ -158,7 +167,7 @@ def write_root_files() -> None:
         '# Hermes transfer and restore\n\n'
         '## Что лежит в этом backup\n\n'
         '- `skills/` — пользовательские и накопленные procedural skills Евы.\n'
-        '- `workspace-notes/` — `decision-log.md` и `interaction-notes.md`.\n'
+        '- `workspace-notes/` — `decision-log.md`, policy, coverage-аудит и `interaction-notes.md`.\n'
         '- `tg-api/` — operational код и конфигурация Telegram API/monitoring контура без secrets и runtime-данных.\n'
         '- `hermes-runtime/config/config.yaml` — текущая Hermes-конфигурация.\n'
         '- `hermes-runtime/cron/jobs.json` — актуальные cron job definitions.\n'

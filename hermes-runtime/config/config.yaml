@@ -471,10 +471,11 @@ approvals:
   mcp_reload_confirm: true
   destructive_slash_confirm: false
 command_allowlist:
-  - stop/restart hermes gateway (kills running agents)
-  - recursive delete
   - delete in root path
   - execute_code
+  - recursive delete
+  - script execution via -e/-c flag
+  - stop/restart hermes gateway (kills running agents)
 hooks_auto_accept: false
 security:
   allow_private_urls: false

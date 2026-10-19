@@ -3,7 +3,7 @@
 ## Что лежит в этом backup
 
 - `skills/` — пользовательские и накопленные procedural skills Евы.
-- `workspace-notes/` — `decision-log.md` и `interaction-notes.md`.
+- `workspace-notes/` — `decision-log.md`, policy, coverage-аудит и `interaction-notes.md`.
 - `tg-api/` — operational код и конфигурация Telegram API/monitoring контура без secrets и runtime-данных.
 - `hermes-runtime/config/config.yaml` — текущая Hermes-конфигурация.
 - `hermes-runtime/cron/jobs.json` — актуальные cron job definitions.

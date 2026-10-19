@@ -4,7 +4,7 @@
 
 Что включено:
 - skills из `~/.hermes/skills`
-- `decision-log.md`
+- `decision-log.md`, его policy и итоговые отчёты coverage-аудита
 - `interaction-notes.md`
 - выборочные рабочие документы из `workspace/eva-data`
 - curated snapshot `workspace/TG-API`

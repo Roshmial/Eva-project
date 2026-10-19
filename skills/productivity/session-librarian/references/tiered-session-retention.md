@@ -8,33 +8,42 @@ Choose age thresholds from observed access patterns and available disk; do not h
 
 - Hot: raw sessions remain online and fully searchable.
 - Warm: raw messages may remain online with rebuildable or bulky tool payloads compacted; preserve decisions and artifacts exactly.
-- Cold: a thesis-style summary remains online and searchable while the raw session lives in a compressed, verified archive.
+- Cold: reusable conclusions remain in the canonical decision log while raw sessions live in a compressed, verified archive.
 - Protected: pinned, active, unresolved, compliance-relevant, or explicitly important sessions remain raw regardless of age.
 
-## Summary contract
+## Decision-coverage contract
 
-Create one summary per source session with stable fields:
+Do not create a permanent summary per source session by default; that produces a second competing knowledge base. Group continuation sessions by normalized topic and use compact extracts only during the audit. Promote reusable knowledge into one canonical topic record containing:
 
-- source session identifier and archive locator;
-- original task and relevant context;
-- decisions with reasons;
-- rejected alternatives and why;
-- facts, constraints, and user preferences learned;
-- verified actions and results, clearly separated from hypotheses;
-- artifacts, file paths, URLs, commits, and other durable handles;
-- unresolved questions and next actions;
-- message identifiers or ranges supporting important claims.
+- current decision and scope;
+- reasons and material trade-offs;
+- rejected alternatives worth not reopening;
+- facts, constraints, and durable user preferences;
+- verified actions/results, clearly separated from hypotheses or unmeasured effects;
+- artifacts and durable handles;
+- unresolved questions and revisit conditions;
+- exact session/message evidence or another stable source pointer.
 
-Do not copy full logs or long tool output. Preserve exact identifiers and status semantics such as implemented, unmeasured, failed, or pending.
+Classify each affected topic/session as `covered`, `missing`, `superseded/conflict`, or `no reusable knowledge`. Do not copy full logs or long tool output. Preserve exact identifiers and result status.
+
+## Efficient audit recipe
+
+1. Select an exact cutoff and enumerate affected sessions.
+2. Normalize continuation titles and group by topic.
+3. Deduplicate repeated handoff context and large tool payloads while retaining IDs and raw-source access.
+4. Balance audit batches by bytes/tokens; begin with 1–3 parallel workers rather than a wide fan-out.
+5. Have workers write candidate reports only. A single parent/editor validates evidence and changes the canonical log.
+6. Validate every cited `message_id` and its actual `session_id` against the read-only source database; child summaries are hypotheses, not proof.
+7. Run an independent deterministic sample across direct sessions and cron/tool noise to falsify the coverage claim.
 
 ## Safety gates before pruning raw online data
 
-1. Create a transactionally consistent raw archive or bounded per-session exports.
-2. Verify archive integrity with the format's own checker and a checksum.
-3. Generate summaries without overwriting source sessions.
-4. Validate schema completeness and check that important decisions and artifacts survived.
-5. Search for several known topics through summaries.
-6. Follow summary pointers into the raw archive and inspect or restore a sample.
+1. Create a transactionally consistent raw archive or bounded exports.
+2. Verify archive integrity with the format's checker and a checksum.
+3. Complete the topic-level coverage audit without modifying source sessions.
+4. Consolidate missing conclusions into canonical decision-log records; resolve conflicts/supersession.
+5. Verify known-topic retrieval and exact evidence pointers.
+6. Inspect/restore a raw sample and independently verify a deterministic `noise` sample.
 7. Run the prune command in dry-run mode and review protected-session exclusions.
 8. Obtain explicit approval for destructive pruning.
 9. Prune in bounded batches, then rebuild indexes or VACUUM only when appropriate.
@@ -42,7 +51,7 @@ Do not copy full logs or long tool output. Preserve exact identifiers and status
 
 ## Failure handling
 
-- If summarization fails or is incomplete, retain the raw online session.
+- If coverage is incomplete or contradictory, retain the raw online session.
 - If a whole-database export exhausts memory, split by session/time range or archive a consistent database snapshot; never prune against a partial export.
-- If a summary conflicts with raw history, correct the summary and keep the raw record authoritative.
-- If archive restore has not been tested, call the archive unverified and do not prune.
+- If a candidate report conflicts with raw history, correct the canonical log from raw evidence and record the conflict disposition.
+- If archive restore or evidence traceability has not been tested, call the archive/coverage unverified and do not prune.
