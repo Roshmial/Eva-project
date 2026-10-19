@@ -133,7 +133,7 @@ Raw snapshot Hermes cron:
 ## Refresh
 
 Полное обновление базы:
-`python /home/hermes/workspace/eva-data/refresh_eva_hub.py`
+`/home/hermes/workspace/eva-data/.venv/bin/python /home/hermes/workspace/eva-data/refresh_eva_hub.py`
 
 Что делает refresh:
 - пересоздаёт схему `eva`;
@@ -159,10 +159,10 @@ Timer systemd пользователя:
 ## Backup-процедура
 
 Создать backup:
-`python /home/hermes/workspace/eva-data/backup_eva_hub.py`
+`/home/hermes/workspace/eva-data/.venv/bin/python /home/hermes/workspace/eva-data/backup_eva_hub.py`
 
 Восстановить из backup:
-`python /home/hermes/workspace/eva-data/restore_eva_hub.py eva_hub_YYYYMMDDTHHMMSSZ.duckdb`
+`/home/hermes/workspace/eva-data/.venv/bin/python /home/hermes/workspace/eva-data/restore_eva_hub.py eva_hub_YYYYMMDDTHHMMSSZ.duckdb`
 
 Папка backup:
 `/home/hermes/workspace/eva-data/backups/`

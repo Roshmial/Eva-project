@@ -18,6 +18,7 @@ BASE_DIR = WORKSPACE_DIR / 'tenders'
 BASE_DIR.mkdir(parents=True, exist_ok=True)
 CONFIG_PATH = BASE_DIR / 'it_tender_sources.json'
 REFRESH_SCRIPT = WORKSPACE_DIR / 'eva-data' / 'refresh_eva_hub.py'
+EVA_PYTHON = WORKSPACE_DIR / 'eva-data' / '.venv' / 'bin' / 'python'
 
 DEFAULT_TARGET_DATE = datetime.now(timezone.utc).strftime('%d.%m.%Y')
 DEFAULT_TARGET_DATE_ISO = datetime.now(timezone.utc).strftime('%Y-%m-%d')
@@ -500,7 +501,7 @@ def main():
     summary_json.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding='utf-8')
 
     if REFRESH_SCRIPT.exists():
-        subprocess.run([sys.executable, str(REFRESH_SCRIPT)], check=True)
+        subprocess.run([str(EVA_PYTHON), str(REFRESH_SCRIPT)], check=True)
 
     lines = [
         f'Готово. Собрала ИТ-закупки за {target_date_str}.',

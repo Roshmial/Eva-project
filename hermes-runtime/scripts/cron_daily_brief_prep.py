@@ -1,9 +1,18 @@
 from __future__ import annotations
 
+import os
+import sys
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 import re
+
+EVA_PYTHON = Path('/home/hermes/workspace/eva-data/.venv/bin/python')
+if Path(sys.executable).resolve() != EVA_PYTHON.resolve():
+    if not EVA_PYTHON.exists():
+        raise SystemExit(f'Eva Python environment not found: {EVA_PYTHON}')
+    os.execv(str(EVA_PYTHON), [str(EVA_PYTHON), __file__, *sys.argv[1:]])
+
 import requests
 import yaml
 

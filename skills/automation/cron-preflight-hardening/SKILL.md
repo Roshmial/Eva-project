@@ -62,12 +62,24 @@ Split the job into two layers:
 - For ordinary workday briefs, prefer one direct grounded recommendation over soft coaching.
 - If there is no valid event/helper item, forbid inventing a surrogate city recommendation just to make the output feel richer.
 
-6. Live-verify immediately
-- Update the job.
-- Run it manually right away.
-- Read the produced cron output artifact and verify the actual delivered text, not only scheduler status.
+6. Isolate script dependencies from the Hermes runtime
+- For project scripts that import third-party packages, create a project-owned virtual environment with a pinned requirements file; do not rely on packages manually present in Hermes's own venv.
+- A Hermes runtime upgrade may replace its Python generation. Treat every import from that environment as ephemeral unless Hermes itself declares the dependency.
+- `no_agent` scripts are executed by the scheduler's interpreter, so a shebang does not select another Python. Make the cron launcher explicitly `exec` the project Python or spawn it by absolute path before importing project packages.
+- Route every entry point for the same data pipeline — cron wrappers, systemd services, collectors, backups, and refresh hooks — to the same project environment. Fixing only the job that alerted leaves sibling jobs broken.
 
-7. Treat input freshness as a release gate
+7. Check capacity before data refresh or backup
+- Before a database rebuild or backup, check free space against live database + staging copy + retained backup + safety margin. Atomic rebuilds and backup rotation temporarily require multiple full-size copies.
+- If space is exhausted, remove only verified rebuildable caches first; never delete live databases, WAL/SHM files, or the last valid backup to make room.
+- Prefer atomic staging plus `os.replace` for analytical rebuilds so an interrupted or ENOSPC run cannot corrupt the live database.
+
+8. Live-verify immediately
+- Update the job and run it manually right away.
+- Read `hermes cron runs <id>` and the produced artifact; scheduler success alone is insufficient.
+- For backups, recompute the checksum and inspect the manifest/source counts. For sync jobs, verify the target file changed or was correctly reported unchanged.
+- Run one sibling job that shares the repaired runtime, then check the next scheduled execution path or service unit points to the same environment.
+
+9. Treat input freshness as a release gate
 - A no-signal report is valid only after the source file exists, is readable, and is fresh for the job window.
 - Missing, malformed, or stale telemetry must produce an explicit failed/degraded status; never render it as a clean report with zero findings.
 - A backup job may succeed only when it copied the live source. If it falls back to an older backup, do not create a new dated snapshot or silently advance retention.
@@ -94,6 +106,8 @@ Split the job into two layers:
 - Do not treat `web_search` as the default first step when you already know the canonical source URLs.
 - Do not accept `last_status=ok` as proof of success; inspect the real output file.
 - Do not rely on a prompt-only fix when the instability comes from the job mixing context collection and synthesis.
+- Do not install project-only Python packages into Hermes's managed runtime as the durable repair; the next runtime generation can remove them.
+- Do not validate an `exec`-based launcher only with static syntax checks; run it through `hermes cron run` because the scheduler's execution wrapper changes `__file__`, argv, environment, and interpreter behavior.
 
 ## Verification checklist
 

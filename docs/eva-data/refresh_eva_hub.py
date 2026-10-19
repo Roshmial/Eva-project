@@ -1398,30 +1398,46 @@ def replace_hermes_data(conn: duckdb.DuckDBPyConnection, imported_at: str) -> No
         FROM sessions
         """
     )]
-    message_rows = [dict(row) for row in cur.execute(
+    session_stats = {
+        row['session_id']: {
+            'last_user_message_id': row['last_user_message_id'],
+            'last_assistant_message_id': row['last_assistant_message_id'],
+            'completion_status': 'done' if row['last_role'] == 'assistant' else 'not_done',
+        }
+        for row in cur.execute(
+            """
+            WITH ranked AS (
+                SELECT
+                    session_id,
+                    role,
+                    id,
+                    row_number() OVER (PARTITION BY session_id ORDER BY id DESC) AS rn
+                FROM messages
+                WHERE role IN ('user', 'assistant')
+            )
+            SELECT
+                session_id,
+                max(CASE WHEN role = 'user' THEN id END) AS last_user_message_id,
+                max(CASE WHEN role = 'assistant' THEN id END) AS last_assistant_message_id,
+                max(CASE WHEN rn = 1 THEN role END) AS last_role
+            FROM ranked
+            GROUP BY session_id
+            """
+        )
+    }
+
+    message_cursor = cur.execute(
         """
         SELECT id, session_id, role, content, tool_name, timestamp,
-               token_count, finish_reason, platform_message_id, observed
+               token_count, finish_reason, platform_message_id, observed,
+               max(CASE WHEN role = 'assistant' THEN 1 ELSE 0 END) OVER (
+                   PARTITION BY session_id ORDER BY id
+                   ROWS BETWEEN 1 FOLLOWING AND UNBOUNDED FOLLOWING
+               ) AS has_later_assistant
         FROM messages
         ORDER BY session_id, id
         """
-    )]
-    src.close()
-
-    session_stats: dict[str, dict[str, object]] = {}
-    for row in message_rows:
-        stats = session_stats.setdefault(row['session_id'], {
-            'last_user_message_id': None,
-            'last_assistant_message_id': None,
-            'completion_status': 'not_done',
-        })
-        role = row.get('role')
-        if role == 'user':
-            stats['last_user_message_id'] = row['id']
-            stats['completion_status'] = 'not_done'
-        elif role == 'assistant':
-            stats['last_assistant_message_id'] = row['id']
-            stats['completion_status'] = 'done'
+    )
 
     sessions = []
     for row in session_rows:
@@ -1436,37 +1452,34 @@ def replace_hermes_data(conn: duckdb.DuckDBPyConnection, imported_at: str) -> No
             imported_at,
         ))
 
-    replied_after_user: dict[str, bool] = {}
-    for row in reversed(message_rows):
-        session_id = row['session_id']
-        role = row.get('role')
-        if role == 'assistant':
-            replied_after_user[session_id] = True
-            row['request_status'] = 'done'
-        elif role == 'user':
-            row['request_status'] = 'done' if replied_after_user.get(session_id) else 'not_done'
-        else:
-            row['request_status'] = None
-
-    messages = [
-        (
-            row['id'], row['session_id'], row['role'], row['content'], row['tool_name'],
-            row['timestamp'], row['token_count'], row['finish_reason'], row['platform_message_id'],
-            row['observed'], row.get('request_status'), imported_at,
-        )
-        for row in message_rows
-    ]
-
     if sessions:
         conn.executemany(
             "INSERT INTO eva.hermes_sessions VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             sessions,
         )
-    if messages:
+
+    while True:
+        rows = message_cursor.fetchmany(1000)
+        if not rows:
+            break
+        messages = []
+        for row in rows:
+            role = row['role']
+            request_status = None
+            if role == 'assistant':
+                request_status = 'done'
+            elif role == 'user':
+                request_status = 'done' if row['has_later_assistant'] else 'not_done'
+            messages.append((
+                row['id'], row['session_id'], role, row['content'], row['tool_name'],
+                row['timestamp'], row['token_count'], row['finish_reason'], row['platform_message_id'],
+                row['observed'], request_status, imported_at,
+            ))
         conn.executemany(
             "INSERT INTO eva.hermes_messages VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             messages,
         )
+    src.close()
 
 
 def replace_app_data(conn: duckdb.DuckDBPyConnection, imported_at: str) -> list[tuple]:

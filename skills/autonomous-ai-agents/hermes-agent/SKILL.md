@@ -257,10 +257,16 @@ Platform docs: https://hermes-agent.nousresearch.com/docs/user-guide/messaging/
 
 Если CLI показывает предупреждение о незавершённом restart после `hermes update`, не перезапускай gateway только по этому banner: marker может пережить уже выполненный restart.
 
+В unattended cron сначала проверь `approvals.cron_mode`. При `deny` safety-классификатор может заблокировать даже read-only `hermes update --plan`, потому что команда содержит `hermes update`. Не ослабляй approvals и не обходи блокировку: перенеси эту проверку в интерактивную сессию либо зафиксируй её как непроверенную. Успех более слабых косвенных проб не подтверждает совпадение runtime commit.
+
 1. Сначала выполни read-only `hermes update --plan`: он сопоставляет установленный commit и runtime всех профилей.
 2. Если план показывает gateway на текущем commit, считавай banner stale; не делай restart и зафиксируй расхождение как runtime/CLI defect.
 3. Если plan показывает старый runtime, сначала проверь активные agent/cron runs и только затем выполняй явно согласованный `hermes gateway restart` или `hermes update`.
 4. После реального обновления или restart повтори `hermes update --plan`, `hermes gateway status` и проверку нужного пользовательского пути; успешный systemd status сам по себе не подтверждает новую версию кода.
+5. При update failure сначала читай structured receipt и разделяй стадии checkout, dependency sync, build и gateway cutover. Обновлённый Git checkout ещё не означает, что новый runtime собран или запущен.
+6. Если обновление идёт из process tree gateway, его управляющий процесс может завершиться по SIGTERM при штатном self-restart. Подтверждай результат по новому PID/start time, runtime commit, подключению платформы и целевому пользовательскому пути; не объявляй сбой только по exit signal updater.
+
+Подробная схема диагностики миграции runtime, source-build зависимостей и незавершённых receipts: `references/update-runtime-troubleshooting.md`.
 
 ### Scripted delivery without the agent loop
 

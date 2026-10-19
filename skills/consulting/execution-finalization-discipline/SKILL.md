@@ -51,6 +51,8 @@ When a live task requires restarting a gateway/service, a restart is an implemen
 - For a gateway restart, do not infer recovery from systemd alone: after restart, verify that the chat platform is connected and send an explicit recovery/continuation message into the affected chat before treating the restart as complete. Use a delivery path independent of the restarted gateway when necessary.
 - Treat service liveness as a prerequisite check. It never substitutes for completion of the user’s original request.
 - Restart only once per coherent change set unless a later verified failure requires another change.
+- A self-restart can terminate the updater or control process by design. Classify success from the replacement PID/start time, loaded code/runtime identity, platform reconnection, and completion of the original operation — never from the updater's exit signal alone.
+- If a long validation continues in the background, label the reply as intermediate. Consume the completion result and inspect the final artifact/status before using final-complete wording.
 
 ## Completion Rules
 

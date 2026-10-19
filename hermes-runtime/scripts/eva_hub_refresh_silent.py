@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 REFRESH = Path('/home/hermes/workspace/eva-data/refresh_eva_hub.py')
+EVA_PYTHON = Path('/home/hermes/workspace/eva-data/.venv/bin/python')
 LOG_DIR = Path('/home/hermes/workspace/eva-data/logs')
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 LOG_PATH = LOG_DIR / 'eva_hub_refresh.log'
@@ -18,7 +19,7 @@ def now_iso() -> str:
 
 
 def main() -> int:
-    proc = subprocess.run([sys.executable, str(REFRESH)], capture_output=True, text=True)
+    proc = subprocess.run([str(EVA_PYTHON), str(REFRESH)], capture_output=True, text=True)
     entry = {
         'ts': now_iso(),
         'exit_code': proc.returncode,
