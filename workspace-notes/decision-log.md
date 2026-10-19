@@ -1,3 +1,19 @@
+[2026-10-19 21:20 UTC] — Старый online-слой сессий очищен после coverage verification
+
+Decision:
+- Перед удалением старых сессий выполнены полный тематический аудит 37 тем, консолидация decision log и независимая выборочная проверка 45 сессий.
+- Первый verification verdict `FAIL` по трём исключениям принят как реальный; после добавления досуга, границы Hermes/n8n и полного форматного контракта Sprint 3 повторная проверка дала `PASS`, остаточных исключений — 0.
+- После подтверждённого Git backup удалены все сессии, попавшие в зафиксированный rolling cutoff старше 90 дней: штатный prune удалил 923 завершённые сессии, затем 510 связанных или формально открытых записей удалены через штатную SessionDB semantics с orphaning поздних children и active-write guards.
+- После удаления в `state.db` осталось 680 сессий и 77 318 сообщений; перед зафиксированным cutoff осталось 0 сессий. `PRAGMA integrity_check = ok`, нарушений foreign key — 0.
+- Физический размер SQLite пока не уменьшен: для `optimize-storage` требуется отдельное краткое offline-окно с остановкой gateway. Логическое удаление завершено; отсутствие VACUUM не означает сохранение удалённых online-сессий.
+- Eva refresh timer восстановлен после очистки.
+
+Recovery:
+- Полный pre-clean архив: `/home/hermes/.hermes/session-archives/state-pre-tier-clean-20261018.db.gz`.
+- SHA-256: `54a8006fba99c3f07e7fce6a7f90c22422a5319e0ef9f3b472ab4a323bf082ac`.
+- Manifest последнего явного удаления: `/home/hermes/workspace/decision-log-audit/final-old-session-delete-manifest.json`.
+- Verification report: `/home/hermes/workspace/decision-log-audit/verification-report.md`.
+
 [2026-10-19 11:54 UTC] — Граница ролей Hermes и n8n в автоматизации процессов
 
 Decision:
