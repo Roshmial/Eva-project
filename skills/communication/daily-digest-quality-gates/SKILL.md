@@ -110,6 +110,8 @@ Fallback is acceptable only as an honest minimum, not as a preferred winner over
 ### Contextual suitability gate
 Before releasing a candidate, check whether its action fits the actual day conditions. A route, outdoor walk, or open-air plan must be excluded when the verified forecast materially conflicts with it, for example probable rain. Do not preserve a candidate merely because it has a link.
 
+Normalize weather descriptions into idiomatic Russian before release. Reject literal or machine-translated condition labels even when the underlying forecast is correct; use an ordinary Russian equivalent supported by the source. For example, do not publish «полупрозрачная облачность» as a weather condition.
+
 Make reject rules deterministic where the pipeline has a candidate registry: filter invalid classes before selection, rather than asking the final writer to notice them. If the remaining pool cannot produce a worthy supporting line, fail the selection step or omit that line when the format permits; never silently fall back to a banned pseudo-recommendation.
 
 A candidate selector must return no candidate when fresh inventory is exhausted. Never rank a repeated item as a fallback merely to satisfy a fixed output shape; the delivery contract must permit a shorter message or `[SILENT]`.

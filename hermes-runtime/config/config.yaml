@@ -1,9 +1,9 @@
 model:
-  default: gpt-5.6-sol-900k
-  provider: openai-codex
+  default: "gpt-5.6-sol-900k"
+  provider: "openai-codex"
   fallback_providers: '["openai-codex"]'
   fallback_models: '["gemma-4-26b-a4b-it", "gpt-5.4"]'
-  base_url: https://chatgpt.com/backend-api/codex
+  base_url: "https://chatgpt.com/backend-api/codex"
   api_mode: codex_responses
 fallback_providers: []
 toolsets:
@@ -248,7 +248,7 @@ display:
   reasoning_full: false
   memory_notifications: 'on'
   background_process_notifications: concise
-  streaming: false
+  streaming: true
   timestamps: false
   final_response_markdown: strip
   persistent_output: true

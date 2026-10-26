@@ -31,6 +31,8 @@ Take the first option that completely works:
 - Fix root causes in shared code after checking every caller.
 - Preserve validation and error handling when moving or combining code.
 - Prefer the option that handles edge cases when alternatives are equally small.
+- For long multi-stage audit or diagnostic scripts, fault-isolate every probe: preflight optional daemons and APIs, catch a section failure, record whether it failed or was skipped, continue with independent checks, and still emit a usable partial artifact. Binary presence alone does not prove its backing service is running.
+- Validate scripts against the oldest supported runtime, not only with static delimiter checks. In Windows PowerShell 5.1, materialize generic collections before inserting them into ordered report objects or serializing them; pipeline expansion or `ToArray()` avoids runtime type-mismatch failures.
 - Add one focused test or assertion for new non-trivial logic involving branches, loops, parsing, money, security, or a new script/application.
 - Do not cut trust-boundary validation, data-loss protection, security, accessibility, hardware calibration, or anything explicitly requested.
 - End coding-task reports with what was not checked and any remaining risk.

@@ -82,6 +82,27 @@ gh repo clone owner/repo-name
 gh repo clone owner/repo-name -- --depth 1
 ```
 
+### Scoped extraction from a third-party repository
+
+When the user wants only one capability rather than a working copy of the whole project:
+
+1. Clone read-only and record provenance before copying anything:
+
+```bash
+git clone --depth 1 https://github.com/owner/repo.git source-repo
+cd source-repo
+git log -1 --format='%H%n%ad%n%s' --date=iso-strict
+git remote -v
+```
+
+2. Inspect the relevant scripts, their direct dependencies, license, device/version constraints, and restore path. Do not infer support from a commercial product name alone when the repository keys compatibility by model code, firmware, chipset, or OS version.
+3. Build a new minimal directory from an explicit allowlist. Include the license, source URL and commit, setup instructions, reversible recovery tooling, and only the reference material needed to review the selected capability.
+4. If no exact supported profile exists, ship candidates disabled or commented and label them review-only. Never silently substitute a nearby model's actionable configuration; shared package names do not prove identical safety constraints.
+5. Remove examples and utilities that can perform excluded side effects, even when they are merely “reference” files. Full upstream profiles often contain launcher, updater, networking, or system-service actions outside the user's requested scope.
+6. Validate source syntax where possible, enumerate the archive contents, assert that excluded classes are absent, test archive integrity, and compute a checksum. Report separately what was copied and what was actually applied to a target system.
+
+A safe extraction is an allowlisted derivative artifact, not a full clone with instructions to ignore most of it; the latter leaves out-of-scope actions one command away and makes the delivered scope unverifiable.
+
 ## 2. Creating Repositories
 
 **With gh:**

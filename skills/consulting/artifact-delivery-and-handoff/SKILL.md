@@ -46,7 +46,7 @@ For platforms that support local file delivery in chat, send the file directly i
 
 # User-specific preference captured from practice
 
-This user expects documentation and handoff artifacts to be delivered as files immediately when requested. If she asks for a file in chat or Telegram, attachment-first delivery is the correct default.
+This user expects documentation and handoff artifacts to be delivered as files immediately when requested. If he asks for a file in chat or Telegram, attachment-first delivery is the correct default.
 
 # Examples
 

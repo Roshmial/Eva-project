@@ -548,7 +548,11 @@ $HERMES_HOME/skills/        Installed skills
 ~/.hermes/hermes-agent/     Source code (if git-installed)
 ```
 
-Profiles use `~/.hermes/profiles/<name>/` with the same layout.
+Profile path rule:
+- the special `default` profile lives directly at `~/.hermes`;
+- only named profiles live under `~/.hermes/profiles/<name>/` with the same layout.
+
+Before reading or changing profile-owned files, run `hermes profile show <name>` and use the reported `Path`; never construct `~/.hermes/profiles/default` by analogy.
 
 ### Config Sections
 

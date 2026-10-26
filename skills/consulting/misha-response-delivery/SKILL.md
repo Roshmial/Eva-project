@@ -137,7 +137,6 @@ This skill governs how to package advisory answers for Misha so the result is im
    - Load `execution-finalization-discipline` as a mandatory companion skill for fix/update/verify/cleanup/dodelat tasks and apply its completion checklist before any final status claim.
    - Before the final reply, do a separate verification pass: check that the requested result is complete, the safe improvements did not distort the original ask, and no required step is still missing.
    - If Misha explicitly decides to use a temporary credential, secret, or access key for a bounded live probe, do not get stuck re-litigating the security warning after stating it once. Make the smallest low-risk verification call first, confirm whether the contour is alive, and only then ask for rotation or safer handling as the next operational step.
-   - If Misha explicitly decides to use a temporary credential, secret, or access key for a bounded live probe, do not get stuck re-litigating the security warning after stating it once. Make the smallest low-risk verification call first, confirm whether the contour is alive, and only then ask for rotation or safer handling as the next operational step.
 
 # Reference-driven presentation rule
 
@@ -188,8 +187,8 @@ When Misha asks to use an earlier presentation as a reference, treat the referen
 - Pitfall: answering with an almost-right shape and then offering to convert it into the exact shape the user already asked for (`дай по дням` -> потом `могу собрать по каждому дню`, `сделай shortlist` -> потом `могу ещё ужать shortlist`, `дай готовый текст` -> потом `могу оформить`).
   Fix: treat the requested structure as part of the deliverable. Before sending, do a last check: `это уже можно сразу использовать в том виде, который запросил Миша?` If yes, stop. If no, finish the reshaping now instead of offering it как следующий шаг.
 
-- Pitfall: losing the active user ask when the message contains a quoted fragment from the previous reply.
-  Fix: treat quoted text only as context. Extract the live request after it and answer that request directly instead of continuing the old topic or replaying stale content.
+- Pitfall: losing the active user ask when the message contains a quoted fragment from the previous reply, or reviewing every item in a multi-part notification when Misha names only one part.
+  Fix: treat quoted text only as context. Extract the live request after it and answer that exact scope. If he names a subsystem or clause such as `часть с memory`, inspect and report only that part; leave sibling skill/config/runtime items out unless they are required to understand the decision.
 
 - Pitfall: misreading Telegram reply wrappers or context-handoff blocks as the real task.
   Fix: when the message starts with something like `[Replying to: ...]`, or when a compaction/handoff summary is present, treat both as background only. Find the fresh user sentence after them and answer that exact ask. Do not continue an older task just because it appears in quoted or summarized text.
