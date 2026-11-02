@@ -202,6 +202,14 @@ hermes status [--all]       Show component status
 
 Important CLI pitfall: use the installed `hermes` entrypoint for health/config checks. Do not assume `python -m hermes ...` works in the active venv — many installs expose only the console script, so `python -m hermes doctor` can fail with `No module named hermes` even when `hermes doctor` works.
 
+#### Config-drift triage
+
+Run both `hermes config check` and `hermes doctor`; they catch different failure classes. `config check` validates saved environment/config references, including platform toolsets, while `doctor` also detects structural/runtime drift such as custom endpoints stranded in the retired `custom_providers` list.
+
+- If `config check` reports an unknown or empty platform toolset, treat that platform as potentially running with no tools. Reconfigure it with `hermes tools`, then start a fresh session or restart the relevant runtime and verify the platform path.
+- If `doctor` reports a legacy `custom_providers` entry with no matching `providers:` entry, do not expect `hermes config migrate` to repair it: the old list-to-map migration is one-shot and does not re-fire. Move the endpoint into the reported `providers.<key>` mapping, preserve its non-secret settings, remove the legacy entry only after comparison, then rerun `hermes doctor` and a real provider/model probe.
+- Do not paste raw provider keys or unmasked config into logs or skill text while diagnosing either case.
+
 ### Tools & Skills
 
 ```

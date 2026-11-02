@@ -20,15 +20,15 @@
       "schedule_display": "0 15 * * *",
       "repeat": {
         "times": null,
-        "completed": 156
+        "completed": 163
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-05-27T15:43:18.595108+00:00",
-      "next_run_at": "2026-10-26T15:00:00+00:00",
-      "last_run_at": "2026-10-25T15:00:50.151798+00:00",
+      "next_run_at": "2026-11-02T15:00:00+00:00",
+      "last_run_at": "2026-11-01T15:00:28.932607+00:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -47,17 +47,17 @@
       "fire_claim": null,
       "failure_streak": 0,
       "last_dispatch": {
-        "scheduled_at": "2026-10-25T15:00:00+00:00",
-        "dispatched_at": "2026-10-25T15:00:23.238997+00:00",
-        "lateness_seconds": 23.2,
+        "scheduled_at": "2026-11-01T15:00:00+00:00",
+        "dispatched_at": "2026-11-01T15:00:16.138733+00:00",
+        "lateness_seconds": 16.1,
         "kind": "on_time"
       },
       "last_failure": {
-        "at": "2026-10-19T15:01:19.962813+00:00",
+        "at": "2026-10-30T15:00:36.913069+00:00",
         "detail": "RuntimeError: HTTP 429: The usage limit has been reached"
       },
       "canonical_completions": [
-        "1f66f2ef803a4a48a51304fa6489ad3d"
+        "68edc706d86442d69a02b4c1aec84821"
       ]
     },
     {
@@ -80,15 +80,15 @@
       "schedule_display": "55 14 * * *",
       "repeat": {
         "times": null,
-        "completed": 155
+        "completed": 162
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-05-28T14:07:14.429160+00:00",
-      "next_run_at": "2026-10-26T14:55:00+00:00",
-      "last_run_at": "2026-10-25T14:55:34.392398+00:00",
+      "next_run_at": "2026-11-02T14:55:00+00:00",
+      "last_run_at": "2026-11-01T14:55:26.160072+00:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -105,9 +105,9 @@
       "fire_claim": null,
       "failure_streak": 0,
       "last_dispatch": {
-        "scheduled_at": "2026-10-25T14:55:00+00:00",
-        "dispatched_at": "2026-10-25T14:55:23.238469+00:00",
-        "lateness_seconds": 23.2,
+        "scheduled_at": "2026-11-01T14:55:00+00:00",
+        "dispatched_at": "2026-11-01T14:55:16.133322+00:00",
+        "lateness_seconds": 16.1,
         "kind": "on_time"
       }
     },
@@ -131,15 +131,15 @@
       "schedule_display": "30 15 * * 0",
       "repeat": {
         "times": null,
-        "completed": 29
+        "completed": 30
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-05-28T14:07:15.436653+00:00",
-      "next_run_at": "2026-11-01T15:30:00+00:00",
-      "last_run_at": "2026-10-25T15:31:37.375874+00:00",
+      "next_run_at": "2026-11-08T15:30:00+00:00",
+      "last_run_at": "2026-11-01T15:31:32.077341+00:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -155,9 +155,9 @@
       "profile": null,
       "fire_claim": null,
       "last_dispatch": {
-        "scheduled_at": "2026-10-25T15:30:00+00:00",
-        "dispatched_at": "2026-10-25T15:30:23.226726+00:00",
-        "lateness_seconds": 23.2,
+        "scheduled_at": "2026-11-01T15:30:00+00:00",
+        "dispatched_at": "2026-11-01T15:30:16.157425+00:00",
+        "lateness_seconds": 16.2,
         "kind": "on_time"
       },
       "failure_streak": 0
@@ -182,17 +182,17 @@
       "schedule_display": "0 17 * * 0",
       "repeat": {
         "times": null,
-        "completed": 28
+        "completed": 29
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-05-29T23:47:34.685920+00:00",
-      "next_run_at": "2026-11-01T17:00:00+00:00",
-      "last_run_at": "2026-10-25T17:02:29.149061+00:00",
-      "last_status": "ok",
-      "last_error": null,
+      "next_run_at": "2026-11-08T17:00:00+00:00",
+      "last_run_at": "2026-11-01T17:00:36.027703+00:00",
+      "last_status": "error",
+      "last_error": "RuntimeError: HTTP 429: The usage limit has been reached",
       "last_delivery_error": null,
       "deliver": "origin",
       "origin": {
@@ -210,18 +210,18 @@
       "profile": null,
       "fire_claim": null,
       "last_dispatch": {
-        "scheduled_at": "2026-10-25T17:00:00+00:00",
-        "dispatched_at": "2026-10-25T17:00:23.939842+00:00",
-        "lateness_seconds": 23.9,
+        "scheduled_at": "2026-11-01T17:00:00+00:00",
+        "dispatched_at": "2026-11-01T17:00:16.165748+00:00",
+        "lateness_seconds": 16.2,
         "kind": "on_time"
       },
-      "failure_streak": 0,
+      "failure_streak": 1,
       "last_failure": {
-        "at": "2026-10-18T17:00:43.195270+00:00",
-        "detail": "GatewayUnavailableError: Gateway draining: update_paused"
+        "at": "2026-11-01T17:00:36.027703+00:00",
+        "detail": "RuntimeError: HTTP 429: The usage limit has been reached"
       },
       "canonical_completions": [
-        "0c4b1708974c4680aa627f4de8f619ae"
+        "bd7ab1d4215d4cad9b1b8d11eaca8c16"
       ]
     },
     {
@@ -244,17 +244,17 @@
       "schedule_display": "45 6 * * 1",
       "repeat": {
         "times": 999,
-        "completed": 30
+        "completed": 31
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-01T06:55:18.124834+00:00",
-      "next_run_at": "2026-10-26T06:45:00+00:00",
-      "last_run_at": "2026-10-19T06:46:15.591818+00:00",
-      "last_status": "error",
-      "last_error": "RuntimeError: HTTP 429: The usage limit has been reached",
+      "next_run_at": "2026-11-02T06:45:00+00:00",
+      "last_run_at": "2026-10-26T06:48:02.943826+00:00",
+      "last_status": "ok",
+      "last_error": null,
       "last_delivery_error": null,
       "deliver": "origin",
       "origin": {
@@ -271,18 +271,18 @@
       "profile": null,
       "fire_claim": null,
       "last_dispatch": {
-        "scheduled_at": "2026-10-19T06:45:00+00:00",
-        "dispatched_at": "2026-10-19T06:45:58.847752+00:00",
-        "lateness_seconds": 58.8,
+        "scheduled_at": "2026-10-26T06:45:00+00:00",
+        "dispatched_at": "2026-10-26T06:45:23.239551+00:00",
+        "lateness_seconds": 23.2,
         "kind": "on_time"
       },
-      "failure_streak": 1,
+      "failure_streak": 0,
       "last_failure": {
         "at": "2026-10-19T06:46:15.591818+00:00",
         "detail": "RuntimeError: HTTP 429: The usage limit has been reached"
       },
       "canonical_completions": [
-        "9a6da1ecde5340478f1997aa06e87637"
+        "97a48e1bb78e4fcb9e537c7de6b1b571"
       ]
     },
     {
@@ -305,15 +305,15 @@
       "schedule_display": "20 18 * * *",
       "repeat": {
         "times": null,
-        "completed": 145
+        "completed": 152
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-03T13:04:32.165457+00:00",
-      "next_run_at": "2026-10-26T18:20:00+00:00",
-      "last_run_at": "2026-10-25T18:20:36.159516+00:00",
+      "next_run_at": "2026-11-02T18:20:00+00:00",
+      "last_run_at": "2026-11-01T18:20:27.184870+00:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -330,9 +330,9 @@
       "fire_claim": null,
       "failure_streak": 0,
       "last_dispatch": {
-        "scheduled_at": "2026-10-25T18:20:00+00:00",
-        "dispatched_at": "2026-10-25T18:20:23.257524+00:00",
-        "lateness_seconds": 23.3,
+        "scheduled_at": "2026-11-01T18:20:00+00:00",
+        "dispatched_at": "2026-11-01T18:20:16.136902+00:00",
+        "lateness_seconds": 16.1,
         "kind": "on_time"
       },
       "last_failure": {
@@ -360,15 +360,15 @@
       "schedule_display": "every 120m",
       "repeat": {
         "times": null,
-        "completed": 1653
+        "completed": 1737
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-06T23:55:03.424901+00:00",
-      "next_run_at": "2026-10-26T06:15:30.238684+00:00",
-      "last_run_at": "2026-10-26T04:15:30.238684+00:00",
+      "next_run_at": "2026-11-02T07:39:19.795607+00:00",
+      "last_run_at": "2026-11-02T05:39:19.795607+00:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -385,9 +385,9 @@
       "fire_claim": null,
       "failure_streak": 0,
       "last_dispatch": {
-        "scheduled_at": "2026-10-26T04:14:28.128975+00:00",
-        "dispatched_at": "2026-10-26T04:15:23.228056+00:00",
-        "lateness_seconds": 55.1,
+        "scheduled_at": "2026-11-02T05:38:19.558813+00:00",
+        "dispatched_at": "2026-11-02T05:39:16.146032+00:00",
+        "lateness_seconds": 56.6,
         "kind": "on_time"
       },
       "last_failure": {
@@ -418,17 +418,17 @@
       "schedule_display": "30 4 * * *",
       "repeat": {
         "times": null,
-        "completed": 274
+        "completed": 281
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-09T08:53:20.923608+00:00",
-      "next_run_at": "2026-10-27T04:30:00+00:00",
-      "last_run_at": "2026-10-26T04:30:41.866339+00:00",
-      "last_status": "ok",
-      "last_error": null,
+      "next_run_at": "2026-11-03T04:30:00+00:00",
+      "last_run_at": "2026-11-02T04:30:40.969991+00:00",
+      "last_status": "error",
+      "last_error": "RuntimeError: HTTP 429: The usage limit has been reached",
       "last_delivery_error": null,
       "deliver": "origin",
       "origin": {
@@ -443,19 +443,19 @@
       "workdir": "/home/hermes/workspace",
       "profile": null,
       "fire_claim": null,
-      "failure_streak": 0,
+      "failure_streak": 1,
       "last_dispatch": {
-        "scheduled_at": "2026-10-26T04:30:00+00:00",
-        "dispatched_at": "2026-10-26T04:30:23.230219+00:00",
-        "lateness_seconds": 23.2,
+        "scheduled_at": "2026-11-02T04:30:00+00:00",
+        "dispatched_at": "2026-11-02T04:30:16.132457+00:00",
+        "lateness_seconds": 16.1,
         "kind": "on_time"
       },
       "last_failure": {
-        "at": "2026-10-19T04:31:18.295832+00:00",
-        "detail": "Не удалось подготовить утреннее сообщение: preflight script завершился с ошибкой — отсутствует модуль Python `yaml` (`ModuleNotFoundError`). Рекомендации не сформированы."
+        "at": "2026-11-02T04:30:40.969991+00:00",
+        "detail": "RuntimeError: HTTP 429: The usage limit has been reached"
       },
       "canonical_completions": [
-        "dc7fb92175434467a2628f26d797a8cf"
+        "ecc2f8efee3547a990f3f02690dd21fd"
       ]
     },
     {
@@ -478,17 +478,17 @@
       "schedule_display": "35 4 * * *",
       "repeat": {
         "times": null,
-        "completed": 133
+        "completed": 140
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-14T19:58:38.653901+00:00",
-      "next_run_at": "2026-10-27T04:35:00+00:00",
-      "last_run_at": "2026-10-26T04:36:38.802691+00:00",
-      "last_status": "ok",
-      "last_error": null,
+      "next_run_at": "2026-11-03T04:35:00+00:00",
+      "last_run_at": "2026-11-02T04:35:36.213096+00:00",
+      "last_status": "error",
+      "last_error": "RuntimeError: HTTP 429: The usage limit has been reached",
       "last_delivery_error": null,
       "deliver": "local",
       "origin": {
@@ -500,16 +500,20 @@
       "enabled_toolsets": null,
       "workdir": "/home/hermes/workspace",
       "fire_claim": null,
-      "failure_streak": 0,
+      "failure_streak": 1,
       "last_dispatch": {
-        "scheduled_at": "2026-10-26T04:35:00+00:00",
-        "dispatched_at": "2026-10-26T04:35:23.221633+00:00",
-        "lateness_seconds": 23.2,
+        "scheduled_at": "2026-11-02T04:35:00+00:00",
+        "dispatched_at": "2026-11-02T04:35:16.138866+00:00",
+        "lateness_seconds": 16.1,
         "kind": "on_time"
       },
       "canonical_completions": [
-        "27c4034c239340248fbe04ae65e2ad62"
-      ]
+        "82cbe52dc3444902a4c28e2d948fc37b"
+      ],
+      "last_failure": {
+        "at": "2026-11-02T04:35:36.213096+00:00",
+        "detail": "RuntimeError: HTTP 429: The usage limit has been reached"
+      }
     },
     {
       "id": "6dfe0d3e6fa0",
@@ -531,15 +535,15 @@
       "schedule_display": "5 5 * * 0",
       "repeat": {
         "times": null,
-        "completed": 19
+        "completed": 20
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-14T19:58:39.664902+00:00",
-      "next_run_at": "2026-11-01T05:05:00+00:00",
-      "last_run_at": "2026-10-25T05:11:22.102769+00:00",
+      "next_run_at": "2026-11-08T05:05:00+00:00",
+      "last_run_at": "2026-11-01T05:10:01.237235+00:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -555,13 +559,13 @@
       "fire_claim": null,
       "failure_streak": 0,
       "last_dispatch": {
-        "scheduled_at": "2026-10-25T05:05:00+00:00",
-        "dispatched_at": "2026-10-25T05:05:23.232866+00:00",
-        "lateness_seconds": 23.2,
+        "scheduled_at": "2026-11-01T05:05:00+00:00",
+        "dispatched_at": "2026-11-01T05:05:16.140269+00:00",
+        "lateness_seconds": 16.1,
         "kind": "on_time"
       },
       "canonical_completions": [
-        "92c75dbad4394d5b85ff15e3cb4b4f1c"
+        "9a2628f8aa6d4589b62158bf8d337fe5"
       ]
     },
     {
@@ -584,15 +588,15 @@
       "schedule_display": "0 6 * * 1",
       "repeat": {
         "times": null,
-        "completed": 20
+        "completed": 21
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-17T19:26:57.855186+00:00",
-      "next_run_at": "2026-11-02T06:00:00+00:00",
-      "last_run_at": "2026-10-19T06:01:13.327551+00:00",
+      "next_run_at": "2026-11-09T06:00:00+00:00",
+      "last_run_at": "2026-10-26T06:00:33.733501+00:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -606,13 +610,13 @@
       "enabled_toolsets": null,
       "workdir": null,
       "fire_claim": {
-        "at": "2026-10-26T06:00:27.239862+00:00",
-        "by": "server-oig0ig:609700:12a9804b002c45b2a4a7526338b58c80"
+        "at": "2026-11-02T06:00:22.152635+00:00",
+        "by": "server-oig0ig:1272718:048a1950cc554a369c82db9cbe3f6215"
       },
       "last_dispatch": {
-        "scheduled_at": "2026-10-26T06:00:00+00:00",
-        "dispatched_at": "2026-10-26T06:00:23.237450+00:00",
-        "lateness_seconds": 23.2,
+        "scheduled_at": "2026-11-02T06:00:00+00:00",
+        "dispatched_at": "2026-11-02T06:00:16.152202+00:00",
+        "lateness_seconds": 16.2,
         "kind": "on_time"
       },
       "failure_streak": 0
@@ -646,20 +650,20 @@
       "schedule_display": "45 3 * * 1",
       "repeat": {
         "times": null,
-        "completed": 7
+        "completed": 8
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-09-11T06:03:08.870344+00:00",
-      "next_run_at": "2026-11-02T03:45:00+00:00",
-      "last_run_at": "2026-10-26T03:47:38.053415+00:00",
-      "last_status": "ok",
-      "last_error": null,
+      "next_run_at": "2026-11-09T03:45:00+00:00",
+      "last_run_at": "2026-11-02T03:45:34.219796+00:00",
+      "last_status": "error",
+      "last_error": "RuntimeError: HTTP 429: The usage limit has been reached",
       "last_delivery_error": null,
       "last_delivery_unverified": null,
-      "failure_streak": 0,
+      "failure_streak": 1,
       "deliver": "local",
       "origin": {
         "platform": "telegram",
@@ -676,126 +680,20 @@
       "workdir": "/home/hermes/workspace",
       "failure_deliver": "local",
       "last_dispatch": {
-        "scheduled_at": "2026-10-26T03:45:00+00:00",
-        "dispatched_at": "2026-10-26T03:45:23.225437+00:00",
-        "lateness_seconds": 23.2,
+        "scheduled_at": "2026-11-02T03:45:00+00:00",
+        "dispatched_at": "2026-11-02T03:45:16.147189+00:00",
+        "lateness_seconds": 16.1,
         "kind": "on_time"
       },
       "fire_claim": null,
       "canonical_completions": [
-        "e2c4f0177dce45f58d6cd43ff070f4ed"
-      ]
-    },
-    {
-      "id": "d536dc0375a8",
-      "name": "verify-offline-storage-optimization-once",
-      "prompt": "Проверь завершение разовой offline-оптимизации Hermes. Прочитай `/home/hermes/workspace/decision-log-audit/optimize-storage-result.json` и `/home/hermes/workspace/decision-log-audit/optimize-storage.log`. Если result ещё отсутствует, проверь `hermes-db-optimize-offline.service`; если он active/activating, дождись завершения через `systemctl --user wait` если поддерживается или одним foreground ожиданием до 15 минут, затем перечитай result. Независимо проверь: размер `/home/hermes/.hermes/state.db`, `PRAGMA integrity_check`, `PRAGMA foreign_key_check`, число sessions/messages, отсутствие сессий до cutoff из `/home/hermes/workspace/decision-log-audit/final-old-session-delete-manifest.json`, active-состояние `hermes-gateway.service` и `eva-hub-refresh.timer`. Если всё успешно, удали разовые unit-файлы `hermes-db-optimize-offline.service` и `.timer`, выполни daemon-reload, обнови верхнюю запись `/home/hermes/workspace/decision-log.md`, заменив статус pending offline optimize на фактический результат, затем запусти `/usr/bin/python3 /home/hermes/.hermes/scripts/eva_github_backup_weekly.py` и подтверди совпадение local/remote commit. Отправь Мише краткий фактический итог. Не выдавай запуск за успех: при ошибке сообщи точный blocker и сохрани units/log для диагностики.",
-      "skills": [],
-      "skill": null,
-      "model": null,
-      "provider": null,
-      "base_url": null,
-      "script": null,
-      "no_agent": false,
-      "monitor_script": null,
-      "monitor_url": null,
-      "monitor_state": null,
-      "context_from": null,
-      "schedule": {
-        "kind": "once",
-        "run_at": "2026-10-19T21:54:44.077518+00:00",
-        "display": "once in 15m"
-      },
-      "schedule_display": "once in 15m",
-      "repeat": {
-        "times": 1,
-        "completed": 1
-      },
-      "enabled": false,
-      "state": "completed",
-      "paused_at": "2026-10-19T21:57:28.301274+00:00",
-      "paused_reason": "Cron execution unverified; reconcile /home/hermes/.hermes/cron/admissions/e9051ead53818b5ca8cc4371818c27cc1cb55f7d0b3945f9a83154c1de4e193b.json: Gateway disconnected; turn outcome is unknown. Resume the printed session ID to check whether it completed or was interrupted; do not resend the work.",
-      "created_at": "2026-10-19T21:39:44.077653+00:00",
-      "next_run_at": null,
-      "last_run_at": "2026-10-19T21:57:29.455427+00:00",
-      "last_status": "error",
-      "last_error": "Restart-safe cron worker exited with status 1 after adopting this execution, without writing a durable terminal state; whether side effects ran is unknown.",
-      "last_delivery_error": null,
-      "last_delivery_unverified": null,
-      "last_failure": {
-        "at": "2026-10-19T21:57:29.455427+00:00",
-        "detail": "Restart-safe cron worker exited with status 1 after adopting this execution, without writing a durable terminal state; whether side effects ran is unknown."
-      },
-      "failure_streak": 1,
-      "deliver": "origin",
-      "origin": {
-        "platform": "telegram",
-        "chat_id": "381204086",
-        "chat_name": "Михаил Рощин",
-        "thread_id": null,
-        "user_id": "381204086",
-        "scope_id": null
-      },
-      "enabled_toolsets": [
-        "terminal",
-        "file"
+        "0349e2d3db8d4306838e911d78d84ed0"
       ],
-      "workdir": "/home/hermes/workspace",
-      "run_claim": null,
-      "fire_claim": null
-    },
-    {
-      "id": "fd3ca27f3afa",
-      "name": "report-offline-vacuum-once",
-      "prompt": "Разовая доставка проверенного результата offline VACUUM.",
-      "skills": [],
-      "skill": null,
-      "model": null,
-      "provider": null,
-      "base_url": null,
-      "script": "report_vacuum_result.py",
-      "no_agent": true,
-      "monitor_script": null,
-      "monitor_url": null,
-      "monitor_state": null,
-      "context_from": null,
-      "schedule": {
-        "kind": "once",
-        "run_at": "2026-10-20T05:33:06.280896+00:00",
-        "display": "once in 10m"
-      },
-      "schedule_display": "once in 10m",
-      "repeat": {
-        "times": 1,
-        "completed": 1
-      },
-      "enabled": false,
-      "state": "completed",
-      "paused_at": null,
-      "paused_reason": null,
-      "created_at": "2026-10-20T05:23:06.281026+00:00",
-      "next_run_at": null,
-      "last_run_at": "2026-10-20T05:33:29.998594+00:00",
-      "last_status": "ok",
-      "last_error": null,
-      "last_delivery_error": null,
-      "last_delivery_unverified": null,
-      "last_failure": null,
-      "failure_streak": 0,
-      "deliver": "origin",
-      "origin": {
-        "platform": "telegram",
-        "chat_id": "381204086",
-        "chat_name": "Михаил Рощин",
-        "thread_id": null,
-        "user_id": "381204086",
-        "scope_id": null
-      },
-      "enabled_toolsets": null,
-      "workdir": "/home/hermes/workspace",
-      "run_claim": null,
-      "fire_claim": null
+      "last_failure": {
+        "at": "2026-11-02T03:45:34.219796+00:00",
+        "detail": "RuntimeError: HTTP 429: The usage limit has been reached"
+      }
     }
   ],
-  "updated_at": "2026-10-26T06:00:27.241137+00:00"
+  "updated_at": "2026-11-02T06:00:22.154272+00:00"
 }
