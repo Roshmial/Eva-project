@@ -835,6 +835,21 @@ Four systems run alongside the main conversation loop. Quick reference
 here; full developer notes live in `AGENTS.md`, user-facing docs under
 `website/docs/user-guide/features/`.
 
+### Global emergency stop (`hermes pause` / `hermes resume`)
+
+Use the global stop when new automated work or gateway turns must be contained immediately:
+
+```bash
+hermes pause --reason "incident description"
+hermes status
+hermes resume
+```
+
+- `hermes pause` blocks **new** cron fires (including catch-up and managed-cron webhooks), kanban dispatch, and gateway turns across CLI, TUI, Desktop, and messaging surfaces. It does not kill work already in flight; stop that separately when required.
+- The pause is durable in the profile's `ESTOP` sentinel and takes effect without a gateway restart. `hermes status` shows the paused state and reason; `hermes resume` removes the sentinel and dispatch resumes on the next tick.
+- Distinguish this fleet-wide control from `hermes cron pause <job-id>`, which changes one job's schedule state. Prefer the narrow per-job pause when only one scheduled task is faulty.
+- After containment, verify the visible paused state before debugging. After `hermes resume`, re-check `hermes cron status` / kanban state and run a bounded live probe; resuming dispatch is not proof that the original failure is fixed.
+
 ### Delegation (`delegate_task`)
 
 Version-sensitive area: verify the current runtime/tool contract before
